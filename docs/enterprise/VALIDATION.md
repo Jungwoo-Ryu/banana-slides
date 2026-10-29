@@ -13,7 +13,7 @@
 
 영역 편집 E2E는 **유료 모델 호출만 가로채서** 요청 내용과 선택 이미지 전달을 검사합니다. 나머지 업로드·DB·내보내기는 실제 로컬 백엔드를 사용합니다. Azure 테스트도 SDK 요청 계약을 검증하는 대역 테스트이며 실제 서비스 연결·생성 품질을 검증한 것은 아닙니다.
 
-Windows `cmd.exe`에서의 `start.bat` 실기동은 이 Linux 환경에서 실행하지 못했습니다. Windows CI 시작 점검을 별도로 구성했습니다. 실제 PC에서는 Node/uv 설치, 회사 프록시·인증서, OCR 실행 파일/언어 데이터가 필요합니다.
+Windows GitHub Actions에서 실제 `cmd.exe`로 `start.bat --no-browser`를 실행하여 의존성 설치, 백엔드 health 응답, 프론트엔드 HTTP 응답까지 통과했습니다. [검증 실행 기록](https://github.com/Jungwoo-Ryu/banana-slides/actions/runs/40874993167)에서 확인할 수 있습니다. 실제 PC의 회사 프록시·인증서와 한국어 OCR 환경은 별도로 확인해야 합니다.
 
 ## 재현 명령
 
