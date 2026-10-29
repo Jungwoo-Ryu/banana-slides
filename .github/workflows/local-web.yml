@@ -13,6 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
+        with:
+          # Keep optional uv cache maintenance out of workflow verification.
+          enable-cache: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -51,6 +54,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'

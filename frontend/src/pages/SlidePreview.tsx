@@ -1344,18 +1344,22 @@ export const SlidePreview: React.FC = () => {
       handleSaveOutlineAndDescription();
     }
 
-    // 调用后端编辑接口
-    await editPageImage(
-      page.id,
-      editPrompt,
-      {
-        useTemplate: selectedContextImages.useTemplate,
-        descImageUrls: selectedContextImages.descImageUrls,
-        uploadedFiles: selectedContextImages.uploadedFiles.length > 0 
-          ? selectedContextImages.uploadedFiles 
-          : undefined,
-      }
-    );
+    // The store shows the error; keep the prompt and references for retry.
+    try {
+      await editPageImage(
+        page.id,
+        editPrompt,
+        {
+          useTemplate: selectedContextImages.useTemplate,
+          descImageUrls: selectedContextImages.descImageUrls,
+          uploadedFiles: selectedContextImages.uploadedFiles.length > 0
+            ? selectedContextImages.uploadedFiles
+            : undefined,
+        }
+      );
+    } catch {
+      return;
+    }
 
     // 缓存当前页的编辑上下文，便于后续快速重复执行
     setEditContextByPage((prev) => ({

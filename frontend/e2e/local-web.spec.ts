@@ -45,6 +45,9 @@ test('blank project, region prompt and actual PPTX browser download',async({page
     // Only the paid AI call is stubbed; all storage and export requests are real.
     let payload='';await page.route(`**/api/projects/${projectId}/pages/${pageId}/edit/image`,async route=>{payload=route.request().postData()||'';await route.fulfill({status:400,contentType:'application/json',body:JSON.stringify({success:false,error:{code:'TEST_NO_MODEL',message:'테스트에서는 유료 모델을 호출하지 않습니다.'}})});});
     await page.getByTestId('inline-edit-prompt').press('Control+Enter');await expect.poll(()=>payload).toContain('선택한 영역의 제목');expect(payload).toContain('context_images');
+    await expect(page.getByText('테스트에서는 유료 모델을 호출하지 않습니다.',{exact:true})).toBeVisible();
+    await expect(page.getByTestId('inline-edit-prompt')).toHaveValue('선택한 영역의 제목을 파란색으로 바꿔 주세요.');
+    await expect(page.getByTestId('inline-edit-attachment-thumb')).toHaveCount(1);
     await page.reload();await page.getByRole('button',{name:'내보내기',exact:true}).click();await page.getByRole('button',{name:'PPTX 내보내기',exact:true}).click();
     const downloadPromise=page.waitForEvent('download');await page.getByRole('button',{name:'내보내기 시작',exact:true}).click();const download=await downloadPromise;
     const saved=testInfo.outputPath('browser-export.pptx');await download.saveAs(saved);

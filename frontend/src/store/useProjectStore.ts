@@ -1351,7 +1351,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       const { pageGeneratingTasks } = get();
       const newTasks = { ...pageGeneratingTasks };
       delete newTasks[pageId];
-      set({ pageGeneratingTasks: newTasks, error: normalizeErrorMessage(error.message || t('store.editImageFailed')) });
+      set({ pageGeneratingTasks: newTasks, error: normalizeErrorMessage(error.response?.data?.error?.message || error.message || t('store.editImageFailed')) });
       throw error;
     }
   },
