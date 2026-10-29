@@ -1,3 +1,4 @@
+import { fieldLabel } from '@/utils/fieldLabels';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Check,
@@ -754,7 +755,7 @@ export const PagePropertiesDrawer: React.FC<PagePropertiesDrawerProps> = ({
                           ref={(el) => {
                             extraFieldRefs.current[name] = el;
                           }}
-                          label={name}
+                          label={fieldLabel(name)}
                           toolbarLeft={
                             notInImagePrompt ? (
                               <span className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-foreground-tertiary">
@@ -778,7 +779,7 @@ export const PagePropertiesDrawer: React.FC<PagePropertiesDrawerProps> = ({
                           }
                           showUploadButton={false}
                           rows={2}
-                          placeholder={name}
+                          placeholder={fieldLabel(name)}
                         />
                       </div>
                     );

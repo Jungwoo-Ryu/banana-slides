@@ -34,7 +34,8 @@ test('blank project, region prompt and actual PPTX browser download',async({page
     await request.put(`/api/projects/${projectId}/pages/${pageId}/outline`,{data:{outline_content:{title:'로컬 편집 검증',points:['영역 편집','PPTX 다운로드']}}});
     await request.put(`/api/projects/${projectId}/pages/${pageId}/description`,{data:{description_content:{text:'테스트 슬라이드입니다.'}}});
     execFileSync(python,[path.join(root,'scripts/seed_local_e2e.py'),projectId,pageId]);await page.goto(`/project/${projectId}/preview`);
-    await expect(page.getByText('로컬 편집 검증').first()).toBeVisible();await page.screenshot({path:testInfo.outputPath('preview.png')});
+    await expect(page.getByText('로컬 편집 검증').first()).toBeVisible();
+    await expect(page.locator('body')).not.toContainText(/[\u4e00-\u9fff]/);await page.screenshot({path:testInfo.outputPath('preview.png')});
     await page.getByTestId('preview-floating-toolbar').getByRole('button',{name:'편집',exact:true}).click();
     await expect(page.getByRole('button',{name:'영역 선택 종료',exact:true}).first()).toBeVisible();
     let target;for(const img of await page.locator('main img:visible').all()){const box=await img.boundingBox();if(box&&box.width>500){target=box;break;}}
