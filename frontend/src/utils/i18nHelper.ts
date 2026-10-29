@@ -1,3 +1,4 @@
+import korean from '@/locales/ko-components.json';
 import i18n from '@/i18n';
 
 type NestedRecord = Record<string, unknown>;
@@ -23,7 +24,9 @@ export function getT<T extends Translations>(translations: T) {
   return (key: string, params?: Record<string, string | number>): string => {
     const lang = i18n.language?.startsWith('zh') ? 'zh' : 'en';
     const dict = translations[lang] || translations['zh'];
-    const localValue = getNestedValue(dict, key);
+    const localValue = i18n.language?.startsWith('ko')
+      ? (korean as Record<string, string>)[key] ?? getNestedValue(dict, key)
+      : getNestedValue(dict, key);
 
     if (localValue !== undefined) {
       let text = localValue;
@@ -36,6 +39,6 @@ export function getT<T extends Translations>(translations: T) {
     }
 
     // Fallback to global i18n
-    return i18n.t(key, params as any);
+    return String(i18n.t(key, params as any));
   };
 }

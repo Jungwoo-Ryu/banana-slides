@@ -46,25 +46,16 @@ from .coordinate_mapper import CoordinateMapper
 from .extractors import (
     ElementExtractor,
     MinerUElementExtractor,
-    BaiduOCRElementExtractor,
-    BaiduAccurateOCRElementExtractor,
     ExtractorRegistry
 )
 
 # 混合提取器
-from .hybrid_extractor import (
-    HybridElementExtractor,
-    BBoxUtils,
-    create_hybrid_extractor
-)
 
 # Inpaint提供者
 from .inpaint_providers import (
     InpaintProvider,
     DefaultInpaintProvider,
     GenerativeEditInpaintProvider,
-    BaiduInpaintProvider,
-    HybridInpaintProvider,
     InpaintProviderRegistry
 )
 
@@ -78,8 +69,6 @@ from .text_attribute_extractors import (
 
 # 工厂和配置
 from .factories import (
-    ExtractorFactory,
-    InpaintProviderFactory,
     TextAttributeExtractorFactory,
     ServiceConfig
 )
@@ -97,19 +86,12 @@ __all__ = [
     # 元素提取器
     'ElementExtractor',
     'MinerUElementExtractor',
-    'BaiduOCRElementExtractor',
-    'BaiduAccurateOCRElementExtractor',
     'ExtractorRegistry',
     # 混合提取器
-    'HybridElementExtractor',
-    'BBoxUtils',
-    'create_hybrid_extractor',
     # Inpaint提供者
     'InpaintProvider',
     'DefaultInpaintProvider',
     'GenerativeEditInpaintProvider',
-    'BaiduInpaintProvider',
-    'HybridInpaintProvider',
     'InpaintProviderRegistry',
     # 文字属性提取器
     'TextStyleResult',
@@ -117,8 +99,6 @@ __all__ = [
     'CaptionModelTextAttributeExtractor',
     'TextAttributeExtractorRegistry',
     # 工厂和配置
-    'ExtractorFactory',
-    'InpaintProviderFactory',
     'TextAttributeExtractorFactory',
     'ServiceConfig',
     # 主服务

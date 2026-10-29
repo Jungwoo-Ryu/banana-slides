@@ -119,7 +119,18 @@ export function normalizeErrorMessage(
   errorMessage: string | null | undefined,
   language?: string,
 ): string {
-  const lang = language || localStorage.getItem('i18nextLng') || navigator.language || 'zh';
+  const lang = language || 'ko';
+  if (lang.startsWith('ko')) {
+    const text = String(errorMessage || '');
+    if (/[가-힣]/.test(text) && !/https?:|Bearer |sk-|Traceback/.test(text)) return text;
+    if (/401|403|api.key|unauthorized/i.test(text)) return 'API 키와 모델 배포 접근 권한을 확인하세요.';
+    if (/429|quota|rate.limit/i.test(text)) return '요청 한도에 도달했습니다. 잠시 후 다시 시도하세요.';
+    if (/timeout|timed.out/i.test(text)) return '응답 시간이 초과되었습니다. 다시 시도하세요.';
+    if (/network|connect/i.test(text)) return '서버 연결을 확인하세요. 백엔드가 실행 중이어야 합니다.';
+    if (/template/i.test(text)) return '템플릿을 선택하거나 업로드하세요.';
+    if (/description/i.test(text)) return '페이지 설명을 먼저 작성하세요.';
+    return '작업을 완료하지 못했습니다. 입력과 서비스 설정을 확인하세요.';
+  }
   const isZh = lang.startsWith('zh');
 
   if (!errorMessage) return isZh ? '操作失败' : 'Operation failed';

@@ -27,8 +27,8 @@ class Project(db.Model):
         db.String(10), nullable=False, server_default='single', default='single'
     )  # 'single' | 'multi'，仅 UI 渲染分支，不影响页级字段读写
     # 导出设置
-    export_extractor_method = db.Column(db.String(50), nullable=True, default='hybrid')  # 组件提取方法: mineru, hybrid
-    export_inpaint_method = db.Column(db.String(50), nullable=True, default='hybrid')  # 背景图获取方法: generative, baidu, hybrid
+    export_extractor_method = db.Column(db.String(50), nullable=True, default='configured')  # 组件提取方法: mineru, hybrid
+    export_inpaint_method = db.Column(db.String(50), nullable=True, default='local')  # 背景图获取方法: generative, baidu, hybrid
     export_allow_partial = db.Column(db.Boolean, nullable=True, default=False)  # 是否允许返回半成品（导出出错时继续而非停止）
     enable_icon_subject_extraction = db.Column(db.Boolean, nullable=True, default=True)  # 是否对小尺寸图标走百度智能抠图
     image_aspect_ratio = db.Column(db.String(10), nullable=False, server_default='16:9', default='16:9')
@@ -76,8 +76,8 @@ class Project(db.Model):
             'template_image_url': f'/files/{self.id}/template/{self.template_image_path.split("/")[-1]}' if self.template_image_path else None,
             'template_style': self.template_style,
             'template_mode': self.template_mode or 'single',
-            'export_extractor_method': self.export_extractor_method or 'hybrid',
-            'export_inpaint_method': self.export_inpaint_method or 'hybrid',
+            'export_extractor_method': self.export_extractor_method or 'configured',
+            'export_inpaint_method': self.export_inpaint_method or 'local',
             'export_allow_partial': self.export_allow_partial or False,
             'enable_icon_subject_extraction': True if self.enable_icon_subject_extraction is None else bool(self.enable_icon_subject_extraction),
             'image_aspect_ratio': self.image_aspect_ratio,

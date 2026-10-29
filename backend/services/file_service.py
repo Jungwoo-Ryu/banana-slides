@@ -9,6 +9,7 @@ from werkzeug.utils import secure_filename
 from PIL import Image
 from models import Project
 from models import db
+from services.storage import FileStorage, LocalFileStorage
 
 
 def convert_image_to_rgb(image: Image.Image) -> Image.Image:
@@ -66,9 +67,10 @@ def resize_image_for_thumbnail(image: Image.Image, max_width: int = 1920) -> Ima
 class FileService:
     """Service for file management"""
     
-    def __init__(self, upload_folder: str):
+    def __init__(self, upload_folder: str, storage: Optional[FileStorage] = None):
         """Initialize file service"""
-        self.upload_folder = Path(upload_folder)
+        self.storage = storage or LocalFileStorage(upload_folder)
+        self.upload_folder = self.storage.root
         self.upload_folder.mkdir(exist_ok=True, parents=True)
     
     def _get_project_dir(self, project_id: str) -> Path:
@@ -348,10 +350,7 @@ class FileService:
         Returns:
             Absolute file path
         """
-        result = (self.upload_folder / relative_path.replace('\\', '/')).resolve()
-        if not str(result).startswith(str(self.upload_folder.resolve())):
-            raise ValueError(f"Path traversal detected: {relative_path}")
-        return str(result)
+        return str(self.storage.resolve(relative_path))
     
     def delete_template(self, project_id: str) -> bool:
         """

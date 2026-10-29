@@ -2,10 +2,11 @@
 Unified response format utilities
 """
 from flask import jsonify
+from .user_messages import localize_error, status_message
 from typing import Any, Dict, Optional
 
 
-def success_response(data: Any = None, message: str = "Success", status_code: int = 200):
+def success_response(data: Any = None, message: str = "완료했습니다.", status_code: int = 200):
     """
     Generate a successful response
     
@@ -19,7 +20,7 @@ def success_response(data: Any = None, message: str = "Success", status_code: in
     """
     response = {
         "success": True,
-        "message": message
+        "message": status_message(message)
     }
     
     if data is not None:
@@ -46,7 +47,7 @@ def error_response(error_code: str, message: str, status_code: int = 400,
     """
     error_payload: Dict[str, Any] = {
         "code": error_code,
-        "message": message,
+        "message": localize_error(message),
     }
     if extra:
         for k, v in extra.items():

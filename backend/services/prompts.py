@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 # --- 常量 ---
 
 LANGUAGE_CONFIG = {
+    'ko': {'name': '한국어', 'instruction': '모든 내용을 자연스러운 한국어로 작성하세요. 내부 구조 표식과 JSON 키는 지시된 형식을 유지하세요.', 'ppt_text': '슬라이드의 모든 문자는 한국어로 작성하세요.'},
     'zh': {
         'name': '中文',
         'instruction': '请使用全中文输出。',
@@ -299,20 +300,21 @@ def _format_requirements(requirements: str, context: str = "outline") -> str:
 def get_default_output_language() -> str:
     """获取环境变量中配置的默认输出语言"""
     from config import Config
-    return getattr(Config, 'OUTPUT_LANGUAGE', 'zh')
+    from services.runtime_config import setting
+    return setting('OUTPUT_LANGUAGE', 'ko')
 
 
 def get_language_instruction(language: str = None) -> str:
     """获取语言限制指令文本"""
     lang = language if language else get_default_output_language()
-    config = LANGUAGE_CONFIG.get(lang, LANGUAGE_CONFIG['zh'])
+    config = LANGUAGE_CONFIG.get(lang, LANGUAGE_CONFIG['ko'])
     return config['instruction']
 
 
 def get_ppt_language_instruction(language: str = None) -> str:
     """获取PPT文字语言限制指令"""
     lang = language if language else get_default_output_language()
-    config = LANGUAGE_CONFIG.get(lang, LANGUAGE_CONFIG['zh'])
+    config = LANGUAGE_CONFIG.get(lang, LANGUAGE_CONFIG['ko'])
     return config['ppt_text']
 
 

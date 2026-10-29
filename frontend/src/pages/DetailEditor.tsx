@@ -1,3 +1,4 @@
+import { fieldLabel } from '@/utils/fieldLabels';
 import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, FileText, Sparkles, Download, Upload, ChevronDown, Settings2, X, Plus, HelpCircle, ImageIcon, Layers } from 'lucide-react';
@@ -19,7 +20,7 @@ import { CSS } from '@dnd-kit/utilities';
 // 组件内翻译
 const detailI18n = {
   zh: {
-    home: { title: '蕉幻' },
+    home: { title: 'Banana Slides' },
     detail: {
       title: "编辑页面描述", pageCount: "共 {{count}} 页", generateImages: "生成图片",
       generating: "生成中...", page: "第 {{num}} 页", titleLabel: "标题",
@@ -184,7 +185,7 @@ const SortableFieldPill: React.FC<{
       }`}
       onClick={onToggle}
     >
-      {name}
+      {fieldLabel(name)}
       {active && onToggleImagePrompt && (
         <span
           role="button"

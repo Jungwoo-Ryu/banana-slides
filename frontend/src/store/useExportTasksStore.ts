@@ -434,7 +434,7 @@ export const useExportTasksStore = create<ExportTasksState>()(
               get().updateTask(id, updates);
             } else if (task.status === 'FAILED') {
               const taskErrorMessage = task.error_message
-                || (typeof task.error === 'string' ? task.error : task.error?.message)
+                || task.error
                 || t('exportStore.exportFailed');
               const watchdogMessage = describeWatchdogFailure(
                 updates.progress?.error_code,

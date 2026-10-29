@@ -104,3 +104,11 @@ frontend/cap-real.mjs
 
 # Isolated issue regression evidence
 /output/issue-verification/
+
+# Local runtime, credentials and generated artifacts
+.runtime/
+.env
+.env.local
+*.pem
+backend/instance/
+uploads/

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { Sparkles, FileText, FileEdit, ImagePlus, Paperclip, Palette, Lightbulb, Search, Settings, FolderOpen, HelpCircle, Sun, Moon, Globe, Monitor, ChevronDown, Upload, RefreshCw, FilePlus, ArrowRight, X } from 'lucide-react';
-import { Button, Card, useToast, MaterialGeneratorModal, MaterialCenterModal, MaterialSelector, ReferenceFileList, ReferenceFileSelector, FilePreviewModal, HelpModal, Footer, GithubRepoCard, TextStyleSelector } from '@/components/shared';
+import { Button, Card, useToast, MaterialGeneratorModal, MaterialCenterModal, MaterialSelector, ReferenceFileList, ReferenceFileSelector, FilePreviewModal, HelpModal, Footer, TextStyleSelector } from '@/components/shared';
 import { MarkdownTextarea, type MarkdownTextareaRef } from '@/components/shared/MarkdownTextarea';
 import { TemplateSelector, getTemplateFile } from '@/components/shared/TemplateSelector';
 import { listUserTemplates, type UserTemplate, uploadReferenceFile, type ReferenceFile, associateFileToProject, triggerFileParse, associateMaterialsToProject, createPptRenovationProject } from '@/api/endpoints';
@@ -35,7 +35,7 @@ const homeI18n = {
       theme: { label: '主题模式', light: '浅色', dark: '深色', system: '跟随系统' }
     },
     home: {
-      title: '蕉幻',
+      title: 'Banana Slides',
       subtitle: 'Vibe your slides like vibe coding',
       tagline: '基于 nano banana pro 的原生 AI PPT 生成器',
       features: {
@@ -380,18 +380,18 @@ export const Home: React.FC = () => {
     // 检查文件大小（前端预检查）
     const maxSize = 200 * 1024 * 1024; // 200MB
     if (file.size > maxSize) {
-      show({ 
-        message: t('home.messages.fileTooLarge', { size: (file.size / 1024 / 1024).toFixed(1) }), 
-        type: 'error' 
+      show({
+        message: t('home.messages.fileTooLarge', { size: (file.size / 1024 / 1024).toFixed(1) }),
+        type: 'error'
       });
       return;
     }
 
     // 检查是否是PPT文件，提示建议使用PDF
     const fileExt = file.name.split('.').pop()?.toLowerCase();
-    if (fileExt === 'ppt' || fileExt === 'pptx') 
+    if (fileExt === 'ppt' || fileExt === 'pptx')
       show({ message: t('home.messages.pptTip'), type: 'info' });
-    
+
     setIsUploadingFile(true);
     try {
       // 在 Home 页面，始终上传为全局文件
@@ -400,7 +400,7 @@ export const Home: React.FC = () => {
         const uploadedFile = response.data.file;
         setReferenceFiles(prev => [...prev, uploadedFile]);
         show({ message: t('home.messages.fileUploadSuccess'), type: 'success' });
-        
+
         // 如果文件状态为 pending，自动触发解析
         if (uploadedFile.parse_status === 'pending') {
           try {
@@ -408,12 +408,12 @@ export const Home: React.FC = () => {
             // 使用解析接口返回的文件对象更新状态
             if (parseResponse?.data?.file) {
               const parsedFile = parseResponse.data.file;
-              setReferenceFiles(prev => 
+              setReferenceFiles(prev =>
                 prev.map(f => f.id === uploadedFile.id ? parsedFile : f)
               );
             } else {
               // 如果没有返回文件对象，手动更新状态为 parsing（异步线程会稍后更新）
-              setReferenceFiles(prev => 
+              setReferenceFiles(prev =>
                 prev.map(f => f.id === uploadedFile.id ? { ...f, parse_status: 'parsing' as const } : f)
               );
             }
@@ -427,7 +427,7 @@ export const Home: React.FC = () => {
       }
     } catch (error: any) {
       console.error('文件上传失败:', error);
-      
+
       // 特殊处理413错误
       if (error?.response?.status === 413) {
         show({
@@ -486,7 +486,7 @@ export const Home: React.FC = () => {
 
   // 文件状态变化回调
   const handleFileStatusChange = (updatedFile: ReferenceFile) => {
-    setReferenceFiles(prev => 
+    setReferenceFiles(prev =>
       prev.map(f => f.id === updatedFile.id ? updatedFile : f)
     );
   };
@@ -566,7 +566,7 @@ export const Home: React.FC = () => {
     if (templateFile) {
       setSelectedTemplate(templateFile);
     }
-    
+
     // 处理模板 ID
     if (templateId) {
       // 判断是用户模板还是预设模板
@@ -593,7 +593,7 @@ export const Home: React.FC = () => {
 
   const handleSubmit = async () => {
     if (structured && !reportFields.topic.trim()) {
-      show({ message: i18n.language?.startsWith('zh') ? '请填写主题后继续' : 'Enter a topic to continue', type: 'error' });
+      show({ message: i18n.language?.startsWith('zh') ? '请填写主题后继续' : '주제를 입력하세요', type: 'error' });
       return;
     }
     // For ppt_renovation, validate file instead of content
@@ -663,7 +663,7 @@ export const Home: React.FC = () => {
           }
         }
       }
-      
+
       // 传递风格描述（只要有内容就传递，不管开关状态）
       const styleDesc = templateStyle.trim() ? templateStyle.trim() : undefined;
 
@@ -673,7 +673,7 @@ export const Home: React.FC = () => {
         .map(f => f.id);
 
       await initializeProject(activeTab as 'idea' | 'outline' | 'description', content, templateFile || undefined, styleDesc, refFileIds.length > 0 ? refFileIds : undefined, aspectRatio);
-      
+
       // 根据类型跳转到不同页面
       const projectId = localStorage.getItem('currentProjectId');
       if (!projectId) {
@@ -708,7 +708,7 @@ export const Home: React.FC = () => {
           }
         }
       }
-      
+
       // 关联图片素材到项目（解析content中的markdown图片链接）
       const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
       const materialUrls: string[] = [];
@@ -716,7 +716,7 @@ export const Home: React.FC = () => {
       while ((match = imageRegex.exec(content)) !== null) {
         materialUrls.push(match[2]); // match[2] 是 URL
       }
-      
+
       if (materialUrls.length > 0) {
         devLog(`Associating ${materialUrls.length} materials to project ${projectId}:`, materialUrls);
         try {
@@ -729,7 +729,7 @@ export const Home: React.FC = () => {
       } else {
         devLog('No materials to associate');
       }
-      
+
       navigate(`/project/${projectId}/outline`);
     } catch (error: any) {
       console.error('创建项目失败:', error);
@@ -790,12 +790,12 @@ export const Home: React.FC = () => {
             <div className="flex items-center">
               <img
                 src={logoUrl}
-                alt="蕉幻 Banana Slides Logo"
+                alt="Banana Slides Banana Slides Logo"
                 className="h-10 md:h-12 w-auto rounded-lg object-contain"
               />
             </div>
             <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-banana-600 via-orange-500 to-pink-500 bg-clip-text text-transparent">
-              蕉幻
+              Banana Slides
             </span>
           </div>
           <div className="flex items-center gap-2 md:gap-3">
@@ -876,12 +876,12 @@ export const Home: React.FC = () => {
             <div className="h-5 w-px bg-gray-300 dark:bg-border-primary mx-1" />
             {/* 语言切换按钮 */}
             <button
-              onClick={() => i18n.changeLanguage(i18n.language?.startsWith('zh') ? 'en' : 'zh')}
+              onClick={() => i18n.changeLanguage('ko')}
               className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 dark:text-foreground-tertiary hover:text-gray-900 dark:hover:text-gray-100 hover:bg-banana-100/60 dark:hover:bg-background-hover rounded-md transition-all"
               title={t('settings.language.label')}
             >
               <Globe size={14} />
-              <span>{i18n.language?.startsWith('zh') ? 'EN' : '中'}</span>
+              <span>한국어</span>
             </button>
             {/* 主题切换按钮 */}
             <div className="relative" ref={themeMenuRef}>
@@ -926,7 +926,7 @@ export const Home: React.FC = () => {
             {/* 分隔线 */}
             <div className="h-5 w-px bg-gray-300 dark:bg-border-primary mx-1" />
             {/* GitHub 仓库卡片 */}
-            <GithubRepoCard />
+
             {/* 分隔线 */}
           </div>
         </div>
@@ -1117,7 +1117,7 @@ export const Home: React.FC = () => {
               {[false, true].map(report => <button type="button" key={String(report)} aria-pressed={reportMode === report}
                 disabled={isSubmitting || isGlobalLoading} onClick={() => setReportMode(report)}
                 className={`px-3 py-2 rounded-lg text-sm ${reportMode === report ? 'bg-banana-100 text-gray-900' : 'text-gray-500'}`}>
-                {report ? (i18n.language?.startsWith('zh') ? '日常汇报' : 'Report builder') : (i18n.language?.startsWith('zh') ? '自由输入' : 'Free input')}
+                {report ? (i18n.language?.startsWith('zh') ? '日常汇报' : '보고서 작성') : (i18n.language?.startsWith('zh') ? '自由输入' : '자유 입력')}
               </button>)}
             </div>}
             {structured && <ReportForm fields={reportFields} zh={!!i18n.language?.startsWith('zh')} disabled={isSubmitting || isGlobalLoading}
@@ -1150,7 +1150,7 @@ export const Home: React.FC = () => {
                       type="button"
                       onClick={() => setIsAspectRatioOpen(!isAspectRatioOpen)}
                       className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-foreground-tertiary dark:hover:text-foreground-secondary dark:hover:bg-background-hover rounded transition-colors"
-                      title={i18n.language?.startsWith('zh') ? '画面比例' : 'Aspect Ratio'}
+                      title={"화면 비율"}
                     >
                       <span>{aspectRatio}</span>
                       <ChevronDown size={12} className={`transition-transform ${isAspectRatioOpen ? 'rotate-180' : ''}`} />
@@ -1265,7 +1265,7 @@ export const Home: React.FC = () => {
                 </div>
               </label>
             </div>
-            
+
             {/* 每页独立模板开关 */}
             <label className="flex items-center gap-2 cursor-pointer group mb-3" title={t('home.template.multiModeHint')}>
               <input
@@ -1330,7 +1330,7 @@ export const Home: React.FC = () => {
         multiple={true}
         initialSelectedIds={selectedFileIds}
       />
-      
+
       <FilePreviewModal fileId={previewFileId} onClose={() => setPreviewFileId(null)} />
       {/* 帮助模态框 */}
       <HelpModal

@@ -7,6 +7,7 @@ from typing import Generator
 from openai import OpenAI
 from .base import get_text_output_limit, TextProvider, strip_think_tags
 from config import get_config
+from services.http_transport import http_client
 
 logger = logging.getLogger(__name__)
 
@@ -20,12 +21,13 @@ class OpenAITextProvider(TextProvider):
         
         Args:
             api_key: API key
-            api_base: API base URL (e.g., https://api.inferera.com/v1)
+            api_base: API base URL (e.g., https://api.openai.com/v1)
             model: Model name to use
         """
         config = get_config()
         self.client = OpenAI(
             api_key=api_key,
+            http_client=http_client(get_config().OPENAI_TIMEOUT),
             base_url=api_base,
             timeout=config.OPENAI_TIMEOUT,  # set timeout from config
             max_retries=config.OPENAI_MAX_RETRIES  # set max retries from config

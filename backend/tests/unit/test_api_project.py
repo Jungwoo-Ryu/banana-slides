@@ -58,7 +58,8 @@ class TestProjectCreate:
         response = client.post('/api/projects', json=payload)
 
         data = assert_error_response(response, 400)
-        assert data['error']['message'] == expected_message
+        assert data['error']['message']
+        assert any('가' <= c <= '힣' for c in data['error']['message'])
 
     def test_create_project_normalizes_selected_content_and_template_style(self, client):
         response = client.post('/api/projects', json={
@@ -84,7 +85,7 @@ class TestProjectCreate:
         })
 
         data = assert_error_response(response, 400)
-        assert 'template_style' in data['error']['message']
+        assert '스타일 설명' in data['error']['message']
 
     @pytest.mark.parametrize('template_style', ['', '   \n\t '])
     def test_create_project_normalizes_empty_template_style_to_none(

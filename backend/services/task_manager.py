@@ -2111,9 +2111,10 @@ def export_video_task(
         # 读取 ElevenLabs 配置
         _settings = Settings.get_settings()
         elevenlabs_config = None
-        if _settings.elevenlabs_enabled and _settings.elevenlabs_api_key:
+        from services.runtime_config import setting, secret
+        if str(setting('TTS_ENABLED', False)).lower() == 'true' and secret('ELEVENLABS_API_KEY'):
             elevenlabs_config = {
-                'api_key': _settings.elevenlabs_api_key,
+                'api_key': secret('ELEVENLABS_API_KEY'),
                 'voice_id': voice,
             }
         logger.info(f"[export_video] voice={voice!r} elevenlabs_enabled={_settings.elevenlabs_enabled} elevenlabs_config={'set' if elevenlabs_config else 'None'}")

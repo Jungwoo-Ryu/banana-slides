@@ -42,129 +42,18 @@ PIL_FORMAT_EXTENSIONS = {
 
 
 def _generate_image_caption(filepath: str) -> str:
-    """Generate AI caption for an uploaded image. Returns empty string on failure."""
     if filepath.lower().endswith('.svg'):
-        return ""
+        return ''
     try:
-        from PIL import Image
-
-        image = Image.open(filepath)
-        image.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
-
-        output_lang = current_app.config.get('OUTPUT_LANGUAGE', 'zh')
-        if output_lang == 'en':
-            prompt = "Please provide a short description of the main content of this image. Return only the description text without any other explanation."
-        else:
-            prompt = "请用一句简短的中文描述这张图片的主要内容。只返回描述文字，不要其他解释。"
-
-        provider_format = (current_app.config.get('AI_PROVIDER_FORMAT') or 'gemini').lower()
-        caption_source = (current_app.config.get('IMAGE_CAPTION_MODEL_SOURCE') or '').lower()
-        caption_model = current_app.config.get('IMAGE_CAPTION_MODEL', 'gemini-3-flash-preview')
-
-        # Determine effective format: per-model source overrides global
-        effective_format = caption_source or provider_format
-
-        if effective_format == 'codex':
-            from services.ai_providers import _get_openai_oauth_token
-            token = _get_openai_oauth_token()
-            if not token:
-                return ""
-
-            buffered = io.BytesIO()
-            if image.mode in ('RGBA', 'LA', 'P'):
-                background = Image.new('RGB', image.size, (255, 255, 255))
-                background.paste(image, mask=image.split()[-1] if image.mode in ('RGBA', 'LA') else None)
-                image = background
-            image.save(buffered, format="JPEG", quality=95)
-            base64_image = base64.b64encode(buffered.getvalue()).decode('utf-8')
-
-            import requests as http_requests
-            resp = http_requests.post(
-                'https://chatgpt.com/backend-api/codex/responses',
-                headers={'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'},
-                json={
-                    'model': caption_model,
-                    'instructions': 'You are a helpful assistant that describes images.',
-                    'input': [{'role': 'user', 'content': [
-                        {'type': 'input_image', 'image_url': f'data:image/jpeg;base64,{base64_image}'},
-                        {'type': 'input_text', 'text': prompt},
-                    ]}],
-                    'store': False,
-                    'stream': True,
-                },
-                timeout=60,
-                stream=True,
-            )
-            resp.raise_for_status()
-            collected = []
-            for raw_line in resp.iter_lines():
-                line = raw_line.decode('utf-8') if isinstance(raw_line, bytes) else raw_line
-                if not line or not line.startswith('data: '):
-                    continue
-                raw = line[6:]
-                if raw.strip() == '[DONE]':
-                    break
-                try:
-                    import json as json_mod
-                    evt = json_mod.loads(raw)
-                    if evt.get('type') == 'response.output_text.delta':
-                        collected.append(evt.get('delta', ''))
-                except Exception:
-                    pass
-            return ''.join(collected).strip()
-
-        elif effective_format == 'openai':
-            from openai import OpenAI
-            api_key = current_app.config.get('OPENAI_API_KEY', '')
-            if not api_key:
-                return ""
-            client = OpenAI(
-                api_key=api_key,
-                base_url=current_app.config.get('OPENAI_API_BASE') or None
-            )
-
-            buffered = io.BytesIO()
-            if image.mode in ('RGBA', 'LA', 'P'):
-                background = Image.new('RGB', image.size, (255, 255, 255))
-                background.paste(image, mask=image.split()[-1] if image.mode in ('RGBA', 'LA') else None)
-                image = background
-            image.save(buffered, format="JPEG", quality=95)
-            base64_image = base64.b64encode(buffered.getvalue()).decode('utf-8')
-
-            response = client.chat.completions.create(
-                model=caption_model,
-                messages=[{
-                    "role": "user",
-                    "content": [
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}},
-                        {"type": "text", "text": prompt}
-                    ]
-                }],
-                temperature=0.3,
-                stream=False,
-            )
-            return response.choices[0].message.content.strip()
-        else:
-            # Gemini (default)
-            from google import genai
-            from google.genai import types
-            api_key = current_app.config.get('GOOGLE_API_KEY', '')
-            if not api_key:
-                return ""
-            api_base = current_app.config.get('GOOGLE_API_BASE', '')
-            client = genai.Client(
-                http_options=types.HttpOptions(base_url=api_base) if api_base else None,
-                api_key=api_key
-            )
-            result = client.models.generate_content(
-                model=caption_model,
-                contents=[image, prompt],
-                config=types.GenerateContentConfig(temperature=0.3)
-            )
-            return result.text.strip()
-    except Exception as e:
-        logger.warning(f"Failed to generate caption for {filepath}: {e}")
-        return ""
+        from services.ai_providers import get_caption_provider
+        from services.runtime_config import setting
+        if str(setting('AUTO_IMAGE_CAPTION', 'false')).lower() != 'true':
+            return ''
+        return get_caption_provider(setting('IMAGE_CAPTION_MODEL')).generate_with_image(
+            '이미지의 주요 내용을 한국어 한 문장으로 설명하세요.', filepath)
+    except Exception:
+        logger.warning('이미지 설명을 생성하지 못했습니다.')
+        return ''
 
 
 def _build_material_query(filter_project_id: str):

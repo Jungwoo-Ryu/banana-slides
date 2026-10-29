@@ -33,6 +33,7 @@ from .prompts import (
     get_template_analysis_prompt,
     get_template_auto_match_prompt,
 )
+from .ai_providers.deferred import DeferredProvider
 from .ai_providers import get_text_provider, get_image_provider, get_caption_provider, TextProvider, ImageProvider
 from config import get_config
 
@@ -155,9 +156,9 @@ class AIService:
             self.caption_model = config.IMAGE_CAPTION_MODEL
 
         # Use provided providers or create from factory based on AI_PROVIDER_FORMAT (from Flask config or env var)
-        self.text_provider = text_provider or get_text_provider(model=self.text_model)
-        self.image_provider = image_provider or get_image_provider(model=self.image_model)
-        self.caption_provider = caption_provider or get_caption_provider(model=self.caption_model)
+        self.text_provider = text_provider or DeferredProvider(get_text_provider, self.text_model)
+        self.image_provider = image_provider or DeferredProvider(get_image_provider, self.image_model)
+        self.caption_provider = caption_provider or DeferredProvider(get_caption_provider, self.caption_model)
     
     def _get_text_thinking_budget(self) -> int:
         """

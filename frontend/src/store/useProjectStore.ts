@@ -236,7 +236,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       // 有没有当前项目的写回，而不是只看第一条
       const { syncProject, pageGeneratingTasks, currentProject } = get();
       const touchedCurrentProject =
-        !!currentProject && entries.some(([, update]) => update.projectId === currentProject.id);
+        !!currentProject && entries.some(([, update]) => update.projectId === currentProject.project_id);
       if (touchedCurrentProject && Object.keys(pageGeneratingTasks).length === 0) {
         await syncProject(currentProject!.id);
       }
@@ -449,7 +449,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     });
 
     // 防抖后调用API
-    debouncedUpdatePage(currentProject.id, pageId, data);
+    debouncedUpdatePage(currentProject.project_id, pageId, data);
   },
 
   // 立即保存所有页面的更改（用于保存按钮）
@@ -462,7 +462,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     await new Promise(resolve => setTimeout(resolve, 1500));
     
     // 同步项目状态，这会从后端获取最新的updated_at
-    await get().syncProject(currentProject.id);
+    await get().syncProject(currentProject.project_id);
   },
 
   // 重新排序页面
@@ -483,7 +483,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     });
 
     try {
-      await api.updatePagesOrder(currentProject.id, newOrder);
+      await api.updatePagesOrder(currentProject.project_id, newOrder);
     } catch (error: any) {
       set({ error: error.message || t('store.updateOrderFailed') });
       // 失败后重新同步
@@ -502,7 +502,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         order_index: currentProject.pages.length,
       };
 
-      const response = await api.addPage(currentProject.id, newPage);
+      const response = await api.addPage(currentProject.project_id, newPage);
       if (response.data) {
         await get().syncProject();
       }
@@ -517,7 +517,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     if (!currentProject) return;
 
     try {
-      await api.deletePage(currentProject.id, pageId);
+      await api.deletePage(currentProject.project_id, pageId);
       await get().syncProject();
     } catch (error: any) {
       set({ error: error.message || t('store.deletePageFailed') });
@@ -708,7 +708,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     // Concurrent queue: pages are pushed by SSE callbacks, drained by a timer loop
     const pageQueue: any[] = [];
     let streamDone = false;
-    let doneData: { total: number; pages: any[]; complete?: boolean } | null = null;
+    const streamResult: { value: { total: number; pages: any[]; complete?: boolean } | null } = { value: null };
     const STAGGER_MS = 150;
 
     // Start the render loop — runs concurrently with the SSE stream
@@ -746,7 +746,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     try {
       await api.generateOutlineStream(projectId, {
         onPage: (page) => { pageQueue.push(page); },
-        onDone: (data) => { doneData = data; },
+        onDone: (data) => { streamResult.value = data; },
         onError: (message) => {
           console.error('[流式大纲] 错误:', message);
           if (isViewingTargetProject()) {
@@ -760,14 +760,14 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       await renderPromise;
 
       // Replace temp pages with real persisted pages
-      if (doneData) {
+      if (streamResult.value) {
         const { currentProject: proj } = get();
         if (proj?.id === projectId) {
-          const normalized = normalizeProject({ ...proj, pages: doneData.pages });
+          const normalized = normalizeProject({ ...proj, pages: streamResult.value.pages });
           set({ currentProject: normalized });
         }
-        devLog('[流式大纲] 完成:', doneData.total, '个页面');
-        return { complete: doneData.complete ?? false, active: isViewingTargetProject() };
+        devLog('[流式大纲] 完成:', streamResult.value.total, '个页面');
+        return { complete: streamResult.value.complete ?? false, active: isViewingTargetProject() };
       } else {
         return { complete: false, active: isViewingTargetProject() };
       }
@@ -813,7 +813,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
   // 生成描述（根据设置选择流式或并行模式）
   generateDescriptions: async (detailLevel?: string) => {
     const { currentProject } = get();
-    if (!currentProject || !currentProject.id) return;
+    if (!currentProject || !currentProject.project_id) return;
 
     const pages = currentProject.pages.filter((p) => p.id);
     if (pages.length === 0) return;
@@ -842,7 +842,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       // Concurrent queue + render loop (like outline streaming)
       const descQueue: api.DescriptionStreamEvent[] = [];
       let streamDone = false;
-      let doneData: { total: number; pages: any[]; warning?: string } | null = null;
+      const streamResult: { value: { total: number; pages: any[]; warning?: string } | null } = { value: null };
       const STAGGER_MS = 100;
 
       const renderPromise = new Promise<void>((resolve) => {
@@ -877,9 +877,9 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       });
 
       try {
-        await api.generateDescriptionsStream(currentProject.id, {
+        await api.generateDescriptionsStream(currentProject.project_id, {
           onDescription: (data) => { descQueue.push(data); },
-          onDone: (data) => { doneData = data; },
+          onDone: (data) => { streamResult.value = data; },
           onError: (message) => {
             console.error('[流式描述] 错误:', message);
             set({ error: normalizeErrorMessage(message) });
@@ -890,19 +890,19 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         streamDone = true;
         await renderPromise;
 
-        if (doneData) {
+        if (streamResult.value) {
           const { currentProject: proj } = get();
           if (proj) {
-            const normalized = normalizeProject({ ...proj, pages: doneData.pages });
+            const normalized = normalizeProject({ ...proj, pages: streamResult.value.pages });
             set({
               currentProject: normalized,
               isDescriptionStreaming: false,
-              ...(doneData.warning ? { error: doneData.warning } : {}),
+              ...(streamResult.value.warning ? { error: streamResult.value.warning } : {}),
             });
           }
-          devLog('[流式描述] 完成:', doneData.total, '个页面');
+          devLog('[流式描述] 完成:', streamResult.value.total, '个页面');
         } else {
-          // 无 doneData（SSE error 或连接中断）→ 从后端恢复真实状态
+          // 无 streamResult.value（SSE error 或连接中断）→ 从后端恢复真实状态
           await get().syncProject();
           set({ isDescriptionStreaming: false });
         }
@@ -926,7 +926,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       set({ currentProject: { ...currentProject, pages: updatedPages } });
 
       try {
-        const projectId = currentProject.id;
+        const projectId = currentProject.project_id;
         if (!projectId) {
           throw new Error(t('store.projectIdMissing'));
         }
@@ -1015,7 +1015,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     set({ currentProject: { ...currentProject, pages: updatedPages } });
 
     try {
-      const response = await api.generatePageDescription(currentProject.id, pageId, true, undefined, detailLevel);
+      const response = await api.generatePageDescription(currentProject.project_id, pageId, true, undefined, detailLevel);
 
       if (response.data) {
         const updatedPageData = response.data;
@@ -1057,7 +1057,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     set({ currentProject: { ...currentProject, pages: updatedPages } });
 
     try {
-      const response = await api.regenerateRenovationPage(currentProject.id, pageId, keepLayout);
+      const response = await api.regenerateRenovationPage(currentProject.project_id, pageId, keepLayout);
 
       if (response.data) {
         const updatedPageData = response.data;
@@ -1090,7 +1090,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     set({ error: null, warningMessage: null });
 
     try {
-      const response = await api.generatePageImage(currentProject.id, pageId, forceRegenerate);
+      const response = await api.generatePageImage(currentProject.project_id, pageId, forceRegenerate);
       const taskId = response.data?.task_id;
 
       if (taskId) {
@@ -1138,7 +1138,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     
     try {
       // 调用批量生成 API
-      const response = await api.generateImages(currentProject.id, undefined, pageIds);
+      const response = await api.generateImages(currentProject.project_id, undefined, pageIds);
       const taskId = response.data?.task_id;
       
       if (taskId) {
@@ -1328,7 +1328,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
 
     set({ error: null });
     try {
-      const response = await api.editPageImage(currentProject.id, pageId, editPrompt, contextImages);
+      const response = await api.editPageImage(currentProject.project_id, pageId, editPrompt, contextImages);
       const taskId = response.data?.task_id;
       
       if (taskId) {
@@ -1363,7 +1363,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
 
     set({ isGlobalLoading: true, error: null });
     try {
-      const response = await api.exportPPTX(currentProject.id, pageIds);
+      const response = await api.exportPPTX(currentProject.project_id, pageIds);
       // 优先使用相对路径，避免 Docker 环境下的端口问题
       const downloadUrl =
         response.data?.download_url || response.data?.download_url_absolute;
@@ -1389,7 +1389,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
 
     set({ isGlobalLoading: true, error: null });
     try {
-      const response = await api.exportPDF(currentProject.id, pageIds);
+      const response = await api.exportPDF(currentProject.project_id, pageIds);
       // 优先使用相对路径，避免 Docker 环境下的端口问题
       const downloadUrl =
         response.data?.download_url || response.data?.download_url_absolute;
@@ -1416,7 +1416,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     try {
       devLog('[导出可编辑PPTX] 启动异步导出任务...');
       // startAsyncTask 中的 pollTask 会在任务完成时自动处理下载
-      await startAsyncTask(() => api.exportEditablePPTX(currentProject.id, filename, pageIds));
+      await startAsyncTask(() => api.exportEditablePPTX(currentProject.project_id, filename, pageIds));
       devLog('[导出可编辑PPTX] 异步任务完成');
     } catch (error: any) {
       console.error('[导出可编辑PPTX] 导出失败:', error);

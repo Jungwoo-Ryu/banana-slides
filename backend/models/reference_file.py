@@ -1,3 +1,4 @@
+from utils.user_messages import localize_error, localize_progress
 """
 Reference File model - stores uploaded reference files and their parsed content
 """
@@ -43,7 +44,7 @@ class ReferenceFile(db.Model):
             'file_size': self.file_size,
             'file_type': self.file_type,
             'parse_status': self.parse_status,
-            'error_message': self.error_message,
+            'error_message': localize_error(self.error_message) if self.error_message else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
         }

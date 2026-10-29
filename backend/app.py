@@ -9,7 +9,6 @@ if sys.platform == 'win32':
 Simplified Flask Application Entry Point
 """
 import os
-import hmac
 import logging
 from pathlib import Path
 from dotenv import load_dotenv
@@ -25,7 +24,9 @@ if __name__ == '__main__':
 # Load environment variables from project root .env file
 _project_root = Path(__file__).parent.parent
 _env_file = _project_root / '.env'
-load_dotenv(dotenv_path=_env_file, override=not os.getenv('DATABASE_PATH'))
+load_dotenv(dotenv_path=_env_file, override=False)
+from services.http_transport import configure_tls
+configure_tls()
 
 from flask import Flask
 from flask_cors import CORS
@@ -34,7 +35,6 @@ from config import Config, DEFAULT_BACKEND_PORT, DEFAULT_FRONTEND_PORT
 from controllers.material_controller import material_bp, material_global_bp
 from controllers.reference_file_controller import reference_file_bp
 from controllers.settings_controller import settings_bp
-from controllers.openai_oauth_controller import openai_oauth_bp
 from controllers import project_bp, page_bp, template_bp, user_template_bp, user_style_template_bp, export_bp, file_bp, style_bp, template_assets_bp, page_template_bp, template_mode_bp
 
 
@@ -158,79 +158,29 @@ def create_app():
     app.register_blueprint(material_global_bp)
     app.register_blueprint(reference_file_bp, url_prefix='/api/reference-files')
     app.register_blueprint(settings_bp)
-    app.register_blueprint(openai_oauth_bp)
     app.register_blueprint(style_bp)
 
     with app.app_context():
-        if db_path_env:
+        if os.getenv('BANANA_SKIP_AUTO_MIGRATE') == '1':
+            # Explicit isolated-test mode; normal/custom data paths always migrate.
             db.create_all()
-            from desktop_bootstrap import repair_desktop_settings_schema
-            repair_desktop_settings_schema(db)
-        elif os.getenv('BANANA_SKIP_AUTO_MIGRATE') == '1':
-            pass
         else:
-            migrations_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'migrations')
-            if os.path.exists(migrations_dir):
-                try:
-                    from alembic import command as alembic_command
-                    from alembic.config import Config as AlembicConfig
-
-                    alembic_ini = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'alembic.ini')
-                    alembic_config = AlembicConfig(alembic_ini)
-                    alembic_config.set_main_option('sqlalchemy.url', app.config['SQLALCHEMY_DATABASE_URI'])
-                    alembic_command.upgrade(alembic_config, 'head')
-                except Exception as e:
-                    logging.getLogger(__name__).warning(f'Alembic upgrade failed, falling back to create_all: {e}')
-                    db.create_all()
-                    from desktop_bootstrap import repair_desktop_settings_schema
-                    repair_desktop_settings_schema(db)
-            else:
-                db.create_all()
-                from desktop_bootstrap import repair_desktop_settings_schema
-                repair_desktop_settings_schema(db)
+            from alembic import command as alembic_command
+            from alembic.config import Config as AlembicConfig
+            alembic_config = AlembicConfig(os.path.join(backend_dir, 'alembic.ini'))
+            alembic_config.set_main_option('script_location', os.path.join(backend_dir, 'migrations'))
+            alembic_config.set_main_option('sqlalchemy.url', app.config['SQLALCHEMY_DATABASE_URI'])
+            try:
+                alembic_command.upgrade(alembic_config, 'head')
+            except Exception as error:
+                raise RuntimeError('DB 업데이트에 실패했습니다. 실행 로그를 확인하고 기존 DB를 백업한 뒤 다시 시도하세요.') from error
         # Load settings from database and sync to app.config
         _load_settings_to_config(app)
 
-    # Access code enforcement on all /api/ routes
-    @app.before_request
-    def _enforce_access_code():
-        from flask import request, jsonify
-        expected = os.getenv('ACCESS_CODE', '').strip()
-        if not expected:
-            return  # not enabled
-        if not request.path.startswith('/api/'):
-            return  # non-API routes (health, static, etc.)
-        if request.path.startswith('/api/access-code/'):
-            return  # allow check/verify endpoints
-        code = request.headers.get('X-Access-Code', '')
-        if hmac.compare_digest(code, expected):
-            return
-        return jsonify({'error': 'Access code required'}), 403
-
-    # Health check endpoint
     @app.route('/health')
     def health_check():
-        return {'status': 'ok', 'message': 'Banana Slides API is running'}
+        return {'status': 'ok', 'message': 'Banana Slides API 실행 중'}
 
-    # Access code verification
-    @app.route('/api/access-code/check', methods=['GET'])
-    def check_access_code():
-        """Check if access code protection is enabled"""
-        enabled = bool(os.getenv('ACCESS_CODE', '').strip())
-        return {'data': {'enabled': enabled}}
-
-    @app.route('/api/access-code/verify', methods=['POST'])
-    def verify_access_code():
-        """Verify the provided access code"""
-        from flask import request, jsonify
-        expected = os.getenv('ACCESS_CODE', '').strip()
-        if not expected:
-            return {'data': {'valid': True}}
-        code = (request.json or {}).get('code', '')
-        if hmac.compare_digest(code, expected):
-            return {'data': {'valid': True}}
-        return jsonify({'error': 'Invalid access code'}), 403
-    
     # Output language endpoint
     @app.route('/api/output-language', methods=['GET'])
     def get_output_language():
@@ -264,160 +214,9 @@ def create_app():
 
 
 def _load_settings_to_config(app):
-    """Load settings from database and apply to app.config on startup"""
     from models import Settings
-    try:
-        settings = Settings.get_settings()
-        
-        # Load AI provider format (always sync, has default value)
-        if settings.ai_provider_format:
-            app.config['AI_PROVIDER_FORMAT'] = settings.ai_provider_format
-            logging.info(f"Loaded AI_PROVIDER_FORMAT from settings: {settings.ai_provider_format}")
-        
-        # Load API configuration
-        # Note: We load even if value is None/empty to allow clearing settings
-        # But we only log if there's an actual value
-        # 与保存时 _sync_settings_to_config 保持一致: 只把 DB 中的统一 key/base 同步到
-        # 当前 provider, 避免污染其他 provider 的 per-model 配置（如 volcengine 设置
-        # 下 per-model openai 调用不得命中 plan/v3 端点）
-        active_format = (settings.ai_provider_format or Config.AI_PROVIDER_FORMAT or '').lower()
-        active_api_keys = {
-            'gemini': ('GOOGLE_API_KEY', 'GOOGLE_API_BASE'),
-            'openai': ('OPENAI_API_KEY', 'OPENAI_API_BASE'),
-            'volcengine': ('VOLCENGINE_API_KEY', 'VOLCENGINE_API_BASE'),
-        }.get(active_format)
-
-        if settings.api_base_url is not None:
-            if active_api_keys:
-                app.config[active_api_keys[1]] = settings.api_base_url
-            if settings.api_base_url:
-                logging.info(f"Loaded API_BASE from settings: {settings.api_base_url}")
-            else:
-                logging.info("API_BASE is empty in settings, using env var or default")
-
-        if settings.api_key is not None:
-            if active_api_keys:
-                app.config[active_api_keys[0]] = settings.api_key
-            if settings.api_key:
-                logging.info("Loaded API key from settings")
-            else:
-                logging.info("API key is empty in settings, using env var or default")
-
-        # Load image generation settings (fall back to .env/Config when NULL)
-        resolution = settings.image_resolution or Config.DEFAULT_RESOLUTION
-        aspect_ratio = settings.image_aspect_ratio or Config.DEFAULT_ASPECT_RATIO
-        app.config['DEFAULT_RESOLUTION'] = resolution
-        app.config['DEFAULT_ASPECT_RATIO'] = aspect_ratio
-        image_quality = getattr(settings, 'image_quality', None) or Config.IMAGE_QUALITY
-        app.config['IMAGE_QUALITY'] = image_quality
-        logging.info(f"Loaded image settings: {resolution}, {aspect_ratio}, quality={image_quality}")
-
-        # Load worker settings (fall back to .env/Config when NULL)
-        desc_workers = settings.max_description_workers or Config.MAX_DESCRIPTION_WORKERS
-        img_workers = settings.max_image_workers or Config.MAX_IMAGE_WORKERS
-        app.config['MAX_DESCRIPTION_WORKERS'] = desc_workers
-        app.config['MAX_IMAGE_WORKERS'] = img_workers
-        from services.task_manager import sync_resource_limits
-        sync_resource_limits(desc_workers, img_workers)
-        logging.info(f"Loaded worker settings: desc={desc_workers}, img={img_workers}")
-
-        # Load model settings (FIX for Issue #136: these were missing before)
-        if settings.text_model:
-            app.config['TEXT_MODEL'] = settings.text_model
-            logging.info(f"Loaded TEXT_MODEL from settings: {settings.text_model}")
-        
-        if settings.image_model:
-            app.config['IMAGE_MODEL'] = settings.image_model
-            logging.info(f"Loaded IMAGE_MODEL from settings: {settings.image_model}")
-
-        # Load OpenAI image API protocol (与保存时 settings_controller 的同步保持一致,
-        # 否则重启后回落 'auto', gpt-image-2-high 等带后缀模型会误走 chat 路径)
-        if settings.openai_image_api_protocol:
-            app.config['OPENAI_IMAGE_API_PROTOCOL'] = settings.openai_image_api_protocol
-            logging.info(f"Loaded OPENAI_IMAGE_API_PROTOCOL from settings: {settings.openai_image_api_protocol}")
-        
-        # Load MinerU settings
-        if settings.mineru_api_base:
-            app.config['MINERU_API_BASE'] = settings.mineru_api_base
-            logging.info(f"Loaded MINERU_API_BASE from settings: {settings.mineru_api_base}")
-        
-        if settings.mineru_token:
-            app.config['MINERU_TOKEN'] = settings.mineru_token
-            logging.info("Loaded MINERU_TOKEN from settings")
-        
-        # Load image caption model
-        if settings.image_caption_model:
-            app.config['IMAGE_CAPTION_MODEL'] = settings.image_caption_model
-            logging.info(f"Loaded IMAGE_CAPTION_MODEL from settings: {settings.image_caption_model}")
-        
-        # Load output language
-        if settings.output_language:
-            app.config['OUTPUT_LANGUAGE'] = settings.output_language
-            logging.info(f"Loaded OUTPUT_LANGUAGE from settings: {settings.output_language}")
-        
-        # Load reasoning mode settings (separate for text and image)
-        app.config['ENABLE_TEXT_REASONING'] = settings.enable_text_reasoning
-        app.config['TEXT_MAX_OUTPUT_TOKENS'] = settings.text_max_output_tokens or Config.TEXT_MAX_OUTPUT_TOKENS
-        app.config['TEXT_THINKING_BUDGET'] = settings.text_thinking_budget
-        app.config['ENABLE_IMAGE_REASONING'] = settings.enable_image_reasoning
-        app.config['IMAGE_THINKING_BUDGET'] = settings.image_thinking_budget
-        app.config['ENABLE_IMAGE_QUALITY_CONTROL'] = getattr(settings, 'enable_image_quality_control', False)
-        logging.info(f"Loaded reasoning config: text={settings.enable_text_reasoning}(budget={settings.text_thinking_budget}), image={settings.enable_image_reasoning}(budget={settings.image_thinking_budget})")
-        logging.info(f"Loaded image quality control: {app.config['ENABLE_IMAGE_QUALITY_CONTROL']}")
-        
-        # Load Baidu API settings
-        if settings.baidu_api_key:
-            app.config['BAIDU_API_KEY'] = settings.baidu_api_key
-            logging.info("Loaded BAIDU_API_KEY from settings")
-
-        # Load LazyLLM source settings
-        if settings.text_model_source:
-            app.config['TEXT_MODEL_SOURCE'] = settings.text_model_source
-            logging.info(f"Loaded TEXT_MODEL_SOURCE from settings: {settings.text_model_source}")
-        if settings.image_model_source:
-            app.config['IMAGE_MODEL_SOURCE'] = settings.image_model_source
-            logging.info(f"Loaded IMAGE_MODEL_SOURCE from settings: {settings.image_model_source}")
-        if settings.image_caption_model_source:
-            app.config['IMAGE_CAPTION_MODEL_SOURCE'] = settings.image_caption_model_source
-            logging.info(f"Loaded IMAGE_CAPTION_MODEL_SOURCE from settings: {settings.image_caption_model_source}")
-
-        # Load per-model API credentials (for gemini/openai per-model overrides)
-        for model_type in ('text', 'image', 'image_caption'):
-            prefix = model_type.upper()
-            for suffix, setting_suffix in [('_API_KEY', '_api_key'), ('_API_BASE', '_api_base_url')]:
-                config_key = f'{prefix}{suffix}'
-                val = getattr(settings, f'{model_type}{setting_suffix}', None)
-                if val:
-                    app.config[config_key] = val
-                    if suffix == '_API_BASE':
-                        logging.info(f"Loaded {config_key} from settings: {val}")
-                    else:
-                        logging.info(f"Loaded {config_key} from settings")
-
-        # Sync LazyLLM vendor API keys to environment variables
-        # Only allow known vendor names to prevent environment variable injection
-        from services.ai_providers.lazyllm_env import ALLOWED_LAZYLLM_VENDORS
-        if settings.lazyllm_api_keys:
-            import json
-            try:
-                keys = json.loads(settings.lazyllm_api_keys)
-                for vendor, key in keys.items():
-                    if key and vendor.lower() in ALLOWED_LAZYLLM_VENDORS:
-                        os.environ[f"{vendor.upper()}_API_KEY"] = key
-                    elif key:
-                        logging.warning(f"Ignoring unknown lazyllm vendor: {vendor}")
-                logging.info(f"Loaded LazyLLM API keys for vendors: {[v for v, k in keys.items() if k and v.lower() in ALLOWED_LAZYLLM_VENDORS]}")
-            except (json.JSONDecodeError, TypeError):
-                logging.warning("Failed to parse lazyllm_api_keys from settings")
-
-    except Exception as e:
-        if isinstance(e, SQLAlchemyError) and "no such table: settings" in str(e):
-            logging.debug(f"Settings table not yet created (expected on first boot): {e}")
-        else:
-            logging.warning(f"Could not load settings from database: {e}")
-
-# Create app instance
-app = create_app()
+    from services.settings_service import sync_settings
+    sync_settings(app, Settings.get_settings())
 
 
 def _compute_worktree_port(base_port: int) -> int:
@@ -432,7 +231,7 @@ def _compute_worktree_port(base_port: int) -> int:
     return base_port + offset
 
 
-def _reconcile_orphaned_tasks_on_startup() -> None:
+def _reconcile_orphaned_tasks_on_startup(target_app=None) -> None:
     """清理上一个进程遗留的后台任务。
 
     后台任务只存在于进程内，重启后数据库里的 PENDING/PROCESSING 记录
@@ -443,7 +242,8 @@ def _reconcile_orphaned_tasks_on_startup() -> None:
     try:
         from services.task_watchdog import reconcile_orphaned_tasks
         # 需要应用上下文才能查询数据库
-        with app.app_context():
+        target_app = target_app or globals().get('app')
+        with target_app.app_context():
             reconciled = reconcile_orphaned_tasks()
         if reconciled:
             logging.getLogger(__name__).info(
@@ -489,7 +289,7 @@ def _acquire_instance_lock(target_app=None) -> bool:
     if _instance_lock_handle is not None:
         return True
 
-    target_app = target_app or app
+    target_app = target_app or globals().get('app')
     root = target_app.config.get('UPLOAD_FOLDER') or os.path.dirname(os.path.abspath(__file__))
     lock_path = os.path.join(root, '.backend-instance.lock')
     try:
@@ -527,14 +327,15 @@ def _acquire_instance_lock(target_app=None) -> bool:
 
 
 if __name__ == '__main__':
+    app = create_app()
     # Run development server
     if os.getenv("IN_DOCKER", "0") == "1":
         port = 5000  # Docker 容器内部固定使用 5000 端口
     elif os.getenv('BACKEND_PORT'):
         port = int(os.getenv('BACKEND_PORT'))
     else:
-        port = _compute_worktree_port(DEFAULT_BACKEND_PORT)
-    debug = os.getenv('FLASK_ENV', 'development') == 'development'
+        port = DEFAULT_BACKEND_PORT
+    debug = os.getenv('FLASK_ENV', 'production') == 'development'
 
     if port == 0:
         from werkzeug.serving import make_server
@@ -594,4 +395,4 @@ if __name__ == '__main__':
             f"Port {port} busy or another instance owns the data root; "
             "skipped orphaned task reconciliation"
         )
-    app.run(host='0.0.0.0', port=port, debug=debug, use_reloader=debug)
+    app.run(host='127.0.0.1', port=port, debug=debug, use_reloader=debug)

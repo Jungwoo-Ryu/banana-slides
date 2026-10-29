@@ -94,7 +94,7 @@ def _resolve_upload_folder(upload_folder: Optional[Union[os.PathLike, str]] = No
 class FileParserService:
     """Service for parsing files using MinerU and enhancing with image captions"""
     
-    def __init__(self, mineru_token: str, mineru_api_base: str = "https://mineru.net",
+    def __init__(self, mineru_token: str, mineru_api_base: str = "",
                  google_api_key: str = "", google_api_base: str = "",
                  openai_api_key: str = "", openai_api_base: str = "",
                  image_caption_model: str = "gemini-3-flash-preview",
@@ -169,6 +169,17 @@ class FileParserService:
             - failed_image_count: Number of images that failed to generate captions
         """
         try:
+            from services.runtime_config import setting, secret
+            mode = setting('DOCUMENT_PARSER', 'local')
+            if mode != 'mineru':
+                from services.document_providers import get_document_provider
+                return None, get_document_provider().parse(file_path, filename), None, None, 0
+            # MinerU is an explicit, configurable compatibility adapter only.
+            from services.http_transport import validate_endpoint
+            self.mineru_api_base = validate_endpoint(self.mineru_api_base)
+            self.mineru_token = secret('MINERU_TOKEN')
+            if not self.mineru_token:
+                raise ValueError('MinerU 사용을 선택했습니다. MINERU_TOKEN과 MINERU_API_BASE를 설정하세요.')
             # Check if it's a plain text file that doesn't need MinerU parsing
             file_ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
             
@@ -209,7 +220,7 @@ class FileParserService:
             logger.info("File parsed successfully.")
             
             # Step 4: Enhance markdown with image captions
-            if markdown_content and self._can_generate_captions():
+            if markdown_content and str(setting('AUTO_IMAGE_CAPTION', 'false')).lower() == 'true' and self._can_generate_captions():
                 logger.info("Step 4/4: Enhancing markdown with image captions...")
                 enhanced_content, failed_count = self._enhance_markdown_with_captions(markdown_content)
                 if failed_count > 0:

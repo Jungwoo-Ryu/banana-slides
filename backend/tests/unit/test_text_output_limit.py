@@ -12,12 +12,10 @@ from flask import Flask
 from PIL import Image
 
 from config import Config
-from controllers.settings_controller import temporary_settings_override
 from services.ai_providers.text.base import get_text_output_limit
 from services.ai_providers.text.openai_provider import OpenAITextProvider
 from services.ai_providers.text.anthropic_provider import AnthropicTextProvider
 from services.ai_providers.text.genai_provider import GenAITextProvider
-from services.ai_providers.text.lazyllm_provider import LazyLLMTextProvider
 
 
 @pytest.fixture
@@ -54,10 +52,10 @@ def test_openai_requests_use_limit(model, key, method, image_path):
     assert ('max_completion_tokens' if key == 'max_tokens' else 'max_tokens') not in kwargs
 
 
-@pytest.mark.parametrize('kind', ['anthropic', 'gemini', 'lazyllm'])
+@pytest.mark.parametrize('kind', ['anthropic', 'gemini'])
 @pytest.mark.parametrize('method', ['generate_text', 'generate_text_stream', 'generate_with_image'])
 def test_other_provider_requests_use_limit(kind, method, image_path):
-    classes = {'anthropic': AnthropicTextProvider, 'gemini': GenAITextProvider, 'lazyllm': LazyLLMTextProvider}
+    classes = {'anthropic': AnthropicTextProvider, 'gemini': GenAITextProvider}
     provider = classes[kind].__new__(classes[kind])
     provider.model, provider.client = 'test-model', MagicMock()
     provider._is_vlm_only = True
@@ -112,13 +110,8 @@ def test_invalid_limit_does_not_change_saved_setting(client, value):
     assert client.get('/api/settings').json['data']['text_max_output_tokens'] == 16384
 
 
-def test_unsaved_service_test_limit_is_restored():
-    app = Flask(__name__)
-    app.config['TEXT_MAX_OUTPUT_TOKENS'] = 32768
-    with app.app_context():
-        with temporary_settings_override({'text_max_output_tokens': 4096}):
-            assert get_text_output_limit() == 4096
-        assert get_text_output_limit() == 32768
+def test_unsaved_service_test_overrides_are_rejected(client):
+    assert client.post('/api/settings/tests/text-model', json={'text_max_output_tokens':4096}).status_code == 400
 
 
 def test_existing_database_migration_preserves_settings(tmp_path):

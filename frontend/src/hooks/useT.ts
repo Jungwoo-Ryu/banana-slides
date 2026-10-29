@@ -1,3 +1,4 @@
+import korean from '@/locales/ko-components.json';
 import { useTranslation } from 'react-i18next';
 
 type NestedRecord = Record<string, unknown>;
@@ -69,7 +70,9 @@ export function useT<T extends Translations>(translations: T) {
     const params = typeof defaultOrParams === 'object' ? defaultOrParams : undefined;
     
     // 优先从组件内翻译查找
-    const localValue = getNestedValue(dict, key);
+    const localValue = i18n.language?.startsWith('ko')
+      ? (korean as Record<string, string>)[key] ?? getNestedValue(dict, key)
+      : getNestedValue(dict, key);
     
     if (localValue !== undefined) {
       // 组件内找到了，处理插值
@@ -83,6 +86,6 @@ export function useT<T extends Translations>(translations: T) {
     }
     
     // 组件内没找到，fallback 到全局翻译（保持原始参数传递）
-    return globalT(key, defaultOrParams as any);
+    return String(globalT(key, defaultOrParams as any));
   };
 }

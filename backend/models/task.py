@@ -1,3 +1,4 @@
+from utils.user_messages import localize_error, localize_progress
 """
 Task model for tracking async operations
 """
@@ -102,8 +103,8 @@ class Task(db.Model):
             'task_id': self.id,
             'task_type': self.task_type,
             'status': self.status,
-            'progress': self.get_progress(),
-            'error_message': self.error_message,
+            'progress': localize_progress(self.get_progress()),
+            'error_message': localize_error(self.error_message) if self.error_message else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'completed_at': self.completed_at.isoformat() if self.completed_at else None,
         }

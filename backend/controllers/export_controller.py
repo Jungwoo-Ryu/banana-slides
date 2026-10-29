@@ -587,6 +587,9 @@ def export_video(project_id):
     Returns:
         JSON with task_id for polling via /api/projects/{project_id}/tasks/{task_id}
     """
+    from services.runtime_config import setting
+    if str(setting('TTS_ENABLED', False)).lower() != 'true':
+        return error_response('FEATURE_DISABLED', '동영상 내보내기는 로컬 웹 기본 구성에서 비활성화되어 있습니다.', 400)
     try:
         project = Project.query.get(project_id)
 

@@ -17,7 +17,7 @@ from PIL import Image
 
 logger = logging.getLogger(__name__)
 
-_MODEL_URL = "https://modelscope.cn/models/AI-ModelScope/RMBG-2.0/resolve/master/onnx/model_fp16.onnx"
+_MODEL_URL = ""
 _DEFAULT_MODEL_PATH = Path.home() / ".cache" / "banana-slides" / "models" / "rmbg-2.0" / "model_fp16.onnx"
 _INPUT_SIZE = 1024
 _MEAN = np.array([0.485, 0.456, 0.406], dtype=np.float32)
@@ -33,37 +33,7 @@ def _resolve_model_path() -> Path:
 
 
 def _download_model(target: Path) -> None:
-    """流式下载模型到 *.part 临时文件，下载完成后 rename。"""
-    import requests
-
-    target.parent.mkdir(parents=True, exist_ok=True)
-    tmp = target.with_suffix(target.suffix + ".part")
-    logger.info(f"📥 开始下载 RMBG-2.0 模型 (~512MB) 到 {target} ...")
-
-    chunk_size = 1024 * 1024
-    log_step = 5 * 1024 * 1024
-    downloaded = 0
-    next_log = log_step
-
-    with requests.get(_MODEL_URL, stream=True, timeout=60) as resp:
-        resp.raise_for_status()
-        total = int(resp.headers.get("Content-Length", 0))
-        with open(tmp, "wb") as f:
-            for chunk in resp.iter_content(chunk_size=chunk_size):
-                if not chunk:
-                    continue
-                f.write(chunk)
-                downloaded += len(chunk)
-                if downloaded >= next_log:
-                    if total:
-                        pct = downloaded * 100 / total
-                        logger.info(f"  下载进度: {downloaded // (1024*1024)}MB / {total // (1024*1024)}MB ({pct:.1f}%)")
-                    else:
-                        logger.info(f"  下载进度: {downloaded // (1024*1024)}MB")
-                    next_log += log_step
-
-    tmp.rename(target)
-    logger.info(f"✅ RMBG-2.0 模型已就绪: {target}")
+    raise ValueError('자동 모델 다운로드는 사용하지 않습니다. 별도 라이선스를 확인한 로컬 모델을 RMBG_MODEL_PATH로 지정하세요.')
 
 
 def _sigmoid(x: np.ndarray) -> np.ndarray:

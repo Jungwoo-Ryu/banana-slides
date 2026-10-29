@@ -22,6 +22,7 @@ from PIL import Image
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
 from .base import ImageProvider
 from config import get_config
+from services.http_transport import http_client
 
 logger = logging.getLogger(__name__)
 
@@ -284,7 +285,7 @@ class OpenAIImageProvider(ImageProvider):
 
         Args:
             api_key: API key
-            api_base: API base URL (e.g., https://api.inferera.com/v1)
+            api_base: API base URL (e.g., https://api.openai.com/v1)
             model: Model name to use
             image_api_protocol: 'auto' (detect by model name), 'images' (force images.generate), 'chat' (force chat.completions)
             image_quality: Quality tier for GPT Image / DALL-E models:
@@ -294,6 +295,7 @@ class OpenAIImageProvider(ImageProvider):
         """
         self.client = OpenAI(
             api_key=api_key,
+            http_client=http_client(get_config().OPENAI_TIMEOUT),
             base_url=api_base,
             timeout=get_config().OPENAI_TIMEOUT,  # set timeout from config
             max_retries=get_config().OPENAI_MAX_RETRIES  # set max retries from config
@@ -847,7 +849,7 @@ class OpenAIImageProvider(ImageProvider):
             extra_body["image_urls"] = self._apimart_image_urls(ref_images)
 
         kwargs = dict(
-            model=self.model,
+            model=getattr(self, 'request_model', self.model),
             prompt=prompt,
             n=1,
             size=aspect_ratio,
@@ -957,7 +959,7 @@ class OpenAIImageProvider(ImageProvider):
                 len(image_files),
                 size,
             )
-            kwargs = dict(model=self.model, image=image_input, prompt=prompt, n=1, size=size)
+            kwargs = dict(model=getattr(self, 'request_model', self.model), image=image_input, prompt=prompt, n=1, size=size)
             if quality:
                 kwargs['quality'] = quality
             if response_format:
@@ -967,7 +969,7 @@ class OpenAIImageProvider(ImageProvider):
             if ref_images:
                 logger.warning("dall-e-3 does not support images.edit; ignoring ref_images")
             logger.debug("%s: images.generate, size=%s, quality=%s", self.model, size, quality)
-            kwargs = dict(model=self.model, prompt=prompt, n=1, size=size)
+            kwargs = dict(model=getattr(self, 'request_model', self.model), prompt=prompt, n=1, size=size)
             if quality:
                 kwargs['quality'] = quality
             if response_format:
@@ -1163,7 +1165,7 @@ class OpenAIImageProvider(ImageProvider):
 
             # Use both system message (for basic providers) and extra_body (for advanced providers)
             response = self.client.chat.completions.create(
-                model=self.model,
+                model=getattr(self, 'request_model', self.model),
                 messages=[
                     {"role": "system", "content": f"aspect_ratio={aspect_ratio}, resolution={resolution}"},
                     {"role": "user", "content": content},

@@ -2,23 +2,12 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'node:path'
-import crypto from 'node:crypto'
 import { execSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-/**
- * Compute a deterministic port from the worktree directory name.
- * Must match the algorithm in backend/app.py `_compute_worktree_port`.
- */
-function computeWorktreePort(basePort: number): number {
-  const basename = path.basename(path.resolve(__dirname, '..'))
-  const hashHex = crypto.createHash('md5').update(basename).digest('hex').substring(0, 8)
-  const offset = parseInt(hashHex, 16) % 500
-  return basePort + offset
-}
 
 function gitValue(command: string): string {
   try {
@@ -41,9 +30,9 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, envDir, '')
 
   // 端口：优先读 env，否则按 worktree 目录名自动计算
-  const backendPort = env.BACKEND_PORT || String(computeWorktreePort(5011))
-  const frontendPort = Number(env.FRONTEND_PORT) || computeWorktreePort(3011)
-  const backendUrl = `http://localhost:${backendPort}`
+  const backendPort = env.BACKEND_PORT || '5011'
+  const frontendPort = Number(env.FRONTEND_PORT) || 3011
+  const backendUrl = `http://127.0.0.1:${backendPort}`
   const gitTag = env.VITE_APP_VERSION_TAG || gitValue('git describe --tags --exact-match HEAD')
   const gitSha = env.VITE_APP_COMMIT_SHA || gitValue('git rev-parse HEAD')
   const gitShortSha = env.VITE_APP_COMMIT_SHORT_SHA || gitSha.slice(0, 7)
@@ -64,7 +53,8 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: frontendPort,
-      host: true, // 监听所有地址
+      host: '127.0.0.1',
+      strictPort: true, // 监听所有地址
       watch: {
         usePolling: true, // WSL 环境下需要启用轮询
       },

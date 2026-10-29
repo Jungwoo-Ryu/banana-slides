@@ -9,7 +9,7 @@ import { devLog } from '@/utils/logger';
 // 组件内翻译
 const previewI18n = {
   zh: {
-    home: { title: '蕉幻' },
+    home: { title: 'Banana Slides' },
     nav: { home: '主页', materialGenerate: '素材生成' },
     slidePreview: {
       pageGenerating: "该页面正在生成中，请稍候...", generationStarted: "已开始生成图片，请稍候...",
@@ -2368,6 +2368,7 @@ export const SlidePreview: React.FC = () => {
                 </button>
                 <button
                   onClick={handleOpenVideoExport}
+                  hidden
                   disabled={isPreparingVideoExport}
                   className="w-full px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-background-hover transition-colors text-sm disabled:cursor-wait disabled:opacity-70"
                 >
@@ -3759,7 +3760,7 @@ export const SlidePreview: React.FC = () => {
                   ?.map((p) => {
                     const title = p.outline_content?.title || '';
                     const points = p.outline_content?.points || [];
-                    const descText = p.description_content?.text || '';
+                    const descText = (p.description_content && 'text' in p.description_content ? p.description_content.text : p.description_content?.text_content.join('\n')) || '';
                     return [title, ...points, descText].filter(Boolean).join('\n');
                   })
                   .filter(Boolean)
@@ -3844,7 +3845,7 @@ export const SlidePreview: React.FC = () => {
                 ?.map((p) => {
                   const title = p.outline_content?.title || '';
                   const points = p.outline_content?.points || [];
-                  const descText = p.description_content?.text || '';
+                  const descText = (p.description_content && 'text' in p.description_content ? p.description_content.text : p.description_content?.text_content.join('\n')) || '';
                   return [title, ...points, descText].filter(Boolean).join('\n');
                 })
                 .filter(Boolean)

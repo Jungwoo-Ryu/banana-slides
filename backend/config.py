@@ -48,7 +48,7 @@ class Config:
     GOOGLE_API_BASE = os.getenv('GOOGLE_API_BASE') or ''
     
     # Provider format: gemini | openai | volcengine | vertex | lazyllm
-    AI_PROVIDER_FORMAT = os.getenv('AI_PROVIDER_FORMAT', 'gemini')
+    AI_PROVIDER_FORMAT = os.getenv('AI_PROVIDER_FORMAT', 'azure')
 
     # Google Cloud Vertex AI (requires AI_PROVIDER_FORMAT=vertex)
     VERTEX_PROJECT_ID = os.getenv('VERTEX_PROJECT_ID', '')
@@ -60,16 +60,12 @@ class Config:
     
     # OpenAI 格式专用配置（当 AI_PROVIDER_FORMAT=openai 时使用）
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')  # 当 AI_PROVIDER_FORMAT=openai 时必须设置
-    OPENAI_API_BASE = os.getenv('OPENAI_API_BASE') or 'https://api.inferera.com/v1'
+    OPENAI_API_BASE = os.getenv('OPENAI_API_BASE') or 'https://api.openai.com/v1'
     OPENAI_TIMEOUT = float(os.getenv('OPENAI_TIMEOUT', '480.0'))  # 8 分钟：留出 gpt-image-2 生图(~225s)+传输的余量
     OPENAI_MAX_RETRIES = int(os.getenv('OPENAI_MAX_RETRIES', '2'))  # 减少重试次数，避免过多重试导致累积超时
 
     # Global output limit for text and image-understanding responses.
     TEXT_MAX_OUTPUT_TOKENS = int(os.getenv("TEXT_MAX_OUTPUT_TOKENS", os.getenv("ANTHROPIC_MAX_TOKENS", "32768")))
-
-    # 火山方舟 Agent Plans（OpenAI-compatible）
-    VOLCENGINE_API_KEY = os.getenv('VOLCENGINE_API_KEY', '') or os.getenv('ARK_API_KEY', '')
-    VOLCENGINE_API_BASE = os.getenv('VOLCENGINE_API_BASE') or 'https://ark.cn-beijing.volces.com/api/plan/v3'
 
     # Anthropic 格式专用配置（当 AI_PROVIDER_FORMAT=anthropic 时使用）
     # 支持 ANTHROPIC_AUTH_TOKEN 作为 ANTHROPIC_API_KEY 的别名
@@ -96,19 +92,19 @@ class Config:
     IMAGE_CAPTION_API_BASE = os.getenv('IMAGE_CAPTION_API_BASE', '')
     
     # AI 模型配置
-    TEXT_MODEL = os.getenv('TEXT_MODEL', 'gemini-3-flash-preview')
-    IMAGE_MODEL = os.getenv('IMAGE_MODEL', 'gemini-3-pro-image-preview')
+    TEXT_MODEL = os.getenv('TEXT_MODEL', 'gpt-5.5')
+    IMAGE_MODEL = os.getenv('IMAGE_MODEL', 'gpt-image-1')
 
     # MinerU 文件解析服务配置
     MINERU_TOKEN = os.getenv('MINERU_TOKEN', '')
-    MINERU_API_BASE = os.getenv('MINERU_API_BASE', 'https://mineru.net')
+    MINERU_API_BASE = os.getenv('MINERU_API_BASE', '')
     
     # 图片识别模型配置
-    IMAGE_CAPTION_MODEL = os.getenv('IMAGE_CAPTION_MODEL', 'gemini-3-flash-preview')
+    IMAGE_CAPTION_MODEL = os.getenv('IMAGE_CAPTION_MODEL', 'gpt-5.5')
     
     # 并发配置
-    MAX_DESCRIPTION_WORKERS = int(os.getenv('MAX_DESCRIPTION_WORKERS', '20'))
-    MAX_IMAGE_WORKERS = int(os.getenv('MAX_IMAGE_WORKERS', '20'))
+    MAX_DESCRIPTION_WORKERS = int(os.getenv('MAX_DESCRIPTION_WORKERS', '3'))
+    MAX_IMAGE_WORKERS = int(os.getenv('MAX_IMAGE_WORKERS', '3'))
     
     # 图片生成配置
     DEFAULT_ASPECT_RATIO = "16:9"
@@ -126,21 +122,20 @@ class Config:
     
     # 输出语言配置
     # 可选值: 'zh' (中文), 'ja' (日本語), 'en' (English), 'auto' (自动)
-    OUTPUT_LANGUAGE = os.getenv('OUTPUT_LANGUAGE', 'zh')
+    OUTPUT_LANGUAGE = os.getenv('OUTPUT_LANGUAGE', 'ko')
     
-    # 火山引擎配置
-    VOLCENGINE_ACCESS_KEY = os.getenv('VOLCENGINE_ACCESS_KEY', '')
-    VOLCENGINE_SECRET_KEY = os.getenv('VOLCENGINE_SECRET_KEY', '')
-    VOLCENGINE_INPAINTING_TIMEOUT = int(os.getenv('VOLCENGINE_INPAINTING_TIMEOUT', '60'))  # Inpainting 超时时间（秒）
-    VOLCENGINE_INPAINTING_MAX_RETRIES = int(os.getenv('VOLCENGINE_INPAINTING_MAX_RETRIES', '3'))  # 最大重试次数
-
-    # Inpainting Provider 配置（用于 InpaintingService 的单张图片修复）
-    # 可选值: 'volcengine' (火山引擎), 'gemini' (Google Gemini)
-    # 注意: 可编辑PPTX导出功能使用 ImageEditabilityService，其中 HybridInpaintProvider 会结合百度重绘和生成式质量增强
-    INPAINTING_PROVIDER = os.getenv('INPAINTING_PROVIDER', 'gemini')  # 默认使用 Gemini
-
-    # 百度 API 配置（用于 OCR 和图像修复）
-    BAIDU_API_KEY = os.getenv('BAIDU_API_KEY', '') or os.getenv('BAIDU_OCR_API_KEY', '')
+    # Explicit adapters; no implicit external OCR or parser uploads.
+    DOCUMENT_PARSER = os.getenv('DOCUMENT_PARSER', 'local')
+    DOCUMENT_PARSER_URL = os.getenv('DOCUMENT_PARSER_URL', '')
+    OCR_PROVIDER = os.getenv('OCR_PROVIDER', 'local')
+    OCR_API_URL = os.getenv('OCR_API_URL', '')
+    INPAINTING_PROVIDER = os.getenv('INPAINTING_PROVIDER', 'local')
+    AZURE_OPENAI_ENDPOINT = os.getenv('AZURE_OPENAI_ENDPOINT', '')
+    AZURE_OPENAI_DEPLOYMENT = os.getenv('AZURE_OPENAI_DEPLOYMENT', 'gpt-5.5')
+    AZURE_OPENAI_IMAGE_DEPLOYMENT = os.getenv('AZURE_OPENAI_IMAGE_DEPLOYMENT', '')
+    AZURE_OPENAI_CAPTION_DEPLOYMENT = os.getenv('AZURE_OPENAI_CAPTION_DEPLOYMENT', '')
+    AZURE_OPENAI_API_VERSION = os.getenv('AZURE_OPENAI_API_VERSION', '2025-04-01-preview')
+    TTS_ENABLED = os.getenv('TTS_ENABLED', 'false').lower() == 'true'
 
     # TTS 视频导出配置
     TTS_DEFAULT_VOICE_ZH = os.getenv('TTS_DEFAULT_VOICE_ZH', 'zh-CN-XiaoxiaoNeural')

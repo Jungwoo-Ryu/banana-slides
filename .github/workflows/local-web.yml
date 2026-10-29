@@ -1,0 +1,83 @@
+name: Local Web
+on:
+  push:
+    branches: [main, 'feat/**']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  web-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: sudo apt-get update && sudo apt-get install -y tesseract-ocr tesseract-ocr-eng fonts-dejavu-core
+      - run: uv sync --frozen --extra test --python 3.12
+      - name: Backend local workflow contracts
+        run: uv run pytest backend/tests/unit/test_local_web.py backend/tests/unit/test_text_output_limit.py backend/tests/unit/test_api_project.py backend/tests/unit/test_page_part_inheritance.py backend/tests/unit/test_template_mode_switch.py -q
+      - run: npm --prefix frontend ci
+      - run: npm --prefix frontend run build:check
+      - run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - name: Start both services
+        run: |
+          uv run python scripts/start_local.py --no-browser > /tmp/local-web.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:3011/ > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/local-web.log
+          exit 1
+      - run: npx playwright test --config playwright.local.config.ts
+        working-directory: frontend
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: local-web-failures
+          path: |
+            frontend/test-results/
+            .runtime/logs/
+
+  windows-launcher:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run start.bat with native cmd.exe
+        shell: pwsh
+        run: |
+          $launcher = Start-Process cmd.exe -ArgumentList '/d /c start.bat --no-browser' -PassThru -RedirectStandardOutput launcher.log -RedirectStandardError launcher-error.log
+          try {
+            $ready = $false
+            for ($attempt = 0; $attempt -lt 240; $attempt++) {
+              if ($launcher.HasExited) { throw 'Launcher exited before readiness' }
+              try {
+                $health = Invoke-RestMethod http://127.0.0.1:5011/health -TimeoutSec 2
+                $web = Invoke-WebRequest http://127.0.0.1:3011/ -TimeoutSec 2
+                if ($health.status -eq 'ok' -and $web.StatusCode -eq 200) { $ready = $true; break }
+              } catch { Start-Sleep -Seconds 2 }
+            }
+            if (-not $ready) { throw 'Services did not become ready' }
+          } finally {
+            if (-not $launcher.HasExited) { taskkill /PID $launcher.Id /T /F }
+            Get-Content launcher.log
+            Get-Content launcher-error.log
+          }
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: windows-launcher-failures
+          path: |
+            launcher*.log
+            .runtime/logs/

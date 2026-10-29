@@ -38,6 +38,9 @@ _caption_provider_cache: dict = {}
 _cache_lock = Lock()
 
 
+from .ai_providers.deferred import DeferredProvider
+
+
 def _get_cached_text_provider(model: str) -> TextProvider:
     """
     Get or create a cached text provider instance
@@ -51,7 +54,7 @@ def _get_cached_text_provider(model: str) -> TextProvider:
     with _cache_lock:
         if model not in _text_provider_cache:
             logger.info(f"Creating new TextProvider for model: {model}")
-            _text_provider_cache[model] = get_text_provider(model=model)
+            _text_provider_cache[model] = DeferredProvider(get_text_provider, model)
         else:
             logger.debug(f"Reusing cached TextProvider for model: {model}")
         return _text_provider_cache[model]
@@ -70,7 +73,7 @@ def _get_cached_image_provider(model: str) -> ImageProvider:
     with _cache_lock:
         if model not in _image_provider_cache:
             logger.info(f"Creating new ImageProvider for model: {model}")
-            _image_provider_cache[model] = get_image_provider(model=model)
+            _image_provider_cache[model] = DeferredProvider(get_image_provider, model)
         else:
             logger.debug(f"Reusing cached ImageProvider for model: {model}")
         return _image_provider_cache[model]
@@ -81,7 +84,7 @@ def _get_cached_caption_provider(model: str) -> TextProvider:
     with _cache_lock:
         if model not in _caption_provider_cache:
             logger.info(f"Creating new CaptionProvider for model: {model}")
-            _caption_provider_cache[model] = get_caption_provider(model=model)
+            _caption_provider_cache[model] = DeferredProvider(get_caption_provider, model)
         return _caption_provider_cache[model]
 
 

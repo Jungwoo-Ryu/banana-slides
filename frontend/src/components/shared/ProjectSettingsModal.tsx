@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, FileText, Settings as SettingsIcon, Download, Sparkles, AlertTriangle, HelpCircle, Lightbulb } from 'lucide-react';
 import { Button, Textarea, TextStyleSelector } from '@/components/shared';
 import { useT } from '@/hooks/useT';
-import { Settings } from '@/pages/Settings';
+import { SettingsPage } from '@/pages/Settings';
 import type { ExportExtractorMethod, ExportInpaintMethod } from '@/types';
 import { ASPECT_RATIO_OPTIONS } from '@/config/aspectRatio';
 
@@ -125,10 +125,9 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
   isSavingRequirements,
   isSavingTemplateStyle,
   sourceContent,
-  exportExtractorMethod = 'hybrid',
-  exportInpaintMethod = 'hybrid',
+  exportExtractorMethod = 'configured',
+  exportInpaintMethod = 'local',
   exportAllowPartial = false,
-  enableIconSubjectExtraction = true,
   onExportExtractorMethodChange,
   onExportInpaintMethodChange,
   onExportAllowPartialChange,
@@ -145,14 +144,12 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
   const [activeTab, setActiveTab] = useState<SettingsTab>('project');
 
   const EXTRACTOR_METHOD_OPTIONS: { value: ExportExtractorMethod; labelKey: string; descKey: string }[] = [
-    { value: 'hybrid', labelKey: 'projectSettings.extractorHybrid', descKey: 'projectSettings.extractorHybridDesc' },
-    { value: 'mineru', labelKey: 'projectSettings.extractorMineru', descKey: 'projectSettings.extractorMineruDesc' },
+    { value: 'configured', labelKey: 'projectSettings.extractorHybrid', descKey: 'projectSettings.extractorHybridDesc' },
   ];
 
   const INPAINT_METHOD_OPTIONS: { value: ExportInpaintMethod; labelKey: string; descKey: string; usesAI: boolean }[] = [
-    { value: 'hybrid', labelKey: 'projectSettings.backgroundHybrid', descKey: 'projectSettings.backgroundHybridDesc', usesAI: true },
+    { value: 'local', labelKey: 'projectSettings.backgroundHybrid', descKey: 'projectSettings.backgroundHybridDesc', usesAI: false },
     { value: 'generative', labelKey: 'projectSettings.backgroundGenerative', descKey: 'projectSettings.backgroundGenerativeDesc', usesAI: true },
-    { value: 'baidu', labelKey: 'projectSettings.backgroundBaidu', descKey: 'projectSettings.backgroundBaiduDesc', usesAI: false },
   ];
 
   if (!isOpen) return null;
@@ -422,7 +419,8 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={enableIconSubjectExtraction}
+                      checked={false}
+                      disabled
                       onChange={(e) => onEnableIconSubjectExtractionChange?.(e.target.checked)}
                       className="mt-1 w-4 h-4 text-banana-500 focus:ring-banana-500 rounded"
                     />
@@ -490,7 +488,7 @@ export const ProjectSettingsModal: React.FC<ProjectSettingsModalProps> = ({
                     {t('projectSettings.globalConfigDesc')}
                   </p>
                 </div>
-                <Settings />
+                <SettingsPage />
               </div>
             )}
           </div>

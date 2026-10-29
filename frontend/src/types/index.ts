@@ -115,10 +115,10 @@ export interface NarrationConfig {
 }
 
 // 导出设置 - 组件提取方法
-export type ExportExtractorMethod = 'mineru' | 'hybrid';
+export type ExportExtractorMethod = 'configured' | 'mineru' | 'hybrid';
 
 // 导出设置 - 背景图获取方法
-export type ExportInpaintMethod = 'generative' | 'baidu' | 'hybrid';
+export type ExportInpaintMethod = 'local' | 'generative' | 'baidu' | 'hybrid';
 
 // 项目
 export interface Project {
@@ -167,7 +167,7 @@ export interface Material {
 }
 
 // 任务状态
-export type TaskStatus = 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+export type TaskStatus = 'PENDING' | 'RUNNING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
 
 // 任务信息
 export interface Task {
@@ -213,7 +213,6 @@ export interface Settings {
   id: number;
   ai_provider_format: string;
   api_base_url?: string;
-  api_key_length: number;
   image_resolution: string;
   image_quality?: string;
   image_aspect_ratio: string;
@@ -222,9 +221,8 @@ export interface Settings {
   text_model?: string;
   image_model?: string;
   mineru_api_base?: string;
-  mineru_token_length: number;
   image_caption_model?: string;
-  output_language: 'zh' | 'en' | 'ja' | 'auto';
+  output_language: 'ko' | 'en' | 'auto';
   // 描述生成模式
   description_generation_mode: 'streaming' | 'parallel';
   // 描述额外字段
@@ -237,24 +235,17 @@ export interface Settings {
   enable_image_reasoning: boolean;
   image_thinking_budget: number;
   enable_image_quality_control: boolean;
-  baidu_api_key_length: number;
   // LazyLLM 配置
   text_model_source?: string;
   image_model_source?: string;
   image_caption_model_source?: string;
-  lazyllm_api_keys_info?: Record<string, number>;  // {vendor: key_length}
   // Per-model API credentials (for gemini/openai per-model overrides)
-  text_api_key_length: number;
   text_api_base_url?: string;
-  image_api_key_length: number;
   image_api_base_url?: string;
-  image_caption_api_key_length: number;
   image_caption_api_base_url?: string;
   // OpenAI image API protocol
   openai_image_api_protocol?: string;
   // OpenAI Codex OAuth
-  openai_oauth_connected: boolean;
-  openai_oauth_account_id?: string | null;
   // ElevenLabs TTS
   elevenlabs_enabled: boolean;
   elevenlabs_api_key_length: number;

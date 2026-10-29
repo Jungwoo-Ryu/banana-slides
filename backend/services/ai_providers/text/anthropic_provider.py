@@ -7,6 +7,7 @@ from typing import Generator, Optional
 from anthropic import Anthropic
 from .base import get_text_output_limit, TextProvider, strip_think_tags
 from config import get_config
+from services.http_transport import http_client
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,7 @@ class AnthropicTextProvider(TextProvider):
         config = get_config()
         self.client = Anthropic(
             api_key=api_key,
+            http_client=http_client(get_config().OPENAI_TIMEOUT),
             base_url=api_base,
             timeout=config.OPENAI_TIMEOUT,
             max_retries=config.OPENAI_MAX_RETRIES

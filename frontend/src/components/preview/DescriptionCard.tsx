@@ -1,3 +1,4 @@
+import { fieldLabel } from '@/utils/fieldLabels';
 import React, { useState, useRef, useCallback } from 'react';
 import { Edit2, FileText, RefreshCw, Tag, Layout, Image, Focus, MessageSquare, ImageOff } from 'lucide-react';
 import { useT } from '@/hooks/useT';
@@ -213,7 +214,7 @@ export const DescriptionCard: React.FC<DescriptionCardProps> = React.memo(({
                   <div key={name} className="mt-3 pt-3 border-t border-gray-100 dark:border-border-primary">
                     <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-foreground-tertiary mb-1">
                       <FieldIcon size={12} />
-                      <span className="font-medium">{name}</span>
+                      <span className="font-medium">{fieldLabel(name)}</span>
                       {notInImagePrompt && (
                         <span className="relative group/nip">
                           <ImageOff size={11} className="opacity-50" />
@@ -284,7 +285,7 @@ export const DescriptionCard: React.FC<DescriptionCardProps> = React.memo(({
             <MarkdownTextarea
               key={name}
               ref={el => { extraFieldRefs.current[name] = el; }}
-              label={name}
+              label={fieldLabel(name)}
               value={editExtraFields[name] || ''}
               onChange={v => setEditExtraFields(prev => ({ ...prev, [name]: v }))}
               onPaste={handlePaste}
@@ -292,7 +293,7 @@ export const DescriptionCard: React.FC<DescriptionCardProps> = React.memo(({
               onFocus={() => focusExtraField(name)}
               showUploadButton={false}
               rows={2}
-              placeholder={name}
+              placeholder={fieldLabel(name)}
             />
           ))}
           <div className="flex justify-end gap-3 pt-4">

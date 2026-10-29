@@ -9,7 +9,6 @@ from sqlalchemy.engine import make_url
 # Add the backend directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-os.environ['BANANA_SKIP_AUTO_MIGRATE'] = '1'
 
 from models import db
 
