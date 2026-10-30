@@ -1,7 +1,7 @@
 /**
  * Renovation non-ASCII filename - Integration E2E Test
  *
- * Regression test for: uploading a PDF with a Chinese (or other non-ASCII)
+ * Regression test for: uploading a PDF with a Korean (or other non-ASCII)
  * filename caused the background task to fail with "No PDF file found for
  * renovation project" because secure_filename() strips non-ASCII chars,
  * leaving the file with no .pdf extension that the task could discover.
@@ -50,15 +50,15 @@ test.describe.serial('Renovation with non-ASCII filename', () => {
     }
   })
 
-  test('Chinese filename PDF completes renovation task without error', async ({ request }) => {
+  test('Korean filename PDF completes renovation task without error', async ({ request }) => {
     const pdfPath = path.join(__dirname, 'fixtures', 'test-16-9.pdf')
     const pdfBuffer = fs.readFileSync(pdfPath)
 
-    // Upload with a Chinese filename — this is what triggered the bug
+    // Upload with a Korean filename — this is what triggered the bug
     const res = await request.post(`${API}/api/projects/renovation`, {
       multipart: {
         file: {
-          name: 'Presentation.pdf',   // non-ASCII filename
+          name: '발표자료.pdf',   // non-ASCII filename
           mimeType: 'application/pdf',
           buffer: pdfBuffer,
         },

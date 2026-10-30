@@ -1,10 +1,7 @@
-"""
-Refurbishment mode ASCII Filename regression test
+"""Non-ASCII filename regression tests for renovation uploads.
 
-Bug: secure_filename() He’ll strip off Chinese, etc. ASCII Characters, leading to
-  'Presentation.pdf' → 'pdf'（No extension) not found in backstage .pdf Documentation。
-
-Rehabilitation: Change to Fixed Naming 'original.<ext>'，It’s completely detached from the coding.。
+secure_filename() may strip the basename and leave only the extension. Saving
+as original.<ext> lets background tasks discover the file regardless of its name.
 """
 
 import io
@@ -91,10 +88,10 @@ def mock_heavy_deps():
 class TestRenovationFilename:
     """Authentication of uploading filenames and background tasks PDF Found Logic"""
 
-    def test_chinese_filename_saved_as_original_pdf(self, client, app):
-        """Chinese filenames should be saved as original.pdf，Not without an extension. 'pdf'"""
+    def test_nonascii_filename_saved_as_original_pdf(self, client, app):
+        """Korean filenames should be saved as original.pdf，Not without an extension. 'pdf'"""
         pdf_bytes = _make_minimal_pdf()
-        response = _post_renovation(client, 'Presentation.pdf', pdf_bytes)
+        response = _post_renovation(client, '발표자료.pdf', pdf_bytes)
 
         assert response.status_code == 202, (
             f"Expected 202, got {response.status_code}: {response.get_json()}"
@@ -121,7 +118,7 @@ class TestRenovationFilename:
     def test_task_manager_can_discover_pdf(self, client, app):
         """The files of the simulation task manager find logic and confirm that you can find the right thing. PDF"""
         pdf_bytes = _make_minimal_pdf()
-        response = _post_renovation(client, 'Reporting material.pdf', pdf_bytes)
+        response = _post_renovation(client, '보고자료.pdf', pdf_bytes)
         assert response.status_code == 202
 
         data = response.get_json()

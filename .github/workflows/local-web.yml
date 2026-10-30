@@ -26,7 +26,7 @@ jobs:
       - name: Check source language
         run: python scripts/check_source_language.py
       - name: Backend local workflow contracts
-        run: uv run pytest backend/tests/unit/test_local_web.py backend/tests/unit/test_text_output_limit.py backend/tests/unit/test_api_project.py backend/tests/unit/test_page_part_inheritance.py backend/tests/unit/test_template_mode_switch.py backend/tests/unit/test_description_field_contract.py backend/tests/unit/test_task_manager_image_prompt_fields.py backend/tests/unit/test_template_auto_match.py backend/tests/unit/test_style_from_content.py backend/tests/unit/test_image_prompt_ratio.py backend/tests/unit/test_english_schema_compat.py -q
+        run: uv run pytest backend/tests/unit/test_local_web.py backend/tests/unit/test_text_output_limit.py backend/tests/unit/test_api_project.py backend/tests/unit/test_page_part_inheritance.py backend/tests/unit/test_template_mode_switch.py backend/tests/unit/test_description_field_contract.py backend/tests/unit/test_task_manager_image_prompt_fields.py backend/tests/unit/test_template_auto_match.py backend/tests/unit/test_style_from_content.py backend/tests/unit/test_image_prompt_ratio.py backend/tests/unit/test_english_schema_compat.py backend/tests/unit/test_renovation_filename.py backend/tests/unit/test_api_material.py backend/tests/unit/test_pptx_font_size.py -q
       - run: npm --prefix frontend ci
       - run: npm --prefix frontend run build:check
       - run: npx playwright install --with-deps chromium

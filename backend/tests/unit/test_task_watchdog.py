@@ -421,7 +421,7 @@ def test_stalled_message_is_localized_at_display_time(client, app):
     """STALLED The display path will also be recalculated in the interface language (review： not previously covered)）。"""
     project_id = _create_project(app)
     task_id = _create_export_task(app, project_id, status='FAILED', heartbeat_age_seconds=7200)
-    chinese_message = 'Mission suspected to be stuck： already 32 No progress update in minutes (last step： build) PPTX）。'
+    chinese_message = "\u4efb\u52a1\u7591\u4f3c\u5361\u4f4f\uff1a\u5df2 32 \u5206\u949f\u6ca1\u6709\u8fdb\u5ea6\u66f4\u65b0\uff08\u6700\u540e\u4e00\u6b65\uff1a\u6784\u5efa PPTX\uff09\u3002"
 
     with app.app_context():
         task = Task.query.get(task_id)

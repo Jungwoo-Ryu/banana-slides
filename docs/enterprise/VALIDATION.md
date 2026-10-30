@@ -4,7 +4,7 @@
 
 ## 통과한 검증
 
-- 백엔드 188개 테스트: 환경변수/파일 자격 증명, 키 비노출·저장 거부, HTTPS 검증 유지, Azure 텍스트·비전·이미지 편집의 배포 이름 전달, 별도 이미지 배포 필수 조건, 로컬 PPTX 문서 파싱, 저장소 경로 이탈 방지, 프로젝트/페이지/템플릿 흐름.
+- 백엔드 210개 테스트: 환경변수/파일 자격 증명, 키 비노출·저장 거부, HTTPS 검증 유지, Azure 텍스트·비전·이미지 편집의 배포 이름 전달, 별도 이미지 배포 필수 조건, 로컬 PPTX 문서 파싱, 저장소 경로 이탈 방지, 프로젝트/페이지/템플릿 흐름.
 - 실제 Tesseract OCR로 이미지의 문자를 추출하고 편집 가능한 PPTX로 저장한 뒤 `python-pptx`로 다시 열어 텍스트 상자 검증. 테스트 이미지와 설치 언어는 영어이며 한국어 OCR 정확도 평가는 별도입니다.
 - TypeScript 검사 및 Vite production build.
 - Playwright 3개 시나리오: 한국어 설정 저장·재조회, 참고 파일 업로드·로컬 파싱, 빈 프로젝트 생성·영역 드래그·프롬프트 제출·브라우저 PPTX 다운로드.
@@ -20,7 +20,7 @@ Windows GitHub Actions에서 실제 `cmd.exe`로 `start.bat --no-browser`를 실
 
 ```bash
 uv sync --frozen --extra test --python 3.12
-uv run pytest backend/tests/unit/test_local_web.py backend/tests/unit/test_text_output_limit.py backend/tests/unit/test_api_project.py backend/tests/unit/test_page_part_inheritance.py backend/tests/unit/test_template_mode_switch.py backend/tests/unit/test_description_field_contract.py backend/tests/unit/test_task_manager_image_prompt_fields.py backend/tests/unit/test_template_auto_match.py backend/tests/unit/test_style_from_content.py backend/tests/unit/test_image_prompt_ratio.py backend/tests/unit/test_english_schema_compat.py -q
+uv run pytest backend/tests/unit/test_local_web.py backend/tests/unit/test_text_output_limit.py backend/tests/unit/test_api_project.py backend/tests/unit/test_page_part_inheritance.py backend/tests/unit/test_template_mode_switch.py backend/tests/unit/test_description_field_contract.py backend/tests/unit/test_task_manager_image_prompt_fields.py backend/tests/unit/test_template_auto_match.py backend/tests/unit/test_style_from_content.py backend/tests/unit/test_image_prompt_ratio.py backend/tests/unit/test_english_schema_compat.py backend/tests/unit/test_renovation_filename.py backend/tests/unit/test_api_material.py backend/tests/unit/test_pptx_font_size.py -q
 npm --prefix frontend ci
 npm --prefix frontend run build:check
 uv run python scripts/start_local.py --no-browser

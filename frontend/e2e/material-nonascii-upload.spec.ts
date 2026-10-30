@@ -6,11 +6,11 @@ const PNG_1X1_RED = Buffer.from(
 )
 
 test.describe('Material upload filenames (#426)', () => {
-  test('uploads a PNG whose original filename contains Chinese characters', async ({ request }) => {
+  test('uploads a PNG whose original filename contains Korean characters', async ({ request }) => {
     const uploadResp = await request.post('/api/materials/upload', {
       multipart: {
         file: {
-          name: 'Text.png',
+          name: '자료.png',
           mimeType: 'image/png',
           buffer: PNG_1X1_RED,
         },
@@ -23,7 +23,7 @@ test.describe('Material upload filenames (#426)', () => {
     }
 
     const material = (await uploadResp.json()).data
-    expect(material.original_filename).toBe('Text.png')
+    expect(material.original_filename).toBe('자료.png')
     expect(material.filename).toMatch(/^[0-9a-f]{32}\.png$/)
     expect(material.relative_path).toBe(`materials/${material.filename}`)
     expect(material.url).toBe(`/files/materials/${material.filename}`)

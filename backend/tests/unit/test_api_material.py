@@ -85,18 +85,18 @@ class TestMaterialUpload:
         )
         assert response.status_code == 400
 
-    def test_upload_material_chinese_filename_uses_content_type_and_uuid_storage(self, client):
-        """Chinese filenames should upload successfully and not drive storage names."""
+    def test_upload_material_nonascii_filename_uses_content_type_and_uuid_storage(self, client):
+        """Korean filenames should upload successfully and not drive storage names."""
         img_bytes = _create_test_image()
         response = client.post(
             '/api/materials/upload',
-            data={'file': (img_bytes, 'Text.png')},
+            data={'file': (img_bytes, '자료.png')},
             content_type='multipart/form-data'
         )
 
         data = assert_success_response(response, 201)
         material = data['data']
-        assert material['original_filename'] == 'Text.png'
+        assert material['original_filename'] == '자료.png'
         assert re.fullmatch(r'[0-9a-f]{32}\.png', material['filename'])
         assert material['relative_path'] == f"materials/{material['filename']}"
         assert material['url'] == f"/files/materials/{material['filename']}"
@@ -217,31 +217,17 @@ class TestGenerateImageCaption:
             result = _generate_image_caption('/nonexistent/path/image.png')
             assert result == ''
 
-    @patch('google.genai.Client')
-    def test_caption_gemini_success(self, mock_client_class, app):
-        """Caption with Gemini provider returns expected text"""
+    @patch('services.ai_providers.get_caption_provider')
+    def test_caption_uses_configured_provider_when_enabled(self, mock_provider, app):
+        """Caption generation uses the provider interface only after explicit opt-in."""
         with app.app_context():
-            app.config['AI_PROVIDER_FORMAT'] = 'gemini'
-            app.config['GOOGLE_API_KEY'] = 'test-key'
-            app.config['GOOGLE_API_BASE'] = ''
+            app.config['AUTO_IMAGE_CAPTION'] = 'true'
             app.config['IMAGE_CAPTION_MODEL'] = 'test-model'
-
-            mock_client = MagicMock()
-            mock_client_class.return_value = mock_client
-            mock_result = MagicMock()
-            mock_result.text = '  A test picture  '
-            mock_client.models.generate_content.return_value = mock_result
-
+            mock_provider.return_value.generate_with_image.return_value = 'A test picture'
             from controllers.material_controller import _generate_image_caption
-            import tempfile
-            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
-                img = Image.new('RGB', (10, 10), color='green')
-                img.save(f, format='PNG')
-                tmp_path = f.name
-            try:
-                result = _generate_image_caption(tmp_path)
-                assert result == 'A test picture'
-                mock_client.models.generate_content.assert_called_once()
-            finally:
-                import os
-                os.unlink(tmp_path)
+            result = _generate_image_caption('/local/test-image.png')
+            assert result == 'A test picture'
+            mock_provider.assert_called_once_with('test-model')
+            args = mock_provider.return_value.generate_with_image.call_args.args
+            assert args[1] == '/local/test-image.png'
+            assert '한국어' in args[0]

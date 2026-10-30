@@ -50,17 +50,18 @@ def _reference_font_size(builder, bbox, text, dpi=96):
     return best_size
 
 
+# Explicit code points keep CJK font-width coverage without source-language prose.
 CASES = [
-    ('Example Title', [40, 40, 1200, 120]),
-    ('Page 17 Page 1 Example of article ABC 123', [60, 60, 900, 100]),
+    ('\u793a\u4f8b\u6807\u9898', [40, 40, 1200, 120]),
+    ('\u7b2c 17 \u9875\u7b2c 1 \u6761\u5185\u5bb9\u793a\u4f8b ABC 123', [60, 60, 900, 100]),
     ('a', [10, 10, 300, 60]),
-    ('Short Title\n Second line text', [50, 50, 700, 200]),
-    ('A long line of Chinese characters' * 12, [30, 30, 800, 300]),
-    ('Mixed English, Chinese mixed content 2026', [20, 20, 640, 80]),
-    ('Table Cell Contents', [100, 100, 260, 160]),
+    ('\u77ed\u6807\u9898\n\u7b2c\u4e8c\u884c\u6587\u672c', [50, 50, 700, 200]),
+    ('\u5f88\u957f\u7684\u4e00\u884c\u4e2d\u6587\u5b57\u7b26' * 12, [30, 30, 800, 300]),
+    ('Mixed \u4e2d\u82f1\u6587 mixed content 2026', [20, 20, 640, 80]),
+    ('\u8868\u683c\u5355\u5143\u683c\u5185\u5bb9', [100, 100, 260, 160]),
     ('A' * 120, [10, 10, 200, 40]),
-    ('Very small box text', [10, 10, 12, 40]),
-    ('Super-Back Text', [0, 0, 1900, 1000]),
+    ('\u6781\u5c0f\u6846\u6587\u672c', [10, 10, 12, 40]),
+    ('\u8d85\u5927\u6846\u77ed\u6587\u672c', [0, 0, 1900, 1000]),
 ]
 
 

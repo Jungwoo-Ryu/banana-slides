@@ -437,7 +437,7 @@ describe('useExportTasksStore', () => {
     expect(task.completedAt).toBeTruthy()
   })
 
-  const RAW_BACKEND_TEXT = 'RAW-BACKEND-SENTENCE-THAT-MUST-NOT-LEAK';
+  const RAW_BACKEND_TEXT = "RAW-BACKEND-SENTENCE-THAT-MUST-NOT-LEAK";
 
   const pollFailedTask = async (taskId: string, response: unknown) => {
     vi.mocked(api.getTaskStatus).mockResolvedValue({ data: response } as any)
