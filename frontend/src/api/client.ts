@@ -31,7 +31,7 @@ function resolveDesktopBackendPort(): number {
 const isClientSideUrl = (url: string) => /^\/?(data|blob):/i.test(url);
 const normalizeClientSideUrl = (url: string) => url.replace(/^\/(?=(data|blob):)/i, '');
 
-// 桌面模式：从 URL query param 同步读取后端端口，避免异步竞态
+// Desktop Mode： From URL query param Synchronize the backend to avoid arcade competition
 if (isDesktop) {
   (window as any).__BACKEND_PORT__ = resolveDesktopBackendPort();
 }
@@ -46,7 +46,7 @@ export function getBaseURL(): string {
   return `http://127.0.0.1:${port}`;
 }
 
-// 统一下载入口：desktop 走原生保存对话框，web 走 window.open
+// Unify Download Entry：desktop Walk original saving dialogue box，web Come on. window.open
 export function triggerDownload(relativeOrAbsoluteUrl: string, filename?: string): void {
   if (!relativeOrAbsoluteUrl || typeof relativeOrAbsoluteUrl !== 'string') {
     console.warn('Invalid download URL:', relativeOrAbsoluteUrl);
@@ -89,12 +89,12 @@ export function triggerDownload(relativeOrAbsoluteUrl: string, filename?: string
   }
 }
 
-// 创建 axios 实例
+// Create axios Examples
 export const apiClient = axios.create({
-  timeout: 300000, // 5分钟超时（AI生成可能很慢）
+  timeout: 300000, // 5 Minute timeout（AI It could be slow to produce.）
 });
 
-// 请求拦截器
+// Request interceptor.
 apiClient.interceptors.request.use(
   (config) => {
     const hasAbsoluteBaseURL = typeof config.baseURL === 'string' && /^https?:\/\//i.test(config.baseURL);
@@ -103,20 +103,20 @@ apiClient.interceptors.request.use(
       config.baseURL = getBaseURL();
     }
 
-    // 让后端按界面语言返回用户可见的错误文案（如后台任务被中断/卡住）
+    // Return user-visible error files in UI language to backend (e.g. aborted backstage task)/Hold it!）
     if (config.headers && !config.headers['Accept-Language']) {
       config.headers['Accept-Language'] = 'ko';
     }
 
-    // 如果请求体是 FormData，删除 Content-Type 让浏览器自动设置
-    // 浏览器会自动添加正确的 Content-Type 和 boundary
+    // If the request is FormData，Delete Content-Type Let browsers set up automatically
+    // Browser automatically adds correct Content-Type and boundary
     if (config.data instanceof FormData) {
-      // 不设置 Content-Type，让浏览器自动处理
+      // Do Not Set Content-Type，Let the browser process it automatically
       if (config.headers) {
         delete config.headers['Content-Type'];
       }
     } else if (config.headers && !config.headers['Content-Type']) {
-      // 对于非 FormData 请求，默认设置为 JSON
+      // For Africa FormData Request, default set to JSON
       config.headers['Content-Type'] = 'application/json';
     }
 
@@ -127,54 +127,54 @@ apiClient.interceptors.request.use(
   }
 );
 
-// 响应拦截器
+// Response interceptor
 apiClient.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
-    // 统一错误处理
+    // Unified error handling
     if (error.response) {
-      // 服务器返回错误状态码
+      // Server returns the error status code
       console.error('API Error:', error.response.data);
     } else if (error.request) {
-      // 请求已发送但没有收到响应
+      // Request sent but no response received
       console.error('Network Error:', error.request);
     } else {
-      // 其他错误
+      // other errors
       console.error('Error:', error.message);
     }
     return Promise.reject(error);
   }
 );
 
-// 图片URL处理工具
-// 使用相对路径，通过代理转发到后端
+// Image URL Processing Tool
+// Use relative path to forward via proxy to backend
 export const getImageUrl = (path?: string, timestamp?: string | number): string => {
   if (!path) return '';
   if (isClientSideUrl(path)) {
     return normalizeClientSideUrl(path);
   }
 
-  // 如果已经是完整URL，直接返回
+  // If it’s complete, URL，Go straight back.
   if (path.startsWith('http://') || path.startsWith('https://')) {
     return path;
   }
-  // 使用相对路径（确保以 / 开头）
+  // Use relative path (ensure that / Start）
   let url = path.startsWith('/') ? path : '/' + path;
 
   if (isDesktop) {
     url = `${getBaseURL()}${url}`;
   }
-  
-  // 添加时间戳参数避免浏览器缓存（仅在提供时间戳时添加）
+
+  // Add time stamp parameters to avoid browser caches (add only when time stamp is provided)）
   if (timestamp) {
-    const ts = typeof timestamp === 'string' 
-      ? new Date(timestamp).getTime() 
+    const ts = typeof timestamp === 'string'
+      ? new Date(timestamp).getTime()
       : timestamp;
     url += `?v=${ts}`;
   }
-  
+
   return url;
 };
 

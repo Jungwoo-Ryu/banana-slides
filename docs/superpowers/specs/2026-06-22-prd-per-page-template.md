@@ -1,145 +1,145 @@
-# PRD：每页不同模板功能（统一模板系统改造）
+# PRD：Different template functions per page (harmonized template system adaptation)）
 
-> 来源：2026-03-22 ~ 03-23 Codex session 设计讨论整理，以最终确认的方案为准。
-
----
-
-## 1. 功能定位
-
-将当前"项目级单模板"方案升级为**统一的页级模板系统**。底层始终按"每页有自己的模板"建模；单模板模式只是批量赋值的语法糖。
-
-### 核心原则
-
-- **内容优先**：模板不影响页面描述内容，只影响图片生成和展示样式
-- **AI 先做，用户有主导权**：AI 负责解析和匹配，用户可查看、纠正、覆盖所有 AI 产出
+> Source：2026-03-22 ~ 03-23 Codex session Design discussions organized to be based on the final confirmed plan。
 
 ---
 
-## 2. 流程总览
+## 1. Functional Positioning
+
+Will Current"Project-level list template"Programme upgraded to**A uniform page-level template system**。Always press the bottom"Each page has its own template."Modeling;single template mode is a mass-granted syntax sugar。
+
+### Core principles
+
+- **Content Priority**：Template does not affect page description, only image generation and presentation styles
+- **AI Let’s do it first. Users have control.**：AI Parsing and matching. Users can view, correct, and cover all AI Outputs
+
+---
+
+## 2. Process Overview
 
 ```
-Home → OutlineEditor → DetailEditor → TemplateSetupPage（新增） → SlidePreview
+Home → OutlineEditor → DetailEditor → TemplateSetupPage（Add） → SlidePreview
 ```
 
-- `Home`：内容输入、创建项目、选择模板模式（单模板 / 多模板）
-- `OutlineEditor`：大纲编辑
-- `DetailEditor`：描述编辑（内容层）
-- **`TemplateSetupPage`**：模板资产管理 + 模板匹配（新增页面，本功能核心）
-- `SlidePreview`：最终预览与导出
+- `Home`：Content input, creation of items, selection of template mode (single template) / Multiple Templates）
+- `OutlineEditor`：Outline Editor
+- `DetailEditor`：Description Editor (Content Layer)）
+- **`TemplateSetupPage`**：Template asset management + Template Match (New Page, This Function Core)）
+- `SlidePreview`：Final Preview and Export
 
-### 为什么放在 DetailEditor 之后
+### Why did you put it? DetailEditor After
 
-- 模板自动匹配依赖页面真实内容和信息密度，DetailEditor 结束时这些信息才稳定
-- 用户此时最能判断模板库是否充足、AI 标签是否准确
-- 符合"内容优先"原则：先定内容，再选模板
+- Template automatically matches the real content and information density of a page dependent，DetailEditor It’s only stable when it’s over.
+- User is best placed to judge whether the template library is adequate at this time、AI Is the label accurate?
+- Match"Content Priority"Principle： First content, then template.
 
 ---
 
-## 3. 模板模式
+## 3. Template Mode
 
-### 3.1 两种模式
+### 3.1 Two models.
 
-| 模式 | 说明 |
+| Mode | Annotations |
 |------|------|
-| **单模板模式** | 用户选择一次模板（图片 + 文字），自动应用到所有页面的模板字段 |
-| **多模板模式** | 每页各自管理自己的模板（图片模板 + 文字模板） |
+| **Single Template Mode** | User selects a template once (photo) + text) , automatically apply to template fields on all pages |
+| **Multiple Template Modes** | Each page manages its own template (photogram template) + Text Templates） |
 
-**底层数据语义**：无论何种模式，数据库始终以"每页一个 `template_asset_id` + `template_style_text`"形态存储。**单模板模式仅表示当前所有页面的两个字段恰好取同一组值**——它是 UI hint，不是独立的数据形态。这意味着模式切换不需要数据结构迁移，只是覆盖或同步页级字段。
+**Bottom Data Semantics**：In any pattern, the database is always used"One per page `template_asset_id` + `template_style_text`"Form Storage。**Single template mode only means that two fields on all current pages coincide with the same set of values**——It’s... UI hint，Not a stand-alone data form. This means that the mode switch does not require a data structure migration, but simply overwrites or synchronizes a page level field。
 
-### 3.2 模式切换规则（决策 7，2026-06-22）
+### 3.2 Mode-to-mode rules (decision-making) 7，2026-06-22）
 
-> 本节修订自原 PRD"多模板 → 单模板不允许"的规则，改为全阶段双向可切。
+> This section is revised from the original PRD"Multiple Templates → Single template not allowed"Change the rule to two-way cut-off for the whole phase.。
 
-**候选方案：**
-- A) 维持原 PRD：单→多允许，多→单禁止
-- B) 单→多允许，多→单允许；多→单时让用户从现有模板里选一个作统一模板，其余页级数据被覆盖
-- C) 全阶段双向切换；多→单时让用户从现有模板里选一个作统一模板，其余页级数据被覆盖；数据层始终是"每页一个模板"，模式只是 UI hint
-- D) 全阶段双向切换；多→单时清空所有页级数据，要求用户重新选一个统一模板
-- E) 全阶段双向切换；多→单时保留页级数据，仅 UI 层屏蔽，切回多模板时数据原样恢复
+**Candidates：**
+- A) Maintain the original PRD：Single→It’s okay. It’s okay.→Singlely forbidden
+- B) Single→It’s okay. It’s okay.→single permission; many→Single-time user selects one of the existing templates as a uniform template and the rest of the page-level data is covered
+- C) full-stage two-way switch; multiple→Single-time users select a uniform template from the existing template, while the rest of the page level data is covered; the data layer remains the same"One template per page"，Modes Just UI hint
+- D) full-stage two-way switch; multiple→Empty all page-level data in a single time and ask users to re-select a uniform template
+- E) full-stage two-way switch; multiple→Keep page-level data single-time only UI Layer shield. Restore data as it is when cutting back to multiple templates
 
-**选择：C**
+**Selection：C**
 
-**理由：**
-- 选 C：与 PRD 第 1 节"底层始终按每页有自己的模板建模"的核心原则保持一致；让用户选一张现有模板作为统一模板，既避免丢失模板库，又把覆盖动作显式化。
-- 不选 A：用户在多模板模式下工作了一阵才发现"想统一"被锁定无法回退；且既然底层每页一份，UI 切换不应有不可逆约束。
-- 不选 B：与 C 相比少了"数据语义统一"的声明，工程实施时仍会困惑"切到单模板时是否要写项目级 `template_image_path`"。
-- 不选 D：强制清空粗暴；用户可能就是想"统一成现在的某一张"，清空让操作成本变高。
-- 不选 E：UI 隐藏但数据保留，切回多模板时"突然冒出一堆模板"对用户是惊吓，违背"模式只是 UI hint"原则。
+**Rationale：**
+- Select C：and PRD Page 1 Section"The bottom always has its own template model on each page."The core principles are consistent; allow users to select an existing template as a unified template, both to avoid the loss of the template library and to visualize over-cover actions。
+- No choice. A：The user worked in multiple templates for a while to find out."I’m trying to unify."Locked Unable to retreat; and since one per page at the bottom，UI Toggle should not be irreversibly bound.。
+- No choice. B：and C Less than that."Semantic Data Harmonization"The statement that the project is still going to be confused."Whether to write a project level when cutting to a single template `template_image_path`"。
+- No choice. D：Forced emptiness; users might just want"It’s one of the ones that unites into the present."，Cleaning up makes the operation more expensive.。
+- No choice. E：UI Hide but keep the data, and cut back to multiple templates"A bunch of templates came out of nowhere."It’s a shock to the user. It’s a breach."Modes Just UI hint"Principles。
 
-**切换规则：**
-- 项目创建时可选单模板或多模板
-- **单 → 多**：仅切换 `template_mode = 'multi'`，所有页继承当前已选模板（保持现状）
-- **多 → 单**：弹"选择统一模板"弹层（可从模板库选 / 新上传） → 用户确认 → 后端把所选模板批量写入所有页 `template_asset_id` 和 `template_style_text`（覆盖已有页级值） → `template_mode = 'single'`
-- **已生成的图片不受切换影响**：切换只改字段，已生成的 `generated_image_url` 保留；用户重新生成该页时才使用新模板
+**Switch Rules：**
+- Select single or multiple templates when the item is created
+- **Single → More**：Switch Only `template_mode = 'multi'`，All pages inherit the currently selected template (main status quo)）
+- **More → Single**：Play."Select a uniform template"Bomb Layer (selectable from the template library) / New Upload） → User confirmation → Backend writes the selected template batch to all pages `template_asset_id` and `template_style_text`（Overwrite Existing Page Level Value） → `template_mode = 'single'`
+- **Images generated are not affected by switching**：Toggle only changing fields, generated `generated_image_url` saving;use new template only when user recreates the page
 
-**切换入口：**
-- 单模板用户：`DetailEditor` / `SlidePreview` 顶部模板控制区有 `转为多模板` 按钮
-- 多模板用户：`TemplateSetupPage` / `SlidePreview` 顶部模板控制区有 `转为单模板` 按钮（对称）
+**Switch entrance：**
+- Single Template User：`DetailEditor` / `SlidePreview` Top template control area. `Convert to Multiple Templates` button
+- Multiple Template Users：`TemplateSetupPage` / `SlidePreview` Top template control area. `Convert to Single Template` Button (Symmetry)）
 
-**数据层约定：** `projects.template_mode` 字段只控制 UI 渲染分支，不影响 `pages.template_asset_id` / `pages.template_style_text` 的读写。
+**Data Layer Engagement：** `projects.template_mode` Fields only control UI Rendering branch, no impact. `pages.template_asset_id` / `pages.template_style_text` to read and write。
 
-### 3.3 "无模板"不再独立存在
+### 3.3 "No Templates"No longer exists on its own.
 
-旧的"无模板模式"统一为"只填文字模板"的状态。三种模式归一：
-- 单模板 = 批量赋同一组模板值
-- 多模板 = 逐页管理
-- 无模板 = 所有页只有文字模板
+Old."No template mode"Unite As"Text Template Only". Three modes are combined.：
+- Single Template = Batch the same set of template values
+- Multiple Templates = Page-by-page Management
+- No Templates = Text template only for all pages
 
 ---
 
-## 4. 每页模板输入定义
+## 4. Type definition for template per page
 
-每页有两个模板槽位：
+Two template slots per page：
 
-| 字段 | 说明 |
+| Field | Annotations |
 |------|------|
-| 图片模板 | 引用项目模板库中的一个模板资产（`template_asset_id`） |
-| 文字模板 | 页级文字风格描述（`template_style_text`） |
+| Picture Template | Quote a template asset in the project template library（`template_asset_id`） |
+| Text Templates | Page-level text style description（`template_style_text`） |
 
-### 合法状态（至少选一个）
+### Legal status (select at least one)）
 
-1. 仅图片模板
-2. 仅文字模板
-3. 图片模板 + 文字模板
+1. Picture Templates Only
+2. Text Templates Only
+3. Picture Template + Text Templates
 
-**禁止状态**：图片和文字都为空
+**Prohibited Status**：Pictures and text are empty
 
-### 多模板模式门禁
+### Multiple Template Mode Dock Disable
 
-- 多模板模式下，**所有页面都必须选择了模板（非未确认状态），才能进入下一步**（SlidePreview）
+- Under Multi Template Mode，**All pages must select a template (not an unrecognized state) to move on to the next step**（SlidePreview）
 
 ---
 
-## 5. 项目模板库
+## 5. Project Template Library
 
-### 5.1 数据模型：`project_template_assets`
+### 5.1 Data Model：`project_template_assets`
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Annotations |
 |------|------|------|
-| `id` | string | 主键 |
-| `project_id` | string | 所属项目 |
-| `image_path` | string | 模板图片路径 |
-| `thumb_path` | string | 缩略图路径 |
+| `id` | string | Primary Key |
+| `project_id` | string | Items to which it belongs |
+| `image_path` | string | Template Picture Path |
+| `thumb_path` | string | Thumbnail Path |
 | `analysis_status` | enum | `pending / processing / completed / failed` |
-| `analysis_json` | json | 结构化解析结果（见 5.3） |
-| `analysis_notes` | string | AI 自由文本补充 |
-| `user_label` | string | 用户手动标记（如"封面图""对比页""目录模板"） |
-| `sort_order` | int | 排序 |
-| `created_at` | datetime | 创建时间 |
+| `analysis_json` | json | Structural decomposition results (see 5.3） |
+| `analysis_notes` | string | AI Free Text Supplement |
+| `user_label` | string | User Manual Tags (e. g."Cover Map""Contrast Pages""Directory Template"） |
+| `sort_order` | int | Sort |
+| `created_at` | datetime | Created |
 
-### 5.2 核心关系
+### 5.2 Core relations
 
-- 一个项目有多个模板资产
-- **一个模板资产可被多个页面复用**（非 1:1 绑定）
-- 每页最多选一个图片模板
+- One project has multiple template assets
+- **A template asset can be reused by multiple pages**（Not 1:1 Tie）
+- Select a picture template for each page
 
-### 5.3 模板解析结果 schema
+### 5.3 Template Parsing Results schema
 
-上传后 AI 自动异步解析，输出结构化 JSON：
+After uploading AI Auto-step resolution, output structured JSON：
 
 ```json
 {
-  "summary": "顶部标题 + 中部双栏正文 + 底部结论",
+  "summary": "Top Title + Center Double Bar Body + Bottom conclusion",
   "template_type": "content",
   "layout_structure": "title-top-two-column",
   "content_capacity": "medium",
@@ -152,84 +152,84 @@ Home → OutlineEditor → DetailEditor → TemplateSetupPage（新增） → Sl
   ],
   "visual_density": "medium",
   "style_keywords": ["academic", "clean", "blue"],
-  "notes": "右下角有固定 logo 区域"
+  "notes": "It’s fixed on the lower right corner. logo Regional"
 }
 ```
 
-- 固定字段用于程序逻辑和自动匹配
-- `notes` 字段承载 AI 无法很好结构化的观察
-- **用户可在 TemplateSetupPage 直接修改解析结果**
+- Fixed fields for program logic and automatic matching
+- `notes` Field Load AI Not a very structured observation.
+- **users can access it in TemplateSetupPage Directly modify the resolution result**
 
-### 5.4 模板上传方式
+### 5.4 Template Uploading Method
 
-1. **逐张上传图片**
-2. **上传 PDF 自动拆页**：系统自动解析 PDF 每页图片，全部加入项目模板库
+1. **Upload pictures one by one**
+2. **Upload PDF AutoClose Pages**：System Auto parsing PDF Each page of pictures, add all to the project template library
 
-### 5.5 用户标记
+### 5.5 User Tags
 
-- 每个模板资产可带持久化标记，如：`封面图`、`目录模板`、`A/B 对比页`、`章节过渡页` 等
-- 标记信息提供给 AI 自动匹配作为选择参考
-- 在 TemplateSetupPage 编辑
+- Each template asset can be marked with a durability mark, e.g.：`Cover Map`、`Directory Template`、`A/B Contrast Pages`、`Chapter transition page` Wait.
+- Tag Information Available AI Automatic Matching as Selection Reference
+- Yes. TemplateSetupPage Edit
 
 ---
 
-## 6. 页级模板字段
+## 6. Page-level template field
 
-在 `pages` 表上新增：
+Yes. `pages` Add to Table：
 
-| 字段 | 类型 | 说明 |
+| Field | Type | Annotations |
 |------|------|------|
-| `template_asset_id` | string / null | 引用的图片模板 |
-| `template_style_text` | string / null | 页级文字模板 |
+| `template_asset_id` | string / null | Picture template cited |
+| `template_style_text` | string / null | Page Text Template |
 | `template_selection_source` | enum | `manual / auto / batch_apply` |
-| `template_match_reason` | string / null | 自动匹配理由 |
-| `template_match_confidence` | number / null | 自动匹配置信度 |
+| `template_match_reason` | string / null | Auto-matching reason |
+| `template_match_confidence` | number / null | Automatically match confidence |
 
-### 状态判定
+### Status determination
 
-| 状态 | 条件 |
+| Status | Conditions |
 |------|------|
-| 已确认 | `template_asset_id` 非空，或 `template_style_text` 非空 |
-| 未确认 | 两者都为空，或自动匹配返回 `undecided` |
+| Confirmed | `template_asset_id` is not empty, or `template_style_text` Non-empty |
+| Not confirmed | Both are empty or automatically matched for return `undecided` |
 
 ---
 
-## 7. TemplateSetupPage（新增页面）
+## 7. TemplateSetupPage（New Page）
 
-### 7.1 页面职责
+### 7.1 Page Duty
 
-这是 `DetailEditor` 之后、`SlidePreview` 之前的正式步骤，负责：
+It’s... `DetailEditor` After、`SlidePreview` Prior formal steps, responsible：
 
-1. 选择模板模式（如果还没选）
-2. 上传模板：逐张图片 / 上传 PDF 拆页
-3. 展示模板缩略图列表
-4. 展示 AI 解析结果（上传后立即异步解析）
-5. 编辑模板标记和版式描述（用户可纠正 AI 解析）
-6. 一键自动匹配模板到页面
-7. 手动修正个别页的模板选择
-8. 删除模板
-9. 查看解析状态
-10. 确认完成后进入 SlidePreview
+1. Select Template Mode (if not already selected)）
+2. Upload template： Picture by Picture / Upload PDF Open Pages
+3. Show Template Thumbnail List
+4. Presentation AI Parsing results (step resolution immediately after uploading)）
+5. Edit template tags and layout descriptions (user can correct) AI Parsing）
+6. One button automatically matches the template to the page
+7. Template selection for manual correction of individual pages
+8. Remove Template
+9. View Parsing Status
+10. Check in after completion. SlidePreview
 
-### 7.2 模板卡片布局
+### 7.2 Template Card Layout
 
-每张模板资产展开显示：
-- 缩略图
-- 用户标记字段
-- AI 解析的版式结构（可编辑）
-- 解析状态指示
+Expand assets per template：
+- Thumbnail
+- User Tag Fields
+- AI Parsing layout structure (editable)）
+- Parsing Status Directives
 
 ---
 
-## 8. 自动匹配多页模板
+## 8. Automatically match multipage templates
 
-### 8.1 匹配方式
+### 8.1 Match Method
 
-- **全项目一次性 LLM 调用**，不是逐页单独匹配
-- 输入：全部模板库及其解析信息 + 全部页面的标题/描述摘要/页码位置/内容密度
-- 输出：每页的结构化匹配结果 JSON
+- **One-time full project LLM Call**，Not page by page.
+- Input： All Template Librarys and their Parsing Information + Title of all pages/Description Summary/Location of page number/Content density
+- Output： Structured Match Results per Page JSON
 
-### 8.2 输出格式
+### 8.2 Output Format
 
 ```json
 [
@@ -238,243 +238,243 @@ Home → OutlineEditor → DetailEditor → TemplateSetupPage（新增） → Sl
     "template_asset_id": "tpl_003",
     "status": "matched",
     "confidence": 0.86,
-    "reason": "内容密度中等，双栏结构，适合该正文模板"
+    "reason": "Medium content density, double-bar structure, suitable for the text template"
   },
   {
     "page_id": "...",
     "template_asset_id": null,
     "status": "undecided",
     "confidence": 0.32,
-    "reason": "当前模板库中没有适合高密度时间线内容的模板"
+    "reason": "There is no template in the current template library suitable for high-density time line content"
   }
 ]
 ```
 
-### 8.3 前置条件
+### 8.3 Preconditions
 
-- **要求所有页面都已有描述**
-- 若存在缺描述的页面，不执行匹配，弹提示：  
-  > "还有 N 页缺少描述，建议先生成/编辑描述后再自动匹配模板"
+- **Require all pages to be described**
+- If there is a missing description page, do not execute the match, click the hint：<br>
+  > "And... N There’s no description on the page. It’s a suggestion./Automatically match templates after editing the description"
 
-### 8.4 覆盖逻辑
+### 8.4 Overwrite Logic
 
-- **默认覆盖所有页面的模板选择**
-- 点击时弹确认框，提示会覆盖当前模板选择
-- 确认框提供可选项：`保留已有模板选择`（勾选后跳过 `template_asset_id` 非空的页面）
-- 如果 LLM 返回 `undecided`，**清空该页旧模板**，标记为"未确认模板"
+- **Default template selection to overwrite all pages**
+- Click on the tickbox to confirm that the hint overwrites the current template selection
+- The confirmation box provides options：`Keep an existing template selection`（Skip After Checking `template_asset_id` Non-empty Pages）
+- If... LLM Back `undecided`，**Empty the old template of the page**，Mark as"Template not confirmed"
 
-### 8.5 匹配结果处理
+### 8.5 Match Result Processing
 
-- 自动匹配成功的页面：**直接视为已确认**（无需逐页二次确认）
-- `undecided` 的页面：视为未确认
-- 匹配结果直接写库
-
----
-
-## 9. 单页自动匹配
-
-### 9.1 入口
-
-每个页面卡片工具栏里的 `自动匹配模板` 按钮（类似"单页生成描述"的心智模型）
-
-### 9.2 前置条件
-
-- **只要求当前页有描述**，不受其他页是否缺描述影响
-
-### 9.3 覆盖逻辑
-
-- 如果当前页已有模板，弹确认框：  
-  > "自动匹配将覆盖当前页已选择的模板，确定继续吗？"
-- 确认框支持勾选 `下次不再提示`（本地偏好存储）
+- Automatically match successful pages：**Directly considered confirmed**（No page-by-page confirmation required）
+- `undecided` pages: treat as unconfirmed
+- Matching Results Direct Library
 
 ---
 
-## 10. 手动选择模板
+## 9. Auto Matching One Page
 
-### 10.1 入口
+### 9.1 Access.
 
-每个页面卡片下方工具栏（编辑、重新生成按钮左边）加 `选择模板` 按钮
+In each page card toolbar `Automatic Match Templates` Buttons (Similar)"Single Page Generation Description"It’s a mental model.）
 
-### 10.2 交互
+### 9.2 Preconditions
 
-- 点击后弹出**带缩略图的模板选择弹层**（不是下拉列表），包含：
-  - 当前项目模板库所有模板（缩略图展示）
-  - `未选择模板` 选项
-  - `上传新模板` 入口
-- 选中的模板预览图固定显示在卡片工具栏上方区域
+- **Just ask for a description on the current page**，Not affected by the lack of description on other pages
 
-### 10.3 从弹层上传新模板
+### 9.3 Overwrite Logic
 
-- 上传成功后：
-  1. 加入项目模板库
-  2. **自动绑定到当前页**（默认选中这张新模板）
-  3. 模板解析后台异步继续（手动选择不依赖解析完成）
+- If there is a template on the current page, click the confirmation box：<br>
+  > "Automatic matching will overwrite the selected template of the current page, sure to continue?？"
+- Confirmation box supports ticking `Next time, no more hints.`（Local Preferences Storage）
 
 ---
 
-## 11. 模板删除
+## 10. Manual selection template
 
-- 允许删除被页面引用的模板
-- 删除时弹确认框，明确提示会影响多少个页面
-- 删除后，所有引用该模板的页面清空模板，进入"未确认模板"状态
+### 10.1 Access.
+
+Under each page card toolbar (editor, recreate left) plus `Select Template` button
+
+### 10.2 Interactive
+
+- Popup after Click**Templates with Thumbnails to select ballistic layers**（Not a drop-down list) includes：
+  - All templates in the current project template library ( thumbnail presentation)）
+  - `No template selected` Options
+  - `Upload New Templates` Access.
+- The selected template preview is fixed above the card toolbar
+
+### 10.3 Upload a new template from the ballistic layer
+
+- After upload success：
+  1. Add Project Template Library
+  2. **Automatically bind to current page**（Default selection of this new template）
+  3. Continue with the template’s solver backstage step (manual selection does not depend on resolution)）
 
 ---
 
-## 12. 入口汇总
+## 11. Template Delete
 
-| 入口 | 位置 | 功能 |
+- Allows the deletion of templates cited on the page
+- Delete the tick confirmation box and specify how many pages will be affected by the hint
+- After deletion, all pages that refer to the template empty the template, enter"Template not confirmed"Status
+
+---
+
+## 12. Summary of entrances
+
+| Access. | Location | Functions |
 |------|------|------|
-| 模板模式选择 | Home 创建项目时 | 选择单模板 / 多模板模式 |
-| 转为多模板 | DetailEditor 顶部模板控制区 | 单模板升级为多模板（不可逆） |
-| 自动匹配多页模板 | TemplateSetupPage 顶部 | 全项目批量自动匹配 |
-| 单页自动匹配模板 | 页面卡片工具栏 | 单页自动匹配 |
-| 选择模板 | 页面卡片工具栏 | 手动选择 / 更换模板 |
-| 管理模板库 | TemplateSetupPage | 上传、删除、标记、纠正解析 |
+| Template Mode Selection | Home when creating a project | Select Single Template / Multiple Template Modes |
+| Convert to Multiple Templates | DetailEditor Top Template Control Area | Upgrade single template to multiple templates (irreversible)） |
+| Automatically match multipage templates | TemplateSetupPage Top | Automatically match the whole project batch |
+| Auto-match template for single pages | Page Card Toolbar | Auto Matching One Page |
+| Select Template | Page Card Toolbar | Manual Selection / Change Template |
+| Manage Template Library | TemplateSetupPage | Upload, delete, mark, correct resolution |
 
 ---
 
-## 13. 与现有功能的兼容
+## 13. Compatibility with existing functions
 
-| 现有功能 | 改造方式 |
+| Existing Functions | Alteration |
 |---------|---------|
-| 项目级 `template_image_path` | 单模板模式下仍可用于批量赋值，但最终真相落在页级字段 |
-| 项目级 `template_style` | 同上，单模板模式下作为批量赋值源，不再作为最终生效真相 |
-| 无模板流程 | 统一为"只填文字模板"的状态，不再单独存在 |
-| 图片生成时的模板引用 | 优先读取页级 `template_asset_id`，其次读页级 `template_style_text` |
+| Project level `template_image_path` | It is still available for bulk value in single template mode, but ultimately the truth falls in the page level field |
+| Project level `template_style` | Idem, as a bulk grant source under a single template model, no longer as the truth of final validity |
+| No template process | Unite As"Text Template Only". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . |
+| Template Reference for Picture Generation | Read Page Level First `template_asset_id`，Second Page Level `template_style_text` |
 
 ---
 
-## 14. 已决事项（2026-06-22）
+## 14. Matters decided（2026-06-22）
 
-> 原 PRD 此处列了 6 项未决事项。本次评审已逐项决策并落定。每项的写法是"候选方案 → 选择 → 理由（含不选其他候选的原因）"。
+> Original PRD It’s here. 6 This review has been decided and settled on a case-by-case basis."Candidates → Selection → Reasons (including reasons for not choosing other candidates)）"。
 
-### 决策 1 — TemplateSetupPage 是否必经
+### Decision-making 1 — TemplateSetupPage Is it necessary?
 
-**候选方案：**
-- A) 单模板和多模板都必经
-- B) 多模板必经，单模板完全跳过（不渲染、不路由）
-- C) 多模板必经，单模板展示简化版（只展示模板预览作为确认页）
-- D) 单模板和多模板都可选（全部都靠页面卡片入口完成）
+**Candidates：**
+- A) Single and multiple templates must pass.
+- B) Multiple templates must pass, single templates must skip completely (no rendering, no route)）
+- C) Multiple templates must be passed, with a single template showing a simplified version (only a preview of the template as a confirmation page)）
+- D) Both single and multiple templates are available (all done on page card entrances)）
 
-**选择：B**
+**Selection：B**
 
-**理由：**
-- 选 B：`feat/per-page-template` 分支 Home 已落地"单/多模式按钮"，单模板模式的模板已在 Home 的 `TemplateSelector` 一次选完批量赋值，setup 页对单模板用户没有任何操作目标（模板库管理、自动匹配、逐页修正都是多模板独占）；多模板没有 setup 页则项目模板库无处管理。配合决策 7 的"全阶段双向切换"，单模板用户切到多模板时会自动进入 TemplateSetupPage 路由，无需重新创建项目。
-- 不选 A：让单模板用户冗余跳一页，UX 倒退，且强制把"管理模板库"概念塞给所有用户。
-- 不选 C：详见决策 6——简化版的维护和测试成本与功能版同级，价值不抵成本。
-- 不选 D：多模板用户找不到模板库管理入口，自动匹配、批量上传等批量操作无处可放。
-
----
-
-### 决策 2 — 模板解析失败降级策略
-
-**候选方案：**
-- A) 解析失败的模板完全不可用（从模板库移除或不显示）
-- B) 解析失败的模板可手动选择并用于生成，但不进自动匹配候选池；UI 标识失败状态，提供重新解析按钮
-- C) 解析失败也无差别参与所有功能（包括自动匹配），靠 fallback 文本兜底
-- D) 解析失败的模板进入"待用户手动补全解析"模式，用户必须填完才能用
-
-**选择：B**
-
-**理由：**
-- 选 B：模板的核心价值是"图片本体 + 用户标记"，解析 JSON 只服务自动匹配这一个下游；现有 `generate_json()` 已有 3 次重试，真实失败概率低，但 AI 短暂故障被放大成"模板不可用"是体验灾难；"可手动用，不进自动匹配"是最小损伤。
-- 不选 A：惩罚用户而不是 AI；手动选择本不依赖解析。
-- 不选 C：自动匹配若用未解析模板等于乱猜，误导更糟。
-- 不选 D：把 AI 失败转嫁为用户必填项，用户不一定有能力或意愿填 9 字段 schema。
+**Rationale：**
+- Select B：`feat/per-page-template` Branch Home Landed"Single/Multi-Model Button"，Templates for single template mode are already available Home It’s... `TemplateSelector` Select a batch value at a time，setup The page does not have any operational targets for single template users (team library management, automatic matching, page-by-page amendments); multiple templates do not exist setup The project template library is not managed anywhere. 7 It’s..."Full-stage two-way switch"，A single template automatically enters when users cut multiple templates TemplateSetupPage Route, no need to recreate project。
+- No choice. A：Make single template user redundant to skip one page，UX Retrogression, forced."Manage Template Library"The concept is attached to all users.。
+- No choice. C：For more details on decision-making 6——The maintenance and testing costs of the simplified version are the same as those of the functional version and are not cost-effective。
+- No choice. D：Multiple template users could not find a template library management portal and no batch operation such as auto-matching, batch uploading, etc. was available.。
 
 ---
 
-### 决策 3 — PDF 拆页实现
+### Decision-making 2 — Template parsing failed downgrade policy
 
-**候选方案：**
-- A) MVP 不做 PDF 拆页（只支持单图上传）；v2 再补
-- B) MVP 包含 PDF 拆页，自建 `backend/services/pdf_image_service.py`，用 PyMuPDF (`fitz`) 渲染每页 PNG
-- C) MVP 包含 PDF 拆页，复用 `backend/services/file_parser_service.py` 现有 MinerU 链路
-- D) MVP 包含 PDF 拆页，前端用 PDF.js 拆页后逐张上传（后端零改动）
+**Candidates：**
+- A) The template for parsing failed is completely unavailable (removed or not shown from the template library)）
+- B) Parsing failed templates can be manually selected and used to generate, but not automatically matching candidate pools；UI ID failed to provide a recyclable button
+- C) Neither does the parse fail to participate in all functions without distinction (including automatic matching). fallback Text Bottom
+- D) Parsing failed template entry"Manually complete resolution to the user"Mode, user has to fill in to use
 
-**选择：B**
+**Selection：B**
 
-**理由：**
-- 选 B：依赖已就位——`PyMuPDF>=1.24.0`（`backend/pyproject.toml:39`）、`PyPDF2>=3.0.0`（L38）都在；`backend/controllers/project_controller.py` 里已有 `fitz.open() + page.get_pixmap()` 的拆页参考代码；`task_manager.py` 的 `ResourceLimiter` + `_commit_with_retry` + 异步任务框架可直接套用，工程量约 8-10h；PDF 是品牌手册、风格 deck 的高频输入格式，推迟会让"项目模板库"在 MVP 沦为玩具。
-- 不选 A：依赖和参考代码现成，推迟省不了多少工程量，反而让 MVP 价值大幅缩水。
-- 不选 C：`file_parser_service.py` 走 MinerU 提取**内容**（返回 Markdown + 内嵌图），不渲染页面图；职责错位，且引入了不必要的外部 API 依赖和网络延迟。
-- 不选 D：前端 PDF.js 在大文件时性能不佳；高 DPI 渲染消耗浏览器内存；切到后端后还要再做"批量上传"调度，反而更复杂。
-
-**实现轮廓（留给工程 spec 细化）：**
-- 新建 `backend/services/pdf_image_service.py`：`pdf_to_page_images(pdf_path, output_dir, dpi=150) -> List[str]`
-- `task_manager.py` 新增 `process_pdf_to_template_images_task`，复用 `image_resource_limiter`
-- `template_controller.py` 新增 `POST /api/projects/:projectId/template-assets/upload-pdf`，返回 task_id 给前端轮询
-- 防御：页数上限 50，DPI 默认 150，渲染失败单页跳过不阻塞整体
+**Rationale：**
+- Select B：The core value of the template is"Picture Body + User Tags"，Parsing JSON Service only automatically matches this downstream; existing `generate_json()` Existing 3 We try again, and the real chance of failure is low, but... AI Short-term failure is amplified."Template not available"It’s the experience of disaster.；"Handy, no automatic match."It’s the smallest damage.。
+- No choice. A：Punishing users instead of AI；Manual selection does not depend on resolution。
+- No choice. C：Auto-matching is more misleading if you use unsolved templates.。
+- No choice. D：Take it. AI The failure to convert to a user does not necessarily require the user ’ s ability or willingness to fill in 9 Field schema。
 
 ---
 
-### 决策 4 — 模板解析 prompt 设计
+### Decision-making 3 — PDF Split Pages Achieved
 
-**候选方案：**
-- A) 沿用 `generate_json()` 模式——few-shot + markdown JSON 块 + 3 次软重试
-- B) Anthropic provider 走 `tool_use` 强制 schema，OpenAI/Gemini 沿用 A
-- C) 全 provider 引入结构化输出（OpenAI `response_format=json_schema`、Gemini `response_schema`、Anthropic `tool_use`）
-- D) 纯描述无 few-shot，完全靠 prompt 文字约束
+**Candidates：**
+- A) MVP Don’t do it. PDF Split Pages (only single chart uploads are supported）；v2 I’ll make it up.
+- B) MVP Organisation PDF Split pages, build yourself `backend/services/pdf_image_service.py`，Use it. PyMuPDF (`fitz`) Render Every Page PNG
+- C) MVP Organisation PDF Split Pages, Reuse `backend/services/file_parser_service.py` Existing MinerU Chain
+- D) MVP Organisation PDF Open page, frontend PDF.js Page-by-page upload (back-end zero change)）
 
-**选择：A**
+**Selection：B**
 
-**理由：**
-- 选 A：`prompts.py` 现有 7 处 JSON 输出 prompt（L280/L413/L680/L815 等）走的都是同一套模式，生产已验证；模板解析 9 字段 schema 比 outline、descriptions 简单；沿用同套基础设施意味着错误处理、重试、日志全复用，工程量最小。
-- 不选 B：provider 之间行为分叉，测试矩阵翻倍，单 provider 的稳定性收益不显著。
-- 不选 C：OpenAI/Gemini 当前 provider 实现都不支持原生 schema，改造工作量大，跨 provider 行为对齐难。
-- 不选 D：9 字段中 `text_regions[]`、`image_regions[]` 这种结构化数组不给样本难稳定输出。
+**Rationale：**
+- Select B：Reliance in position——`PyMuPDF>=1.24.0`（`backend/pyproject.toml:39`）、`PyPDF2>=3.0.0`（L38）It’s all there.；`backend/controllers/project_controller.py` It’s already in there. `fitz.open() + page.get_pixmap()` . . . . . .；`task_manager.py` It’s... `ResourceLimiter` + `_commit_with_retry` + The staggered mission framework can be applied directly, with approximately the size of the project 8-10h；PDF It’s brandbooks, style. deck HF input format, delay will cause"Project Template Library"Yes. MVP To be a toy.。
+- No choice. A：Reliance and reference codes are available. Delays will save less than much of the work. MVP It’s worth a lot of money.。
+- No choice. C：`file_parser_service.py` Come on. MinerU Ripping**Contents**（Back Markdown + Embedded ), do not render page graphs; misstepped duties and introduced unnecessary externals API Dependence and network delay。
+- No choice. D：Frontend PDF.js Poor performance in large documents; high DPI Render consumer browser memory; do it after cutting to the back end"Batch Upload"Dispatch, it’s more complicated.。
 
-**实现要点：**
-- prompt 中嵌 2-3 个真实模板的解析样本作 few-shot
-- 写 `get_template_analysis_prompt()` 到 `prompts.py`
-- 在 `ai_service.py` 加 `analyze_template(image_path)`，组合 `generate_with_image` + `generate_json`
-
----
-
-### 决策 5 — 自动匹配 prompt 设计
-
-**候选方案：**
-- A) 一次性全量调用，不做防御
-- B) 一次性全量调用 + 阈值防御：页数 ≤ 50 且模板 ≤ 20 时一次调用，超阈值按 30 页分批
-- C) 始终分批（每批 30 页），牺牲全局视角换稳定性
-- D) 模板侧 Embedding 预过滤（每页先选 Top-5 模板，再 LLM 精排）
-- E) 逐页独立调用（N 页 = N 次调用）
-
-**选择：B**
-
-**理由：**
-- 选 B：实测口径 50 页 + 10 模板 ≈ 6K input tokens，主流模型（Gemini 32K、Claude 200K、GPT-4 128K）余量充足；`generate_descriptions_stream`（`prompts.py:615-677`）已经验证过同等量级的全量打包；阈值防御挡住极端项目，工程上只需在 `ai_service.py` 里加一段分支逻辑。
-- 不选 A：无防御对超大项目（>50 页）token 截断风险高，失败时排查成本高。
-- 不选 C：常态项目都是 ≤ 50 页，分批让每次匹配丢失全局上下文（模板分布的均衡性、章节的视觉节奏感），匹配质量下降。
-- 不选 D：Embedding 是另一套基础设施（向量库 / 向量服务 / Embedding 模型），MVP 不开；且模板数 ≤ 20 时 Top-5 预过滤的精度收益小于"丢失全局视角"的损失。
-- 不选 E：N 次调用成本和延迟都不可接受，且失去"跨页协调"能力（同模板不要连续 5 页都用）。
-
-**实现要点：**
-- 写 `get_template_auto_match_prompt(templates, page_summaries)` 到 `prompts.py`
-- 在 `ai_service.py` 加 `auto_match_templates(project_id)`
-- 输入字段裁剪：每页只传 title + 100 字描述摘要 + 内容密度；模板只传 `analysis_json` 关键字段 + `user_label`，`notes` 截断到 200 字
-- 分批触发条件：页数 > 50 或模板 > 20，按 30 页一批
+**Achieving contours (for engineering) spec Detailed）：**
+- New `backend/services/pdf_image_service.py`：`pdf_to_page_images(pdf_path, output_dir, dpi=150) -> List[str]`
+- `task_manager.py` Add `process_pdf_to_template_images_task`，Reuse `image_resource_limiter`
+- `template_controller.py` Add `POST /api/projects/:projectId/template-assets/upload-pdf`，Back task_id Query to front wheel
+- Defence： maximum number of pages 50，DPI Default 150，Rendering failed single page skips unblocked whole
 
 ---
 
-### 决策 6 — 单模板模式下 TemplateSetupPage 简化形态
+### Decision-making 4 — Template Parsing prompt Design
 
-**候选方案：**
-- A) 完全不渲染 TemplateSetupPage，路由直接跳过（单模板：Home → OutlineEditor）
-- B) 渲染简化版（只展示已选模板预览 + "下一步"按钮）
-- C) 渲染完整版（模板库管理也展示，但所有页面统一锁定到同一模板）
+**Candidates：**
+- A) Continue `generate_json()` Mode——few-shot + markdown JSON Blocks + 3 Try again softly
+- B) Anthropic provider Come on. `tool_use` Force schema，OpenAI/Gemini Continue A
+- C) All provider Introduction of structured output（OpenAI `response_format=json_schema`、Gemini `response_schema`、Anthropic `tool_use`）
+- D) Pure description None few-shot，All of it. prompt Text Constraint
 
-**选择：A**
+**Selection：A**
 
-**理由：**
-- 选 A：与决策 1 配套——单模板模式的模板在 Home `TemplateSelector` 已选定；setup 页对单模板用户没有任何操作目标；`feat/per-page-template` 分支 Home 已具备 `templateMode` 分支判断条件，实现成本几乎为零。
-- 不选 B：简化版页面是噪音，拖慢"创建项目→编辑大纲"主路径；且简化版/完整版的视觉差异容易让用户误以为"我点错了模式"。
-- 不选 C：单模板模式的语义就是"一次选定，批量赋值"，不应让用户看到"模板库"概念；一旦让用户看见模板库，就会期望多模板能力，导致模式语义混乱。
+**Rationale：**
+- Select A：`prompts.py` Existing 7 Locations JSON Output prompt（L280/L413/L680/L815 It’s all in the same pattern. Production has been verified; templates are analyzed. 9 Field schema That’s right. outline、descriptions Simple; following the same infrastructure means error processing, retrying, re-use of logs, with the smallest amount of work。
+- No choice. B：provider Behavior fork, test matrix double, single. provider Not much of a steady return.。
+- No choice. C：OpenAI/Gemini Current provider It doesn’t support the original. schema，Retrofitting work loads, over provider Behavior is difficult.。
+- No choice. D：9 Fields `text_regions[]`、`image_regions[]` This structified array doesn’t give the sample a steady output.。
 
-**路由实现：**
-- Home `initializeProject` 后，`templateMode === 'multi'` 才 navigate 到 `/project/:projectId/template-setup`
-- 否则直接 navigate 到 `/project/:projectId/outline`
+**Elements of achievement：**
+- prompt Embedded 2-3 A real template for the resolution sample. few-shot
+- Write `get_template_analysis_prompt()` Present. `prompts.py`
+- Yes. `ai_service.py` Add `analyze_template(image_path)`，Group `generate_with_image` + `generate_json`
 
 ---
 
-> **决策日期：2026-06-22**　决策依据见 `~/.claude/plans/prd-unified-biscuit.md`。第 3.2 节关于"模式切换规则"的修订对应决策 7。
+### Decision-making 5 — Automatic Matching prompt Design
+
+**Candidates：**
+- A) Full one-time call, no defense.
+- B) One-time full call + Threshold defence： pages ≤ 50 and templates ≤ 20 , which is called once in a while, the threshold is exceeded. 30 Page in Series
+- C) Always in batches (each batch) 30 ”For stability at the expense of the global perspective”
+- D) Template Side Embedding Prefilter (select per page first) Top-5 Templates, again LLM Platoon）
+- E) Page-by-page independent call（N Page = N Recall）
+
+**Selection：B**
+
+**Rationale：**
+- Select B：Actual calibration 50 Page + 10 Template ≈ 6K input tokens，Mainstream model（Gemini 32K、Claude 200K、GPT-4 128K）There’s plenty left.；`generate_descriptions_stream`（`prompts.py:615-677`）Full package of the equivalent level has been verified; threshold defence has blocked the extreme project, and only works on `ai_service.py` Riga’s branch logic.。
+- No choice. A：Undefensible-to-extensive project.（>50 Page）token High cut-off risk and high cost of checking if failed。
+- No choice. C：It’s normal. ≤ 50 Pages, batches allowing each match to lose the global context (the balance of the template distribution, the visual rhythm of the chapter) and the quality of the match to decline。
+- No choice. D：Embedding It’s another infrastructure. / Vector services / Embedding Model），MVP Do not open; and templates ≤ 20 Time Top-5 Pre-filtered accuracy returns less than"Loss of global perspective"Losses。
+- No choice. E：N Recall costs and delays are unacceptable and are lost"Cross-page coordination"Capability (not continuous with template) 5 It’s all on the page.）。
+
+**Elements of achievement：**
+- Write `get_template_auto_match_prompt(templates, page_summaries)` Present. `prompts.py`
+- Yes. `ai_service.py` Add `auto_match_templates(project_id)`
+- Enter field cropping： pass only every page title + 100 Word Description Summary + content density; templates are passed only `analysis_json` Key fields + `user_label`，`notes` Intercept to 200 Word
+- Batch trigger： Pages > 50 or Templates > 20，Press 30 Pages
+
+---
+
+### Decision-making 6 — Single Template Mode TemplateSetupPage Simplified form
+
+**Candidates：**
+- A) Not at all. TemplateSetupPage，Pass directly by route (single template)：Home → OutlineEditor）
+- B) Render simplified version (shows the selected template preview only) + "Next"button）
+- C) Render full version (the template library management is also displayed, but all pages are locked to the same template）
+
+**Selection：A**
+
+**Rationale：**
+- Select A：and decision-making 1 Accompany——The template for single template mode is in Home `TemplateSelector` Selected；setup The page-to-sole template users have no operational objective；`feat/per-page-template` Branch Home Existing `templateMode` Discrepancies, at almost zero cost。
+- No choice. B：Simplicity page is noise. Slow down."Create Item→Edit Outline"main path; and simplified version/The full version of visual differences can easily be misconstrued by users."I put it in the wrong way."。
+- No choice. C：The semantic of single template mode is"One selection, batch value"，Users should not see"Template Library"Concept; when the template library is seen by the user, multiple template capabilities are expected, leading to confusion in the semantics of the pattern。
+
+**Routes achieved：**
+- Home `initializeProject` Back，`templateMode === 'multi'` That’s right. navigate Present. `/project/:projectId/template-setup`
+- Otherwise, it’s straight. navigate Present. `/project/:projectId/outline`
+
+---
+
+> **Decision-making date：2026-06-22**　Decision-making bases are available at： `~/.claude/plans/prd-unified-biscuit.md`。Page 3.2 Section on"Mode Toggle Rules"Revisions to decision-making 7。

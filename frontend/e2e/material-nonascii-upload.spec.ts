@@ -10,7 +10,7 @@ test.describe('Material upload filenames (#426)', () => {
     const uploadResp = await request.post('/api/materials/upload', {
       multipart: {
         file: {
-          name: '正文.png',
+          name: 'Text.png',
           mimeType: 'image/png',
           buffer: PNG_1X1_RED,
         },
@@ -23,7 +23,7 @@ test.describe('Material upload filenames (#426)', () => {
     }
 
     const material = (await uploadResp.json()).data
-    expect(material.original_filename).toBe('正文.png')
+    expect(material.original_filename).toBe('Text.png')
     expect(material.filename).toMatch(/^[0-9a-f]{32}\.png$/)
     expect(material.relative_path).toBe(`materials/${material.filename}`)
     expect(material.url).toBe(`/files/materials/${material.filename}`)

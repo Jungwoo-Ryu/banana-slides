@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 
-/** 首页的装饰性 emoji 已换成 lucide 图标 / 直接去掉，避免不同平台字形不一致。 */
+/** Decorativeity of the First Page emoji Replaced lucide Icon / Just remove it, and avoid different platform fonts.。 */
 
 async function openHome(page: Page) {
   await page.addInitScript(() => localStorage.setItem('hasSeenHelpModal', 'true'));
@@ -9,7 +9,7 @@ async function openHome(page: Page) {
   await page.waitForTimeout(800);
 }
 
-/** 上传一个假的 pptx，只为触发本地状态，不会发网络请求 */
+/** Uploading a fake. pptx，Only to trigger a local state, no network requests will be issued. */
 async function attachFakePptx(page: Page) {
   await page.locator('input[accept=".pdf,.pptx,.ppt"]').setInputFiles({
     name: 'demo.pptx',
@@ -18,28 +18,28 @@ async function attachFakePptx(page: Page) {
   });
 }
 
-test('tagline 不再包含 🍌', async ({ page }) => {
+test('tagline Organisation 🍌', async ({ page }) => {
   await openHome(page);
   const tagline = page.getByText(/nano banana pro/).first();
   await expect(tagline).toBeVisible();
   expect(await tagline.textContent()).not.toContain('🍌');
 });
 
-test('上传 pptx 的提示 toast 不带 💡 前缀', async ({ page }) => {
+test('Upload pptx hint toast No, I don’t. 💡 Prefix', async ({ page }) => {
   await openHome(page);
-  await page.getByRole('button', { name: /PPT 翻新|PPT Renovation/ }).first().click();
+  await page.getByRole('button', { name: /PPT \u7ffb\u65b0|PPT Renovation/ }).first().click();
   await page.waitForTimeout(400);
 
   await attachFakePptx(page);
 
-  const toast = page.getByText(/建议先在本地将 PPTX 转为 PDF|recommend converting/i).first();
+  const toast = page.getByText(/\u5efa\u8bae\u5148\u5728\u672c\u5730\u5c06 PPTX \u8f6c\u4e3a PDF|recommend converting/i).first();
   await expect(toast).toBeVisible({ timeout: 10000 });
   expect(await toast.textContent()).not.toContain('💡');
 });
 
-test('已选文件的移除按钮是 lucide 图标而不是 ✕ 字符', async ({ page }) => {
+test('Remove button for selected files is lucide Icon instead of ✕ Character', async ({ page }) => {
   await openHome(page);
-  await page.getByRole('button', { name: /PPT 翻新|PPT Renovation/ }).first().click();
+  await page.getByRole('button', { name: /PPT \u7ffb\u65b0|PPT Renovation/ }).first().click();
   await page.waitForTimeout(400);
 
   await attachFakePptx(page);
@@ -47,7 +47,7 @@ test('已选文件的移除按钮是 lucide 图标而不是 ✕ 字符', async (
   const chip = page.getByText('demo.pptx').first();
   await expect(chip).toBeVisible({ timeout: 10000 });
 
-  // 移除按钮：同一容器里那个带 svg 的 button
+  // Remove button： the belt in the same container svg It’s... button
   const removeBtn = page
     .locator('button')
     .filter({ has: page.locator('svg.lucide-x') })
@@ -55,7 +55,7 @@ test('已选文件的移除按钮是 lucide 图标而不是 ✕ 字符', async (
   await expect(removeBtn).toBeVisible();
   expect(await removeBtn.textContent()).not.toContain('✕');
 
-  // 点一下应当真的能移除
+  // It should really remove it.
   await removeBtn.click();
   await expect(page.getByText('demo.pptx')).toHaveCount(0);
 });

@@ -22,7 +22,7 @@ def _write_test_image(path: Path) -> None:
 def _create_project(client) -> str:
     response = client.post(
         "/api/projects",
-        json={"creation_type": "idea", "idea_prompt": "测试自动入库"},
+        json={"creation_type": "idea", "idea_prompt": "Test AutoBase"},
     )
     data = assert_success_response(response, 201)
     return data["data"]["project_id"]
@@ -35,7 +35,7 @@ def test_associate_completed_reference_file_imports_mineru_images_to_project_mat
     source_image = upload_folder / "mineru_files" / "extract123" / "images" / "chart-abcdef.png"
     _write_test_image(source_image)
 
-    markdown = "正文\n![政策截图](/files/mineru/extract123/images/chart-abcdef.png)\n"
+    markdown = "Text\n![Policy cut-off](/files/mineru/extract123/images/chart-abcdef.png)\n"
     with app.app_context():
         reference_file = ReferenceFile(
             filename="report.pdf",
@@ -56,7 +56,7 @@ def test_associate_completed_reference_file_imports_mineru_images_to_project_mat
     data = assert_success_response(materials_response)
     materials = data["data"]["materials"]
     assert len(materials) == 1
-    assert materials[0]["caption"] == "政策截图"
+    assert materials[0]["caption"] == "Policy cut-off"
     assert materials[0]["original_filename"] == "chart-abcdef.png"
     assert materials[0]["relative_path"].startswith(f"{project_id}/materials/parsed_")
     assert materials[0]["url"].startswith(f"/files/{project_id}/materials/parsed_")
@@ -75,7 +75,7 @@ def test_associate_imports_if_parsing_completes_during_refresh(client, app, monk
     source_image = upload_folder / "mineru_files" / "race123" / "images" / "chart.png"
     _write_test_image(source_image)
 
-    markdown = "正文\n![刷新后完成](/files/mineru/race123/images/chart.png)\n"
+    markdown = "Text\n![Refresh & Finish](/files/mineru/race123/images/chart.png)\n"
     with app.app_context():
         reference_file = ReferenceFile(
             filename="race.pdf",
@@ -105,7 +105,7 @@ def test_associate_imports_if_parsing_completes_during_refresh(client, app, monk
     data = assert_success_response(client.get(f"/api/projects/{project_id}/materials"))
     materials = data["data"]["materials"]
     assert len(materials) == 1
-    assert materials[0]["caption"] == "刷新后完成"
+    assert materials[0]["caption"] == "Refresh & Finish"
 
 
 def test_associate_succeeds_if_material_import_fails(client, app, monkeypatch):
@@ -118,7 +118,7 @@ def test_associate_succeeds_if_material_import_fails(client, app, monkeypatch):
             file_size=123,
             file_type="pdf",
             parse_status="completed",
-            markdown_content="![图](/files/mineru/extract/images/missing.png)",
+            markdown_content="![Figure](/files/mineru/extract/images/missing.png)",
         )
         db.session.add(reference_file)
         db.session.commit()
@@ -149,7 +149,7 @@ def test_import_reference_markdown_images_handles_mineru_prefix_paths(client, ap
 
     imported_count = import_reference_markdown_images_to_materials(
         project_id=project_id,
-        markdown_content="![图表](/files/mineru/extract456/images/very-long-image.png)",
+        markdown_content="![Chart](/files/mineru/extract456/images/very-long-image.png)",
         upload_folder=app.config["UPLOAD_FOLDER"],
     )
     db.session.commit()
@@ -168,8 +168,8 @@ def test_import_reference_markdown_images_deduplicates_repeated_urls(client, app
     imported_count = import_reference_markdown_images_to_materials(
         project_id=project_id,
         markdown_content="\n".join([
-            "![图表](/files/mineru/extract789/images/chart.png)",
-            "![图表](/files/mineru/extract789/images/chart.png)",
+            "![Chart](/files/mineru/extract789/images/chart.png)",
+            "![Chart](/files/mineru/extract789/images/chart.png)",
         ]),
         upload_folder=app.config["UPLOAD_FOLDER"],
     )
@@ -187,7 +187,7 @@ def test_import_reference_markdown_images_deduplicates_per_project(client, app):
     upload_folder = Path(app.config["UPLOAD_FOLDER"])
     source_image = upload_folder / "mineru_files" / "extract_shared" / "images" / "chart.png"
     _write_test_image(source_image)
-    markdown = "![共享图](/files/mineru/extract_shared/images/chart.png)"
+    markdown = "![Share Diagram](/files/mineru/extract_shared/images/chart.png)"
 
     first_count = import_reference_markdown_images_to_materials(
         project_id=first_project_id,
@@ -225,7 +225,7 @@ def test_import_reference_markdown_images_handles_parentheses_in_urls(client, ap
 
     imported_count = import_reference_markdown_images_to_materials(
         project_id=project_id,
-        markdown_content="![括号图](/files/mineru/extract_parens/images/chart (1).png)",
+        markdown_content="![Brackets](/files/mineru/extract_parens/images/chart (1).png)",
         upload_folder=app.config["UPLOAD_FOLDER"],
     )
     db.session.commit()
@@ -233,7 +233,7 @@ def test_import_reference_markdown_images_handles_parentheses_in_urls(client, ap
     assert imported_count == 1
     data = assert_success_response(client.get(f"/api/projects/{project_id}/materials"))
     material = data["data"]["materials"][0]
-    assert material["caption"] == "括号图"
+    assert material["caption"] == "Brackets"
     assert material["original_filename"] == "chart (1).png"
 
 
@@ -261,11 +261,11 @@ def test_import_reference_markdown_images_decodes_urls_and_truncates_caption(cli
     project_id = _create_project(client)
 
     upload_folder = Path(app.config["UPLOAD_FOLDER"])
-    source_image = upload_folder / "mineru_files" / "extract_cn" / "images" / "图 表.png"
+    source_image = upload_folder / "mineru_files" / "extract_cn" / "images" / "Figure.png"
     _write_test_image(source_image)
 
-    encoded_url = quote("/files/mineru/extract_cn/images/图 表.png", safe="/")
-    long_caption = "图" * 600
+    encoded_url = quote("/files/mineru/extract_cn/images/Figure.png", safe="/")
+    long_caption = "Figure" * 600
     imported_count = import_reference_markdown_images_to_materials(
         project_id=project_id,
         markdown_content=f"![{long_caption}]({encoded_url})",
@@ -276,8 +276,8 @@ def test_import_reference_markdown_images_decodes_urls_and_truncates_caption(cli
     assert imported_count == 1
     data = assert_success_response(client.get(f"/api/projects/{project_id}/materials"))
     material = data["data"]["materials"][0]
-    assert material["original_filename"] == "图 表.png"
-    assert material["caption"] == "图" * 500
+    assert material["original_filename"] == "Figure.png"
+    assert material["caption"] == "Figure" * 500
 
 
 def test_import_reference_markdown_images_strips_query_and_fragment(client, app):
@@ -289,7 +289,7 @@ def test_import_reference_markdown_images_strips_query_and_fragment(client, app)
 
     imported_count = import_reference_markdown_images_to_materials(
         project_id=project_id,
-        markdown_content="![图表](/files/mineru/extract_query/images/chart.png?v=1#page)",
+        markdown_content="![Chart](/files/mineru/extract_query/images/chart.png?v=1#page)",
         upload_folder=app.config["UPLOAD_FOLDER"],
     )
     db.session.commit()
@@ -301,8 +301,8 @@ def test_import_reference_markdown_images_strips_query_and_fragment(client, app)
     duplicate_count = import_reference_markdown_images_to_materials(
         project_id=project_id,
         markdown_content="\n".join([
-            "![图表](/files/mineru/extract_query/images/chart.png?v=2)",
-            "![图表](/files/mineru/extract_query/images/chart.png#another-page)",
+            "![Chart](/files/mineru/extract_query/images/chart.png?v=2)",
+            "![Chart](/files/mineru/extract_query/images/chart.png#another-page)",
         ]),
         upload_folder=app.config["UPLOAD_FOLDER"],
     )

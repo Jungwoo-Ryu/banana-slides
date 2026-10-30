@@ -8,18 +8,18 @@ import { MarkdownTextarea, type MarkdownTextareaRef } from '@/components/shared/
 import { useDescriptionGeneratingState } from '@/hooks/useGeneratingState';
 import type { Page, DescriptionContent, Material } from '@/types';
 
-// DescriptionCard 组件自包含翻译
+// DescriptionCard Component contains translation
 const descriptionCardI18n = {
   zh: {
     descriptionCard: {
-      page: "第 {{num}} 页", regenerate: "重新生成",
-      descriptionTitle: "编辑页面描述", description: "页面文字",
-      noDescription: "还没有生成描述",
-      uploadingImage: "正在上传图片...",
-      descriptionPlaceholder: "只写会渲染到页面上的文字（标题、要点、数据等），支持粘贴图片；配图与排版要求请写到下方对应字段",
-      coverPage: "封面",
-      coverPageTooltip: "第一页为封面页，默认保持简洁风格",
-      notInImagePrompt: "不影响图片生成"
+      page: "Page {{num}}", regenerate: "Regenerate",
+      descriptionTitle: "Edit Descriptions", description: "Page Text",
+      noDescription: "No description generated yet",
+      uploadingImage: "Uploading image...",
+      descriptionPlaceholder: "Only the text to be rendered on the slide (title, points, data); put visuals and layout requirements in the fields below. Supports pasting images",
+      coverPage: "Cover",
+      coverPageTooltip: "This is the cover page, default to keep simple style",
+      notInImagePrompt: "Not used in image generation"
     }
   },
   en: {
@@ -48,7 +48,7 @@ export interface DescriptionCardProps {
   isAiRefining?: boolean;
 }
 
-// 从 description_content 提取文本内容（提取到组件外部供 memo 比较器使用）
+// From description_content Extract text content (extract to external component for memo Comparer Use）
 const getDescriptionText = (descContent: DescriptionContent | undefined): string => {
   if (!descContent) return '';
   if ('text' in descContent) {
@@ -59,16 +59,16 @@ const getDescriptionText = (descContent: DescriptionContent | undefined): string
   return '';
 };
 
-// 提取 extra_fields，向后兼容 layout_suggestion
+// Ripping extra_fields，Backward compatibility layout_suggestion
 const getExtraFields = (descContent: DescriptionContent | undefined): Record<string, string> => {
   if (!descContent) return {};
   if (descContent.extra_fields) return descContent.extra_fields;
-  // 向后兼容：旧数据只有 layout_suggestion
-  if (descContent.layout_suggestion) return { '排版建议': descContent.layout_suggestion };
+  // Backward compatibility： old data only layout_suggestion
+  if (descContent.layout_suggestion) return { 'Layout suggestions': descContent.layout_suggestion };
   return {};
 };
 
-// 用于 memo 比较的序列化 key
+// For memo Sequenced comparison key
 const getExtraFieldsKey = (descContent: DescriptionContent | undefined): string => {
   const fields = getExtraFields(descContent);
   return JSON.stringify(fields);
@@ -128,11 +128,11 @@ export const DescriptionCard: React.FC<DescriptionCardProps> = React.memo(({
     activeInsertAtCursor.current = (md: string) => extraFieldRefs.current[fieldName]?.insertAtCursor(md);
   }, []);
 
-  // 通过 page.status 驱动骨架屏，与图片生成的 GENERATING 状态互不干扰
+  // Pass. page.status Drive the skeleton screen, with pictures generated GENERATING We don’t interfere with each other.
   const generating = useDescriptionGeneratingState(page, isAiRefining);
 
   const handleEdit = () => {
-    // 在打开编辑对话框时，从当前的 page 获取最新值
+    // Opens the edit dialog from the current page Get the latest value
     const currentText = getDescriptionText(page.description_content);
     const currentExtraFields = getExtraFields(page.description_content);
     setEditContent(currentText);
@@ -141,7 +141,7 @@ export const DescriptionCard: React.FC<DescriptionCardProps> = React.memo(({
   };
 
   const handleSave = () => {
-    // 保存时包含 text 和 extra_fields
+    // Include while saving text and extra_fields
     const filteredFields: Record<string, string> = {};
     for (const [key, value] of Object.entries(editExtraFields)) {
       if (value.trim()) {
@@ -157,13 +157,13 @@ export const DescriptionCard: React.FC<DescriptionCardProps> = React.memo(({
     setIsEditing(false);
   };
 
-  // 合并已有和配置中的字段名（按配置顺序，附加已有但不在配置中的）
+  // Merges existing field names and configurations (in order of configuration, attach existing ones but not in configuration)）
   const allFieldNames = [...new Set([...extraFieldNames, ...Object.keys(extraFields)])];
 
   return (
     <>
       <Card className="p-0 overflow-hidden flex flex-col">
-        {/* 标题栏 */}
+        {/* Title Bar */}
         <div className="bg-banana-50 dark:bg-background-hover px-4 py-3 border-b border-gray-100 dark:border-border-primary">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -186,7 +186,7 @@ export const DescriptionCard: React.FC<DescriptionCardProps> = React.memo(({
           </div>
         </div>
 
-        {/* 内容 */}
+        {/* Contents */}
         <div className="p-4 flex-1 max-h-96 overflow-y-auto desc-card-scroll" data-testid="description-card-content">
           {generating ? (
             <div className="space-y-2">
@@ -203,10 +203,10 @@ export const DescriptionCard: React.FC<DescriptionCardProps> = React.memo(({
               {allFieldNames.map(name => {
                 const value = extraFields[name];
                 if (!value) return null;
-                // 新字段 + 旧字段名（存量数据不迁移，仍需正常展示）
+                // New Field + Old field name (stock data are not migrated and still need to be displayed properly）
                 const FIELD_ICONS: Record<string, typeof Tag> = {
-                  '配图与素材': Image, '版式与重点': Layout, '演讲者备注': MessageSquare,
-                  '视觉元素': Image, '视觉焦点': Focus, '排版布局': Layout, '排版建议': Layout,
+                  'Visual assets': Image, 'Layout and emphasis': Layout, 'Speaker notes': MessageSquare,
+                  'Visual elements': Image, 'Visual focus': Focus, 'Page layout': Layout, 'Layout suggestions': Layout,
                 };
                 const FieldIcon = FIELD_ICONS[name] || Tag;
                 const notInImagePrompt = imagePromptFields && !imagePromptFields.includes(name);
@@ -237,7 +237,7 @@ export const DescriptionCard: React.FC<DescriptionCardProps> = React.memo(({
           )}
         </div>
 
-        {/* 操作栏 */}
+        {/* Operations Bar */}
         <div className="border-t border-gray-100 dark:border-border-primary px-4 py-3 flex justify-end gap-2 mt-auto">
           <Button
             variant="ghost"
@@ -260,7 +260,7 @@ export const DescriptionCard: React.FC<DescriptionCardProps> = React.memo(({
         </div>
       </Card>
 
-      {/* 编辑对话框 */}
+      {/* Edit Dialog */}
       <Modal
         isOpen={isEditing}
         onClose={() => setIsEditing(false)}
@@ -280,7 +280,7 @@ export const DescriptionCard: React.FC<DescriptionCardProps> = React.memo(({
             rows={6}
             placeholder={t('descriptionCard.descriptionPlaceholder')}
           />
-          {/* 额外字段编辑 */}
+          {/* Extra field editing */}
           {allFieldNames.map(name => (
             <MarkdownTextarea
               key={name}

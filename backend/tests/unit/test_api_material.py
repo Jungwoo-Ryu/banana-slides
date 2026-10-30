@@ -37,7 +37,7 @@ class TestMaterialUpload:
     @patch('controllers.material_controller._generate_image_caption')
     def test_upload_material_with_caption(self, mock_caption, client):
         """Upload with generate_caption=true should include AI caption"""
-        mock_caption.return_value = '一张红色方块图片'
+        mock_caption.return_value = 'A red square picture.'
         img_bytes = _create_test_image()
         response = client.post(
             '/api/materials/upload?generate_caption=true',
@@ -45,7 +45,7 @@ class TestMaterialUpload:
             content_type='multipart/form-data'
         )
         data = assert_success_response(response, 201)
-        assert data['data']['caption'] == '一张红色方块图片'
+        assert data['data']['caption'] == 'A red square picture.'
         assert 'url' in data['data']
         mock_caption.assert_called_once()
 
@@ -90,13 +90,13 @@ class TestMaterialUpload:
         img_bytes = _create_test_image()
         response = client.post(
             '/api/materials/upload',
-            data={'file': (img_bytes, '正文.png')},
+            data={'file': (img_bytes, 'Text.png')},
             content_type='multipart/form-data'
         )
 
         data = assert_success_response(response, 201)
         material = data['data']
-        assert material['original_filename'] == '正文.png'
+        assert material['original_filename'] == 'Text.png'
         assert re.fullmatch(r'[0-9a-f]{32}\.png', material['filename'])
         assert material['relative_path'] == f"materials/{material['filename']}"
         assert material['url'] == f"/files/materials/{material['filename']}"
@@ -126,13 +126,13 @@ class TestMaterialUpload:
 
         response = client.post(
             '/api/materials/upload',
-            data={'file': (svg_bytes, '图标.svg')},
+            data={'file': (svg_bytes, 'Icon.svg')},
             content_type='multipart/form-data'
         )
 
         data = assert_success_response(response, 201)
         material = data['data']
-        assert material['original_filename'] == '图标.svg'
+        assert material['original_filename'] == 'Icon.svg'
         assert material['filename'].endswith('.svg')
 
     def test_upload_material_text_mentioning_svg_is_rejected(self, client):
@@ -229,7 +229,7 @@ class TestGenerateImageCaption:
             mock_client = MagicMock()
             mock_client_class.return_value = mock_client
             mock_result = MagicMock()
-            mock_result.text = '  一张测试图片  '
+            mock_result.text = '  A test picture  '
             mock_client.models.generate_content.return_value = mock_result
 
             from controllers.material_controller import _generate_image_caption
@@ -240,7 +240,7 @@ class TestGenerateImageCaption:
                 tmp_path = f.name
             try:
                 result = _generate_image_caption(tmp_path)
-                assert result == '一张测试图片'
+                assert result == 'A test picture'
                 mock_client.models.generate_content.assert_called_once()
             finally:
                 import os

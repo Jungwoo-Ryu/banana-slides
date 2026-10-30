@@ -7,8 +7,8 @@ test.describe('History title editing', () => {
       {
         id: projectId,
         project_id: projectId,
-        project_title: '显式项目标题',
-        idea_prompt: '旧项目标题',
+        project_title: 'Visible item title',
+        idea_prompt: 'Old item title',
         status: 'DRAFT',
         created_at: '2026-05-05T10:00:00.000Z',
         updated_at: '2026-05-05T10:00:00.000Z',
@@ -18,7 +18,7 @@ test.describe('History title editing', () => {
             page_id: 'page-1',
             order_index: 0,
             status: 'DRAFT',
-            outline_content: { title: 'Slide 01 - 封面', points: [] },
+            outline_content: { title: 'Slide 01 - Cover', points: [] },
           },
         ],
       },
@@ -80,9 +80,9 @@ test.describe('History title editing', () => {
     })
 
     await page.goto('/history')
-    await expect(page.getByRole('heading', { name: '显式项目标题', exact: true })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Visible item title', exact: true })).toBeVisible()
 
-    await page.getByRole('heading', { name: '显式项目标题', exact: true }).click()
+    await page.getByRole('heading', { name: 'Visible item title', exact: true }).click()
     const input = page.locator('input[type="text"]').first()
     await expect(input).toBeVisible()
     await expect(input).toHaveCSS('background-color', 'rgb(19, 19, 26)')
@@ -104,10 +104,10 @@ test.describe('History title editing', () => {
       })
     })
 
-    await input.fill('新的封面标题')
+    await input.fill('New Cover Title')
     await input.press('Enter')
 
-    await expect(page.getByRole('heading', { name: '新的封面标题', exact: true })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'New Cover Title', exact: true })).toBeVisible()
   })
 
   test('integration: editing untitled project title persists after reload', async ({ page }) => {
@@ -120,7 +120,7 @@ test.describe('History title editing', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         creation_type: 'idea',
-        idea_prompt: '未命名项目',
+        idea_prompt: 'Unnamed Item',
       }),
     })
     const created = await createResponse.json()
@@ -131,16 +131,16 @@ test.describe('History title editing', () => {
       await page.goto('/history')
       await page.waitForLoadState('networkidle')
 
-      await page.getByRole('heading', { name: '未命名项目', exact: true }).click()
+      await page.getByRole('heading', { name: 'Unnamed Item', exact: true }).click()
       const input = page.locator('input[type="text"]').first()
-      await input.fill('真实持久化后的标题')
+      await input.fill('Title after Real Endurance')
       await input.press('Enter')
 
-      await expect(page.getByRole('heading', { name: '真实持久化后的标题', exact: true })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Title after Real Endurance', exact: true })).toBeVisible()
 
       await page.reload()
       await page.waitForLoadState('networkidle')
-      await expect(page.getByRole('heading', { name: '真实持久化后的标题', exact: true })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Title after Real Endurance', exact: true })).toBeVisible()
     } finally {
       await fetch(`${backendUrl}/api/projects/${projectId}`, { method: 'DELETE' })
     }

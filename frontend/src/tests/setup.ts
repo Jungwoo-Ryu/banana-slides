@@ -1,19 +1,19 @@
 /**
- * Vitest 测试环境设置文件
- * 
- * 配置测试所需的全局设置和模拟
+ * Vitest Test Environment Settings File
+ *
+ * Configure global settings and simulations for testing
  */
 
 import '@testing-library/jest-dom'
 import { afterEach, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 
-// 每个测试后清理
+// Clean up after every test.
 afterEach(() => {
   cleanup()
 })
 
-// Mock matchMedia（某些组件需要）
+// Mock matchMedia（Some components are required）
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation(query => ({
@@ -45,7 +45,7 @@ global.IntersectionObserver = vi.fn().mockImplementation(() => ({
 // Mock scrollTo
 window.scrollTo = vi.fn()
 
-// Mock fetch (可以在具体测试中覆盖)
+// Mock fetch (You can overwrite in specific tests)
 global.fetch = vi.fn()
 
 // Mock localStorage/sessionStorage for utility tests

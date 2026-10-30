@@ -1,10 +1,10 @@
-"""模型层单测：ProjectTemplateAsset + Project.template_mode + Page 模板字段。
+"""Model Layer Monometry：ProjectTemplateAsset + Project.template_mode + Page Template Fields。
 
-覆盖：
-1. Project 默认 template_mode='single'
-2. ProjectTemplateAsset 创建、to_dict、URL 生成、JSON 解析/写入
-3. Project.template_assets 关系级联（删项目级联删 asset）
-4. Page.template_asset relationship + ON DELETE SET NULL（删 asset 后页面字段被清空）
+Overwrite：
+1. Project Default template_mode='single'
+2. ProjectTemplateAsset Create、to_dict、URL Generate、JSON Parsing/Writing
+3. Project.template_assets Relationship cascades (delete project cascades) asset）
+4. Page.template_asset relationship + ON DELETE SET NULL（Delete asset Post page field emptied）
 """
 
 import uuid
@@ -68,17 +68,17 @@ def test_project_template_mode_can_be_multi(db_session):
 
 def test_template_asset_to_dict_shape(db_session):
     proj = _create_project(db_session)
-    asset = _create_asset(db_session, proj, user_label='封面图', sort_order=2)
-    asset.set_analysis({'summary': '顶部标题 + 双栏正文', 'visual_density': 'medium'})
+    asset = _create_asset(db_session, proj, user_label='Cover Map', sort_order=2)
+    asset.set_analysis({'summary': 'Top Title + Double Bar Body', 'visual_density': 'medium'})
     db_session.commit()
 
     data = asset.to_dict()
     assert data['id'] == asset.id
     assert data['project_id'] == proj.id
     assert data['analysis_status'] == 'pending'
-    assert data['user_label'] == '封面图'
+    assert data['user_label'] == 'Cover Map'
     assert data['sort_order'] == 2
-    assert data['analysis_json'] == {'summary': '顶部标题 + 双栏正文', 'visual_density': 'medium'}
+    assert data['analysis_json'] == {'summary': 'Top Title + Double Bar Body', 'visual_density': 'medium'}
     assert data['image_url'].endswith('/original.png')
     assert data['image_url'].startswith(f'/files/{proj.id}/template-assets/{asset.id}/')
     assert data['thumb_url'].endswith('/thumb.jpg')
@@ -115,18 +115,18 @@ def test_project_cascade_deletes_assets(db_session):
 
 def test_page_template_relationship_loads_asset(db_session):
     proj = _create_project(db_session)
-    asset = _create_asset(db_session, proj, user_label='对比页')
+    asset = _create_asset(db_session, proj, user_label='Contrast Pages')
     page = _create_page(db_session, proj)
     page.template_asset_id = asset.id
-    page.template_style_text = '极简风格'
+    page.template_style_text = 'Extremely simple style'
     page.template_selection_source = 'manual'
     db_session.commit()
     db_session.refresh(page)
 
     assert page.template_asset is not None
-    assert page.template_asset.user_label == '对比页'
+    assert page.template_asset.user_label == 'Contrast Pages'
     assert page.to_dict()['template_asset_id'] == asset.id
-    assert page.to_dict()['template_style_text'] == '极简风格'
+    assert page.to_dict()['template_style_text'] == 'Extremely simple style'
     assert page.to_dict()['template_selection_source'] == 'manual'
 
 
@@ -145,7 +145,7 @@ def test_template_asset_pages_referenced_backref(db_session):
 
 
 def test_delete_asset_sets_page_template_id_null(db_session):
-    """ON DELETE SET NULL 验证：删除 asset 后引用页 template_asset_id 自动置空。"""
+    """ON DELETE SET NULL Authentication： Delete asset Post-reference page template_asset_id Auto Empty。"""
     from models import db, Page
     proj = _create_project(db_session)
     asset = _create_asset(db_session, proj)
@@ -153,7 +153,7 @@ def test_delete_asset_sets_page_template_id_null(db_session):
     page.template_asset_id = asset.id
     db_session.commit()
 
-    # SQLite 默认不开 foreign_keys；手动开启验证 ON DELETE SET NULL
+    # SQLite Default not open foreign_keys；Manually Open Authentication ON DELETE SET NULL
     db_session.execute(db.text('PRAGMA foreign_keys = ON'))
 
     db_session.delete(asset)

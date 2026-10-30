@@ -29,40 +29,40 @@ test.describe('Markdown import preview', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           order_index: 0,
-          outline_content: { title: '原始页面', points: ['已有内容'] },
+          outline_content: { title: 'Original Page', points: ['Existing content'] },
         }),
       })
 
       await page.addInitScript(() => localStorage.setItem('hasSeenHelpModal', 'true'))
       await page.goto(`/project/${projectId}/outline`)
-      await expect(page.getByText('原始页面')).toBeVisible()
+      await expect(page.getByText('Original Page')).toBeVisible()
 
-      await page.getByRole('button', { name: /导入\/导出|Import\/Export/ }).click()
-      await page.getByRole('button', { name: /^导入$|^Import$/ }).click()
+      await page.getByRole('button', { name: /\u5bfc\u5165\/\u5bfc\u51fa|Import\/Export/ }).click()
+      await page.getByRole('button', { name: /^\u5bfc\u5165$|^Import$/ }).click()
 
       const markdown = [
-        '## 第 1 页: 新增第一页',
+        '## Page 1 Page: Add the first page',
         '',
-        '这一页介绍导入预览。',
+        'This page describes the import preview。',
         '',
         '---',
         '',
-        '## 第 2 页: 新增第二页',
+        '## Page 2 Page: Add the second page',
         '',
-        '这一页确认追加页数。',
+        'Additional page confirmed on this page。',
       ].join('\n')
-      await page.getByPlaceholder(/把大纲|Paste outline/).fill(markdown)
+      await page.getByPlaceholder(/\u628a\u5927\u7eb2|Paste outline/).fill(markdown)
 
-      await expect(page.getByText(/将追加 2 页到当前项目|2 page\(s\) will be appended/)).toBeVisible()
-      await page.getByRole('button', { name: /导入到项目|Import into Project/ }).click()
+      await expect(page.getByText(/\u5c06\u8ffd\u52a0 2 \u9875\u5230\u5f53\u524d\u9879\u76ee|2 page\(s\) will be appended/)).toBeVisible()
+      await page.getByRole('button', { name: /\u5bfc\u5165\u5230\u9879\u76ee|Import into Project/ }).click()
 
-      await expect(page.getByText('新增第一页')).toBeVisible()
-      await expect(page.getByText('新增第二页')).toBeVisible()
+      await expect(page.getByText('Add the first page')).toBeVisible()
+      await expect(page.getByText('Add the second page')).toBeVisible()
 
       const projectResponse = await fetch(`${backendUrl}/api/projects/${projectId}`)
       const project = await projectResponse.json()
       const titles = project.data.pages.map((item: { outline_content?: { title?: string } }) => item.outline_content?.title)
-      expect(titles).toEqual(expect.arrayContaining(['原始页面', '新增第一页', '新增第二页']))
+      expect(titles).toEqual(expect.arrayContaining(['Original Page', 'Add the first page', 'Add the second page']))
       expect(project.data.pages).toHaveLength(3)
     } finally {
       await fetch(`${backendUrl}/api/projects/${projectId}`, { method: 'DELETE' })

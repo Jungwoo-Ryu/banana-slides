@@ -5,15 +5,15 @@ import { StatusBadge, Skeleton, useConfirm } from '@/components/shared';
 import { getImageUrl } from '@/api/client';
 import type { Page } from '@/types';
 
-// SlideCard 组件自包含翻译
+// SlideCard Component contains translation
 const slideCardI18n = {
   zh: {
     slideCard: {
-      notGenerated: "未生成",
-      confirmDeletePage: "确定要删除这一页吗？",
-      confirmDeleteTitle: "确认删除",
-      coverPage: "封面",
-      coverPageTooltip: "第一页为封面页，通常包含标题和副标题"
+      notGenerated: "Not Generated",
+      confirmDeletePage: "Are you sure you want to delete this page?",
+      confirmDeleteTitle: "Confirm Delete",
+      coverPage: "Cover",
+      coverPageTooltip: "This is the cover page, usually containing the title and subtitle"
     }
   },
   en: {
@@ -53,7 +53,7 @@ export const SlideCard: React.FC<SlideCardProps> = ({
   const imageUrl = page.generated_image_path
     ? getImageUrl(page.generated_image_path, page.updated_at)
     : '';
-  
+
   const generating = isGenerating || page.status === 'QUEUED' || page.status === 'GENERATING';
 
   return (
@@ -63,7 +63,7 @@ export const SlideCard: React.FC<SlideCardProps> = ({
       }`}
       onClick={onClick}
     >
-      {/* 缩略图 */}
+      {/* Thumbnail */}
       <div className="relative bg-gray-100 dark:bg-background-secondary rounded-lg overflow-hidden mb-2" style={{ aspectRatio: aspectRatio.replace(':', '/') }}>
         {generating ? (
           <Skeleton className="w-full h-full" />
@@ -74,7 +74,7 @@ export const SlideCard: React.FC<SlideCardProps> = ({
               alt={`Slide ${index + 1}`}
               className="w-full h-full object-cover"
             />
-            {/* 悬停操作 */}
+            {/* Suspend Operation */}
             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
               <button
                 onClick={(e) => {
@@ -108,14 +108,14 @@ export const SlideCard: React.FC<SlideCardProps> = ({
             </div>
           </div>
         )}
-        
-        {/* 状态标签 */}
+
+        {/* Status Label */}
         <div className="absolute bottom-2 right-2">
           <StatusBadge status={page.status} />
         </div>
       </div>
 
-      {/* 标题 */}
+      {/* Title */}
       <div className="flex items-center gap-2">
         <span
           className={`text-sm font-medium ${

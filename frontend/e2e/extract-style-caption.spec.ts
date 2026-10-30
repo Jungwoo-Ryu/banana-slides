@@ -16,12 +16,12 @@ const TINY_PNG = Buffer.from(
 /** Click the extract-style button and provide a fake image via filechooser. */
 async function triggerStyleExtract(page: import('@playwright/test').Page) {
   // Enable text style mode first (checkbox defaults to off)
-  const toggle = page.getByText(/使用文字描述风格|Use text description for style/)
+  const toggle = page.getByText(/\u4f7f\u7528\u6587\u5b57\u63cf\u8ff0\u98ce\u683c|Use text description for style/)
   await toggle.scrollIntoViewIfNeeded()
   await toggle.click()
 
   // Wait for the extract button to appear, then find the sibling hidden input
-  const btn = page.getByText(/从图片提取风格|Extract from image/)
+  const btn = page.getByText(/\u4ece\u56fe\u7247\u63d0\u53d6\u98ce\u683c|Extract from image/)
   await expect(btn).toBeVisible()
 
   // The hidden file input is right after the button, not multiple, not disabled
@@ -48,7 +48,7 @@ test.describe('Extract style - Mock tests', () => {
     await page.goto(BASE_URL)
     await triggerStyleExtract(page)
 
-    await expect(page.getByText(/风格提取成功|Style extracted successfully/)).toBeVisible({ timeout: 5000 })
+    await expect(page.getByText(/\u98ce\u683c\u63d0\u53d6\u6210\u529f|Style extracted successfully/)).toBeVisible({ timeout: 5000 })
   })
 
   test('should show error toast when extract-style fails', async ({ page }) => {
@@ -66,7 +66,7 @@ test.describe('Extract style - Mock tests', () => {
     await page.goto(BASE_URL)
     await triggerStyleExtract(page)
 
-    await expect(page.getByText(/风格提取失败|Style extraction failed/)).toBeVisible({ timeout: 5000 })
+    await expect(page.getByText(/\u98ce\u683c\u63d0\u53d6\u5931\u8d25|Style extraction failed/)).toBeVisible({ timeout: 5000 })
   })
 
   test('should send multipart POST to /api/extract-style', async ({ page }) => {
@@ -87,7 +87,7 @@ test.describe('Extract style - Mock tests', () => {
     await page.goto(BASE_URL)
     await triggerStyleExtract(page)
 
-    await expect(page.getByText(/风格提取成功|Style extracted successfully/)).toBeVisible({ timeout: 5000 })
+    await expect(page.getByText(/\u98ce\u683c\u63d0\u53d6\u6210\u529f|Style extracted successfully/)).toBeVisible({ timeout: 5000 })
     expect(requestOk).toBe(true)
   })
 })

@@ -128,12 +128,12 @@ test.describe('Export Images - UI Mock', () => {
     await page.waitForFunction(() => document.body.innerText.length > 50, { timeout: 15000 })
 
     // Find and click the export button using text content
-    const exportBtn = page.locator('button:has-text("导出")').first()
+    const exportBtn = page.locator('button:has-text("Export")').first()
     await expect(exportBtn).toBeVisible({ timeout: 10000 })
     await exportBtn.click()
 
     // Verify image export option appears in the dropdown
-    const imgExportBtn = page.locator('button:has-text("导出为图片")')
+    const imgExportBtn = page.locator('button:has-text("Export as Picture")')
     await expect(imgExportBtn).toBeVisible({ timeout: 5000 })
   })
 
@@ -188,8 +188,8 @@ test.describe('Export Images - UI Mock', () => {
     await page.goto(`/project/${PID}/preview`)
     await page.waitForFunction(() => document.body.innerText.length > 50, { timeout: 15000 })
 
-    await page.locator('button:has-text("导出")').first().click()
-    await page.locator('button:has-text("导出为图片")').click()
+    await page.locator('button:has-text("Export")').first().click()
+    await page.locator('button:has-text("Export as Picture")').click()
 
     await expect.poll(() => imageExportCalled).toBe(true)
   })
@@ -267,11 +267,11 @@ test.describe('Export Images - UI Mock', () => {
     })
 
     await page.goto(`/project/${PID}/preview`)
-    await page.getByLabel('导出任务').click()
+    await page.getByLabel('Export Tasks').click()
     await expect(page.getByText(filename)).toBeVisible({ timeout: 10000 })
 
-    await page.getByLabel(`删除 ${filename}`).click()
-    await page.getByRole('button', { name: '删除文件' }).click()
+    await page.getByLabel(`Delete ${filename}`).click()
+    await page.getByRole('button', { name: 'Delete File' }).click()
 
     await expect.poll(() => deleteCalled).toBe(true)
     await expect(page.getByText(filename)).toHaveCount(0)

@@ -147,7 +147,7 @@ test.describe('Position-based Page Merge (Mocked)', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           success: true,
-          data: { pages: REFINED_FEWER_PAGES, message: '大纲修改成功' },
+          data: { pages: REFINED_FEWER_PAGES, message: 'Outline modified successfully' },
         }),
       })
     })
@@ -158,9 +158,9 @@ test.describe('Position-based Page Merge (Mocked)', () => {
     await expect(page.getByText('Conclusion')).toBeVisible()
 
     // Refine to reduce pages
-    const refineInput = page.locator('input[placeholder*="增加"], textarea[placeholder*="增加"], input[placeholder*="Add"], textarea[placeholder*="Add"]')
+    const refineInput = page.locator('input[placeholder*="Increase"], textarea[placeholder*="Increase"], input[placeholder*="Add"], textarea[placeholder*="Add"]')
     if (await refineInput.count() > 0) {
-      await refineInput.first().fill('删除最后一页')
+      await refineInput.first().fill('Delete Last Page')
       const refinePromise = page.waitForResponse(
         (r) => r.url().includes('/refine/outline') && r.status() === 200
       )
@@ -185,7 +185,7 @@ test.describe('Position-based Page Merge (Mocked)', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           success: true,
-          data: { pages: REFINED_MORE_PAGES, message: '大纲修改成功' },
+          data: { pages: REFINED_MORE_PAGES, message: 'Outline modified successfully' },
         }),
       })
     })
@@ -193,9 +193,9 @@ test.describe('Position-based Page Merge (Mocked)', () => {
     await page.goto(`${BASE}/project/${PROJECT_ID}/outline`)
     await expect(page.getByText('Introduction')).toBeVisible({ timeout: 5000 })
 
-    const refineInput = page.locator('input[placeholder*="增加"], textarea[placeholder*="增加"], input[placeholder*="Add"], textarea[placeholder*="Add"]')
+    const refineInput = page.locator('input[placeholder*="Increase"], textarea[placeholder*="Increase"], input[placeholder*="Add"], textarea[placeholder*="Add"]')
     if (await refineInput.count() > 0) {
-      await refineInput.first().fill('增加一页额外内容')
+      await refineInput.first().fill('Add an extra page')
       const refinePromise = page.waitForResponse(
         (r) => r.url().includes('/refine/outline') && r.status() === 200
       )
@@ -217,7 +217,7 @@ test.describe('Position-based Page Merge (Mocked)', () => {
     await expect(page.getByText('Introduction')).toBeVisible({ timeout: 5000 })
 
     // Click regenerate button
-    const regenButton = page.getByRole('button', { name: /重新生成|Regenerate/i })
+    const regenButton = page.getByRole('button', { name: /\u91cd\u65b0\u751f\u6210|Regenerate/i })
     if (await regenButton.count() > 0) {
       await regenButton.click()
 
@@ -226,7 +226,7 @@ test.describe('Position-based Page Merge (Mocked)', () => {
       await expect(dialog).toBeVisible({ timeout: 3000 })
       // Check that warning mentions deletion of pages
       const dialogText = await dialog.textContent()
-      expect(dialogText).toMatch(/删除|removed|remove/i)
+      expect(dialogText).toMatch(/\u5220\u9664|removed|remove/i)
     }
   })
 })

@@ -49,9 +49,9 @@ function restartBackend() {
 test.afterAll(async ({ browser }) => {
   const page = await browser.newPage()
   await page.goto('/settings')
-  await page.getByRole('button', { name: /重置/ }).click()
-  await page.getByRole('button', { name: /确定重置/ }).click()
-  await expect(page.locator('text=已重置').or(page.locator('text=reset'))).toBeVisible({ timeout: 5000 })
+  await page.getByRole('button', { name: /\u91cd\u7f6e/ }).click()
+  await page.getByRole('button', { name: /\u786e\u5b9a\u91cd\u7f6e/ }).click()
+  await expect(page.locator('text=Resetd').or(page.locator('text=reset'))).toBeVisible({ timeout: 5000 })
   await page.close()
   try { execSync(`rm -f ${LOG_FILE}`) } catch { /* ignore */ }
 })
@@ -98,6 +98,6 @@ test.describe('Per-model API credentials loaded on startup (#284)', () => {
     // Verify API Key shows placeholder indicating it's set
     const apiKeyInput = textGroup.locator('input[type="password"]')
     const placeholder = await apiKeyInput.getAttribute('placeholder')
-    expect(placeholder).toMatch(/长度|length/i)
+    expect(placeholder).toMatch(/\u957f\u5ea6|length/i)
   })
 })

@@ -25,14 +25,14 @@ function mockProject(pagesOverride?: ReturnType<typeof mockProject>['pages']) {
     order_index: index,
     status,
     ...(imagePath ? { generated_image_path: imagePath } : {}),
-    outline_content: { title: `第 ${index + 1} 页`, points: [] },
+    outline_content: { title: `Page ${index + 1} Page`, points: [] },
     created_at: '2026-07-01T10:00:00.000Z',
     updated_at: '2026-07-01T10:00:00.000Z',
   })
   return {
     id: MOCK_PROJECT_ID,
     project_id: MOCK_PROJECT_ID,
-    project_title: '播放测试项目',
+    project_title: 'Play test items',
     status: 'DRAFT',
     template_mode: 'single',
     image_aspect_ratio: '16:9',
@@ -169,7 +169,7 @@ const dockedToolbar = (page: Page) => page.getByTestId('preview-docked-toolbar')
 async function openPlayer(page: Page) {
   await page.goto(`/project/${MOCK_PROJECT_ID}/preview`)
   await expect(floatingToolbar(page)).toBeVisible()
-  await floatingToolbar(page).getByRole('button', { name: /播放|Play/ }).click()
+  await floatingToolbar(page).getByRole('button', { name: /\u64ad\u653e|Play/ }).click()
   await expect(player(page)).toBeVisible()
 }
 
@@ -199,8 +199,8 @@ test.describe('Slide player - near-fullscreen overlay (mock)', () => {
     await openPlayer(page)
 
     const toolbar = playerToolbar(page)
-    const prevBtn = toolbar.getByRole('button', { name: /上一页|Previous/ })
-    const nextBtn = toolbar.getByRole('button', { name: /下一页|Next/ })
+    const prevBtn = toolbar.getByRole('button', { name: /\u4e0a\u4e00\u9875|Previous/ })
+    const nextBtn = toolbar.getByRole('button', { name: /\u4e0b\u4e00\u9875|Next/ })
 
     // Toolbar buttons
     await expect(prevBtn).toBeDisabled()
@@ -228,10 +228,10 @@ test.describe('Slide player - near-fullscreen overlay (mock)', () => {
 
     const toolbar = playerToolbar(page)
     for (let i = 0; i < 2; i++) {
-      await toolbar.getByRole('button', { name: /下一页|Next/ }).click()
+      await toolbar.getByRole('button', { name: /\u4e0b\u4e00\u9875|Next/ }).click()
     }
     await expect(toolbar).toContainText('3 / 3')
-    await expect(playerStage(page).getByText(/尚未生成图片|Image not generated/)).toBeVisible()
+    await expect(playerStage(page).getByText(/\u5c1a\u672a\u751f\u6210\u56fe\u7247|Image not generated/)).toBeVisible()
   })
 
   test('shows generating/queued status text for in-flight pages', async ({ page }) => {
@@ -241,9 +241,9 @@ test.describe('Slide player - near-fullscreen overlay (mock)', () => {
 
     const toolbar = playerToolbar(page)
     for (let i = 0; i < 2; i++) {
-      await toolbar.getByRole('button', { name: /下一页|Next/ }).click()
+      await toolbar.getByRole('button', { name: /\u4e0b\u4e00\u9875|Next/ }).click()
     }
-    await expect(playerStage(page).getByText(/正在生成中|Generating/)).toBeVisible()
+    await expect(playerStage(page).getByText(/\u6b63\u5728\u751f\u6210\u4e2d|Generating/)).toBeVisible()
   })
 
   test('reopening after paging and switching pages starts from the selected page (no index loop)', async ({ page }) => {
@@ -253,18 +253,18 @@ test.describe('Slide player - near-fullscreen overlay (mock)', () => {
     // Play to page 3, exit, then pick page 1 in the sidebar
     const toolbar = playerToolbar(page)
     for (let i = 0; i < 2; i++) {
-      await toolbar.getByRole('button', { name: /下一页|Next/ }).click()
+      await toolbar.getByRole('button', { name: /\u4e0b\u4e00\u9875|Next/ }).click()
     }
     await expect(toolbar).toContainText('3 / 3')
     await page.getByTestId('player-exit').click()
     await expect(player(page)).toBeHidden()
 
-    await page.locator('aside').getByText('第 1 页').click()
+    await page.locator('aside').getByText('Page 1 Page').click()
     await expect(floatingToolbar(page)).toContainText('1 / 3')
 
     // Reopen: the player must start on the currently selected page and stay there
     const requestsBefore = counters.imageVersionRequests()
-    await floatingToolbar(page).getByRole('button', { name: /播放|Play/ }).click()
+    await floatingToolbar(page).getByRole('button', { name: /\u64ad\u653e|Play/ }).click()
     await expect(player(page)).toBeVisible()
     // Strict stability check: sample the page counter over ~1s; it must never
     // leave the starting page (an index sync loop would flicker 1/3 <-> 3/3)
@@ -285,7 +285,7 @@ test.describe('Slide player - near-fullscreen overlay (mock)', () => {
     await openPlayer(page)
 
     const toggle = page.getByTestId('player-fullscreen-toggle')
-    await expect(toggle).toHaveAttribute('aria-label', /全屏播放|Fullscreen/)
+    await expect(toggle).toHaveAttribute('aria-label', /\u5168\u5c4f\u64ad\u653e|Fullscreen/)
 
     await toggle.click()
     expect(await page.evaluate(() => (window as never as { __fsCount: number }).__fsCount)).toBe(1)
@@ -296,7 +296,7 @@ test.describe('Slide player - near-fullscreen overlay (mock)', () => {
         return w.__fsTarget?.getAttribute('data-testid')
       })
     ).toBe('slide-player')
-    await expect(toggle).toHaveAttribute('aria-label', /退出全屏|Exit fullscreen/)
+    await expect(toggle).toHaveAttribute('aria-label', /\u9000\u51fa\u5168\u5c4f|Exit fullscreen/)
     // PPT-style native fullscreen: chrome is hidden, the stage fills the whole
     // screen and the image covers it (no letterboxing)
     await expect(page.getByTestId('player-header')).toBeHidden()
@@ -310,12 +310,12 @@ test.describe('Slide player - near-fullscreen overlay (mock)', () => {
     // overlay stays in near-fullscreen mode
     await page.keyboard.press('Escape')
     await expect(player(page)).toBeVisible()
-    await expect(toggle).toHaveAttribute('aria-label', /全屏播放|Fullscreen/)
+    await expect(toggle).toHaveAttribute('aria-label', /\u5168\u5c4f\u64ad\u653e|Fullscreen/)
 
     await toggle.click()
-    await expect(toggle).toHaveAttribute('aria-label', /退出全屏|Exit fullscreen/)
+    await expect(toggle).toHaveAttribute('aria-label', /\u9000\u51fa\u5168\u5c4f|Exit fullscreen/)
     await toggle.click()
-    await expect(toggle).toHaveAttribute('aria-label', /全屏播放|Fullscreen/)
+    await expect(toggle).toHaveAttribute('aria-label', /\u5168\u5c4f\u64ad\u653e|Fullscreen/)
     expect(await page.evaluate(() => (window as never as { __fsCount: number }).__fsCount)).toBe(2)
   })
 
@@ -340,7 +340,7 @@ test.describe('Slide player - near-fullscreen overlay (mock)', () => {
     await mockPreview(page)
     await openPlayer(page)
 
-    await playerToolbar(page).getByRole('button', { name: /下一页|Next/ }).click()
+    await playerToolbar(page).getByRole('button', { name: /\u4e0b\u4e00\u9875|Next/ }).click()
     await expect(playerToolbar(page)).toContainText('2 / 3')
 
     await page.getByTestId('player-exit').click()
@@ -352,7 +352,7 @@ test.describe('Slide player - near-fullscreen overlay (mock)', () => {
     await mockPreview(page)
     await openPlayer(page)
 
-    const playButton = floatingToolbar(page).getByRole('button', { name: /播放|Play/ })
+    const playButton = floatingToolbar(page).getByRole('button', { name: /\u64ad\u653e|Play/ })
     await page.getByTestId('player-exit').click()
     await expect(playButton).toBeFocused()
   })
@@ -361,7 +361,7 @@ test.describe('Slide player - near-fullscreen overlay (mock)', () => {
     await mockPreview(page)
     await openPlayer(page)
 
-    const playButton = floatingToolbar(page).getByRole('button', { name: /播放|Play/ })
+    const playButton = floatingToolbar(page).getByRole('button', { name: /\u64ad\u653e|Play/ })
     await page.keyboard.press('Escape')
     await expect(playButton).toBeFocused()
   })
@@ -373,21 +373,21 @@ test.describe('Slide player - near-fullscreen overlay (mock)', () => {
 
     // Open from the floating toolbar, shrink below lg while playing, close:
     // the floating trigger is display:none now, focus must land on the docked play button
-    await floatingToolbar(page).getByRole('button', { name: /播放|Play/ }).click()
+    await floatingToolbar(page).getByRole('button', { name: /\u64ad\u653e|Play/ }).click()
     await expect(player(page)).toBeVisible()
     await page.setViewportSize({ width: 800, height: 800 })
     await page.getByTestId('player-exit').click()
     await expect(dockedToolbar(page)).toBeVisible()
-    await expect(dockedToolbar(page).getByRole('button', { name: /播放|Play/ })).toBeFocused()
+    await expect(dockedToolbar(page).getByRole('button', { name: /\u64ad\u653e|Play/ })).toBeFocused()
 
     // Reverse: open from the docked toolbar, widen past lg, close:
     // focus must land on the floating play button
-    await dockedToolbar(page).getByRole('button', { name: /播放|Play/ }).click()
+    await dockedToolbar(page).getByRole('button', { name: /\u64ad\u653e|Play/ }).click()
     await expect(player(page)).toBeVisible()
     await page.setViewportSize({ width: 1280, height: 720 })
     await page.getByTestId('player-exit').click()
     await expect(floatingToolbar(page)).toBeVisible()
-    await expect(floatingToolbar(page).getByRole('button', { name: /播放|Play/ })).toBeFocused()
+    await expect(floatingToolbar(page).getByRole('button', { name: /\u64ad\u653e|Play/ })).toBeFocused()
   })
 
   test('closing the player with X while in native fullscreen exits fullscreen first', async ({ page }) => {
@@ -396,14 +396,14 @@ test.describe('Slide player - near-fullscreen overlay (mock)', () => {
     await openPlayer(page)
 
     await page.getByTestId('player-fullscreen-toggle').click()
-    await expect(page.getByTestId('player-fullscreen-toggle')).toHaveAttribute('aria-label', /退出全屏|Exit fullscreen/)
+    await expect(page.getByTestId('player-fullscreen-toggle')).toHaveAttribute('aria-label', /\u9000\u51fa\u5168\u5c4f|Exit fullscreen/)
     // The header exit button is hidden in native fullscreen; the toolbar one is used
     await page.getByTestId('player-exit-fs').click()
 
     await expect(player(page)).toBeHidden()
     expect(await page.evaluate(() => !!document.fullscreenElement)).toBe(false)
     expect(await page.evaluate(() => (window as never as { __fsCount: number }).__fsCount)).toBe(1)
-    await expect(floatingToolbar(page).getByRole('button', { name: /播放|Play/ })).toBeFocused()
+    await expect(floatingToolbar(page).getByRole('button', { name: /\u64ad\u653e|Play/ })).toBeFocused()
   })
 
   test('reopening after a resize uses the fresh viewport size', async ({ page }) => {
@@ -412,7 +412,7 @@ test.describe('Slide player - near-fullscreen overlay (mock)', () => {
     await page.getByTestId('player-exit').click()
 
     await page.setViewportSize({ width: 1024, height: 768 })
-    await floatingToolbar(page).getByRole('button', { name: /播放|Play/ }).click()
+    await floatingToolbar(page).getByRole('button', { name: /\u64ad\u653e|Play/ }).click()
     await expect(player(page)).toBeVisible()
 
     const stage = (await playerStage(page).boundingBox())!
@@ -512,7 +512,7 @@ test.describe('Slide player - near-fullscreen overlay (mock)', () => {
     // Resolve the pending request → the browser enters fullscreen and the button re-enables
     await page.evaluate(() => (window as never as { __fsResolve: () => void }).__fsResolve())
     await expect(toggle).toBeEnabled()
-    await expect(toggle).toHaveAttribute('aria-label', /退出全屏|Exit fullscreen/)
+    await expect(toggle).toHaveAttribute('aria-label', /\u9000\u51fa\u5168\u5c4f|Exit fullscreen/)
   })
 })
 
@@ -523,7 +523,7 @@ test.describe('Slide player - narrow screen (mock)', () => {
     await page.goto(`/project/${MOCK_PROJECT_ID}/preview`)
 
     await expect(dockedToolbar(page)).toBeVisible()
-    await dockedToolbar(page).getByRole('button', { name: /播放|Play/ }).click()
+    await dockedToolbar(page).getByRole('button', { name: /\u64ad\u653e|Play/ }).click()
     await expect(player(page)).toBeVisible()
     await expect(playerToolbar(page)).toContainText('1 / 3')
   })
@@ -539,13 +539,13 @@ test.describe('Slide player - integration (real backend)', () => {
     await page.waitForLoadState('networkidle')
     await expect(floatingToolbar(page)).toBeVisible()
 
-    await floatingToolbar(page).getByRole('button', { name: /播放|Play/ }).click()
+    await floatingToolbar(page).getByRole('button', { name: /\u64ad\u653e|Play/ }).click()
     await expect(player(page)).toBeVisible()
     await expect(playerToolbar(page)).toContainText('1 / 3')
     // Real fixture image rendered inside the stage
     await expect(playerStage(page).locator('img')).toBeVisible()
 
-    await playerToolbar(page).getByRole('button', { name: /下一页|Next/ }).click()
+    await playerToolbar(page).getByRole('button', { name: /\u4e0b\u4e00\u9875|Next/ }).click()
     await expect(playerToolbar(page)).toContainText('2 / 3')
     await page.keyboard.press('ArrowRight')
     await expect(playerToolbar(page)).toContainText('3 / 3')

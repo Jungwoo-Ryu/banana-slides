@@ -1,222 +1,201 @@
 ---
-title: "导入导出格式"
-description: "大纲和描述的 Markdown 导入导出格式说明"
+title: "Import & Export Format"
+description: "Markdown format for importing and exporting outlines and descriptions"
 ---
 
-Banana Slides 使用 Markdown 文件（`.md` / `.markdown` / `.txt`）导入导出大纲和页面描述，格式可读性强，可用任意文本编辑器编辑。
+Banana Slides uses Markdown files (`.md` / `.markdown` / `.txt`) to import and export outlines and page descriptions. The format is human-readable and easy to edit in any text editor.
 
-## 格式结构
+## Format Structure
 
 ```markdown
-# 项目标题
+# Project Title
 
-> 生成时间: 2025/1/1 12:00:00
-
----
-
-## 第 1 页: 封面
-
-> 章节: 引言
-
-这一页作为封面，只展示演示主题、公司名称和日期。
-
-**页面描述：**
---- 页面文字 ---
-
-### 项目年度汇报
-
-公司名称
-
-2026 年 4 月
-
---- 页面文字结束 ---
-
-版式与重点：居中大标题，副标题和日期置于下方；标题为视觉重点
+> Generated at: 2025/1/1 12:00:00
 
 ---
 
-## 第 2 页: 市场概况
+## Page 1: Cover Page
 
-> 章节: 分析
+> Chapter: Introduction
 
-这一页概述行业增长趋势、主要细分市场和关键机会。
+This cover introduces the presentation topic, company name, and date.
 
-**页面描述：**
---- 页面文字 ---
+**Page Description:**
+--- SLIDE_TEXT ---
 
-### 市场概况
+### Annual Business Review
 
-- 行业规模持续增长
-- 企业级需求增速更快
-- 细分市场仍存在空白机会
+Company Name
 
---- 页面文字结束 ---
+April 2026
 
-配图与素材：增长柱状图、关键数据卡片、市场细分示意图
+--- SLIDE_TEXT_END ---
+
+Layout & Emphasis: large centered title, subtitle and date below; the title is the visual emphasis
+
+---
+
+## Page 2: Market Overview
+
+> Chapter: Analysis
+
+This slide summarizes industry growth, key market segments, and the main opportunity.
+
+**Page Description:**
+--- SLIDE_TEXT ---
+
+### Market Overview
+
+- Industry size continues to grow
+- Enterprise demand is accelerating faster
+- Several subsegments remain underserved
+
+--- SLIDE_TEXT_END ---
+
+Visuals & Assets: growth bar chart, key metric cards, market segmentation diagram
 
 ---
 ```
 
-## 字段说明
+## Field Reference
 
-| 字段 | 语法 | 必填 |
-|------|------|------|
-| 页面标题 | `## 第 N 页: 标题` 或 `## Page N: Title` | 是 |
-| 章节 | `> 章节: 名称` 或 `> Chapter: Name` | 否 |
-| 大纲概述 | 页面标题后的一句普通文本 | 否 |
-| 页面描述 | `**页面描述：**` 或 `**Page Description:**` 后使用 `--- 页面文字 ---` / `--- 页面文字结束 ---` 包裹页面正文 | 否 |
+| Field | Syntax | Required |
+|-------|--------|----------|
+| Page header | `## Page N Page: Title` or `## Page N: Title` | Yes |
+| Chapter | `> Section: Name` or `> Chapter: Name` | No |
+| Outline summary | One plain sentence after the page header | No |
+| Description | `**Page description：**` or `**Page Description:**`, with the slide body wrapped in `--- SLIDE_TEXT ---` / `--- SLIDE_TEXT_END ---` | No |
 
-如果描述末尾包含形如 `配图与素材：...`、`版式与重点：...` 的额外字段，导入时也会一并保留（旧项目的 `视觉元素：...`、`排版布局：...` 同样兼容）。
+If the description ends with short extra-field lines such as `Visuals & Assets: ...` or `Layout & Emphasis: ...`, Banana Slides will preserve them on import (the older `Visual Elements: ...` and `Layout: ...` fields from existing projects are still supported).
 
-页面之间用 `---` 分隔。
+Pages are separated by `---`.
 
-## 导出选项
+## Export Options
 
-可从大纲编辑器和详细编辑器导出：
+You can export from both the Outline Editor and Detail Editor:
 
-| 来源 | 内容 |
-|------|------|
-| 大纲编辑器 | 页面标题和大纲内容 |
-| 详细编辑器 | 可导出「仅描述」或「大纲 + 页面描述」 |
+| Source | Content |
+|--------|---------|
+| Outline Editor | Page titles and outline content |
+| Detail Editor | Description-only export, or full outline + descriptions |
 
-## 导入行为
+## Import Behavior
 
-- 粘贴或上传 Markdown 后，导入弹窗会先显示可识别的页面数量；只有识别到页面时才能执行导入。
-- 导入的页面会按 Markdown 文件顺序**一次性追加**到现有项目，不会替换已有页面。
-- 当前推荐格式是在页面标题后直接写一句大纲概述；旧的 `**大纲要点：**` / `- 要点` 结构仍可导入。
-- 同时兼容中英文标记：`第 N 页` / `Page N`、`章节` / `Chapter`、`大纲要点` / `Outline Points`、`页面描述` / `Page Description`。
-- 导入内容中的 HTML 标签会被自动清除。
-- 页面描述末尾的短字段行（如 `版式与重点：...`）会被识别为额外字段并保留。
-- 支持 `.md`、`.markdown` 和 `.txt` 文件；PDF、Word、图片等非文本文件会在读取前被拦截，并提示更换文件格式。
+- After you paste or upload Markdown, the import dialog previews how many pages can be detected. Import stays disabled until at least one page is recognized.
+- Imported pages are **appended in Markdown file order** in one batch — they do not replace current pages.
+- The current recommended format is one concise outline sentence after the page title. Older `**Outline Points:**` / `- point` blocks are still accepted.
+- Both Chinese and English markers are supported: `Page N Page` / `Page N`, `Section` / `Chapter`, `Outline points` / `Outline Points`, `Page description` / `Page Description`.
+- HTML tags in imported content are automatically stripped.
+- Short trailing field lines in the description section, such as `Layout & Emphasis: ...`, are parsed as extra fields and preserved.
+- Accepts `.md`, `.markdown`, and `.txt` files. Non-text files such as PDF, Word, or images are rejected before reading, with a clear file-format message.
 
-## 最简示例
+## Minimal Example
 
-一个有效的导入文件可以很简单：
+A valid import file can be as simple as:
 
 ```markdown
-## 第 1 页: 开场介绍
+## Page 1: Introduction
 
-这一页介绍演示主题、议程和演讲者。
+This slide introduces the topic, agenda, and speaker.
 
-## 第 2 页: 总结
+## Page 2: Summary
 
-这一页回顾核心结论和后续行动。
+This slide reviews the key conclusions and next steps.
 ```
 
-## 用外部 AI 生成导入文件
+## Use External AI to Create Import Files
 
-如果你想先在外部 AI 助手中批量整理大纲，或让它按固定结构产出可导入文本，可以使用下面的模板。
+If you want to organize an outline in an external AI assistant first, or have it produce import-ready Markdown in a fixed structure, you can use the template below.
 
-将提示词复制到任意 AI 助手（如 ChatGPT、Claude、Kimi），替换占位符后，让它只输出 Markdown 结果，再导入 Banana Slides。
+Copy the prompt into any AI assistant such as ChatGPT or Claude, replace the placeholders, and ask it to output Markdown only. You can then import that result into Banana Slides.
 
 <Tip>
-  这只是给外部 AI 生成导入文件的辅助方式，不是 Banana Slides 的主要创作入口。多数情况下，直接在应用内创建项目并使用内置 AI 生成会更方便。
+  This is only a helper for creating import files with external AI, not the main Banana Slides workflow. In most cases, creating a project directly inside the app and using the built-in AI will be faster.
 </Tip>
 
 <Tip>
-  这里的“页面描述”不是一句简短的画面说明，而是该页的主要文字内容与设计要求的组合。通常做法是：
-  先在 `**页面描述：**` 下写该页会直接展示的 Markdown 文本（会逐字渲染到幻灯片上），再按需在末尾补充 `配图与素材：...`、`版式与重点：...`、`演讲者备注：...` 这类字段。
+  Here, “page description” is not just a short visual note. In practice it is a combination of the page's actual Markdown content plus optional design fields. A good pattern is:
+  write the slide's display content under `**Page Description:**` (it is rendered onto the slide verbatim), then optionally append short trailing fields such as `Visuals & Assets: ...`, `Layout & Emphasis: ...`, or `Speaker Notes: ...`.
 </Tip>
 
 <Tip>
-  如果只需要大纲（不含描述），从提示词中删除 `**页面描述：**` 相关要求即可。若想输出英文标记，也可将 `第 N 页 / 章节 / 大纲要点 / 页面描述` 换成 `Page N / Chapter / Outline Points / Page Description`。
+  For outline-only import, remove the `**Page description：**` requirement from the prompt. If you prefer English markers, you can replace `Page N Page / Section / Outline points / Page description` with `Page N / Chapter / Outline Points / Page Description`.
 </Tip>
 
 <Tip>
-  当前 Banana Slides 内置 prompt 更接近下面这种结构：
-  页面标题之后直接给一句简短概述，不再单独生成 `**大纲要点：**`；而在 `**页面描述：**` 内部，`--- 页面文字 ---` / `--- 页面文字结束 ---` 现在应视为必需结构，而不是可选写法。
+  Banana Slides' current built-in prompt is closer to this structure:
+  after the page title, write one concise outline sentence instead of a separate `**Outline Points:**` block; inside `**Page Description:**`, `--- SLIDE_TEXT ---` / `--- SLIDE_TEXT_END ---` should now be treated as required structure, not optional decoration.
 </Tip>
 
 <Tip>
-  直接导入 Markdown 时，系统仍兼容旧的 `**大纲要点：**` / `- 要点` 结构；新内容建议使用标题后的简短概述句。
+  The Markdown importer still supports the older `**Outline Points:**` / `- point` structure. For new content, prefer the concise summary sentence after the page title.
 </Tip>
 
-贴近当前内置 prompt 的示例页更接近下面这种写法：
+A slide that mirrors the current built-in prompt more closely should look like this:
 
 ```markdown
-## 第 3 页: 市场机会
+## Page 3: Market Opportunity
 
-> 章节: 行业分析
+> Chapter: Industry Analysis
 
-这一页说明市场规模增长、竞争格局分散，以及企业级机会正在放大。
+This slide explains market growth, fragmented competition, and why enterprise demand is expanding.
 
-**页面描述：**
---- 页面文字 ---
+**Page Description:**
+--- SLIDE_TEXT ---
 
-### 市场机会正在快速放大
+### Market Opportunity Is Expanding Fast
 
-- 全球市场规模预计在 2028 年达到 **320 亿美元**
-- 企业级场景增速高于消费级场景
-- 当前竞争格局分散，头部集中度仍然较低
+- The global market is projected to reach **$3.2B by 2028**
+- Enterprise use cases are growing faster than consumer use cases
+- The competitive landscape remains fragmented
 
-| 维度 | 当前现状 | 机会判断 |
+| Dimension | Current State | Opportunity |
 | --- | --- | --- |
-| 市场规模 | 高增长 | 值得进入 |
-| 竞争强度 | 中等 | 可差异化 |
-| 付费意愿 | 明确 | 可快速验证 |
+| Market Size | High growth | Attractive |
+| Competition | Moderate | Differentiable |
+| Willingness to Pay | Clear | Fast validation |
 
---- 页面文字结束 ---
+--- SLIDE_TEXT_END ---
 
-配图与素材：增长曲线、对比数据卡片、行业细分示意图
-版式与重点：上方标题，左侧要点，右侧数据卡片，下方表格；320 亿美元为视觉重点
+Visuals & Assets: growth curve, comparison stat cards, subsegment diagram
+Layout & Emphasis: title on top, bullets on the left, stat cards on the right, table at the bottom; $3.2B by 2028 is the visual emphasis
 ```
 
-<Accordion title="AI 提示词模板">
+<Accordion title="AI Prompt Template">
 
 ```text
-按照如下要求生成可直接导入banana-slides的演示文稿文字描述：
+Generate presentation content in the following Markdown format so it mirrors Banana Slides' current built-in prompt style.
 
-对于每一页：
-1. 第一行“##” 二级标题开头，后面跟页面标题
-2. 第二行“>” 开头，后面根具体的章节（如果需要分章节）
-3. **大纲要点：**开头，后面新开一行开始写大纲内容，阐述该页的目的和内容梗概。
-4. **页面描述：**开头，后面新开一行开始写页面描述内容，包含页面文字（带上明确分割记号，切不包含任何额外解释。该字段的每一个字都会渲染到页面上，请谨慎）、页面图片等字段。
-5. 如果需要，后面可以跟额外字段。
-5. 用 --- 分隔不同页。
+Topic: [YOUR TOPIC]
+Number of pages: [NUMBER, e.g. 8]
+Language: [Chinese / English]
+Style notes: [e.g. "professional and data-driven" or "playful and visual"]
 
-输出格式遵循以下实际范例：
-<example>
----
+Rules:
+1. Each page starts with "## Page N: Title"
+2. Group pages into chapters using "> Chapter: Chapter Name"
+3. After the page title, write one concise sentence explaining what the slide should cover; do not generate a separate `**Outline Points:**` block
+4. Under "**Page Description:**", write the actual Markdown content that should appear on the slide.
+   It may include headings, bullets, short paragraphs, emphasis, or tables when appropriate.
+5. Inside `**Page Description:**`, you must use this structure:
+   --- SLIDE_TEXT ---
+   [slide body in Markdown]
+   --- SLIDE_TEXT_END ---
+6. If needed, append short one-line fields at the end of the page description, for example:
+   Visuals & Assets: ...
+   Layout & Emphasis: ...
+   Speaker Notes: ...
+7. Separate pages with "---"
+8. First page should be a cover, last page should be a closing/thank-you page
+9. Do not output explanations, prefaces, conclusions, or code fences
 
-## 第 2 页: 公司诞生前的行业环境
+Additional requirements:
+- The main body under "**Page Description:**" should look like real slide content, not just abstract instructions such as "blue tech background, text on the left, image on the right"
+- If a slide is best expressed as a list, comparison, timeline, or table, write it directly in Markdown
+- Keep optional trailing fields short and concrete
+- Omit optional fields when unnecessary
 
-> 章节: Part 1: 开场与背景
-
-**大纲要点：**
-- 概述20世纪90年代初个人电脑、图形计算和半导体行业的发展背景，说明英伟达成立的市场土壤。
-
-**页面描述：**
---- 页面文字 ---
-xxx
---- 页面文字结束 ---
-
-版式与重点：左侧要点纵向排列，右侧留行业背景示意图区
-演讲者备注：强调英伟达并非凭空出现，而是诞生于PC、图形计算和半导体共同发展的时代节点
-配图与素材：PC、芯片、电路纹理背景元素
-
----
-
-## 第 3 页: 创始团队与公司成立
-
-> 章节: Part 1: 开场与背景
-
-**大纲要点：**
-- 介绍黄仁勋及联合创始人的背景、创业动机、公司创立时间与初期定位，交代英伟达的起点。
-
-**页面描述：**
---- 页面文字 ---
-xxx
---- 页面文字结束 ---
-
-版式与重点：上方放成立信息，下方分点展示团队与定位；成立信息为视觉重点
-演讲者备注：介绍创始团队来自芯片与图形领域，英伟达从一开始就带有强烈技术创业色彩
-配图与素材：创始团队人物感、创业时间轴元素
-
----
-</example>
-
-
-只输出 Markdown，不要额外解释。
+Output ONLY the Markdown, no extra explanation.
 ```
 
 </Accordion>

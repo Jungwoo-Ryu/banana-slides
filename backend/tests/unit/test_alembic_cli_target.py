@@ -128,7 +128,7 @@ def test_cli_creates_missing_sqlite_directory(tmp_path):
 
 
 def test_explicit_config_override_still_wins(tmp_path):
-    """app.py sets sqlalchemy.url programmatically (desktop/自定义库路径);
+    """app.py sets sqlalchemy.url programmatically (desktop/Custom library path);
     that override must beat DATABASE_URL."""
     override_db = tmp_path / 'override.db'
     other_db = tmp_path / 'env.db'

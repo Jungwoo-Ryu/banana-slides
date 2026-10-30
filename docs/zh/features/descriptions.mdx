@@ -1,102 +1,102 @@
 ---
-title: "完善描述"
-description: "为每页幻灯片生成或编写详细的视觉描述"
+title: "Write Descriptions"
+description: "Generate or write detailed visual descriptions for each slide"
 ---
 
-描述编辑器是第三步。每页的描述由几个分工明确的字段组成，一起告诉 AI 这张幻灯片长什么样。描述越具体，生成效果越好。
+The Description Editor is the third step. Each page's description is made up of a few fields with clearly separated jobs, which together tell the AI what the slide should look like. The more specific, the better the result.
 
-## 每页的字段分工
+## How the Fields Divide the Work
 
-每个字段回答一个不同的问题，内容不要互相重复——重复的指令会互相打架，反而拉低生成质量。
+Each field answers a different question. Don't repeat content across them — overlapping instructions fight each other and drag the output quality down.
 
-| 字段 | 回答什么 | 会怎样被使用 |
-|------|---------|-------------|
-| **页面文字** | 这页**说**什么 | **逐字渲染到幻灯片上**，写什么就显示什么 |
-| **配图与素材** | 这页**放**什么 | 按内容执行：要画的图表/插画，或引用的素材图片 |
-| **版式与重点** | 这页**怎么排** | 只作设计指导，不会作为文字出现在页面上 |
-| **演讲者备注** | 讲的时候**怎么讲** | 不上屏，也不参与图片生成 |
+| Field | Answers | How it's used |
+|-------|---------|---------------|
+| **Page Text** | What this page **says** | **Rendered onto the slide verbatim** — what you write is what shows up |
+| **Visuals & Assets** | What this page **shows** | Executed as written: charts/illustrations to draw, or asset images to reference |
+| **Layout & Emphasis** | How this page is **arranged** | Design guidance only — never appears as text on the slide |
+| **Speaker Notes** | How to **deliver** it | Not on screen, and not used for image generation |
 
 <Warning>
-  「页面文字」里的内容会一字不差地印到幻灯片上。设计意图（如「标题居中」「用蓝色」）要写进「版式与重点」，写在页面文字里会被当作正文渲染出来。
+  Anything in "Page Text" is printed onto the slide word for word. Design intent (like "center the title" or "use blue") belongs in "Layout & Emphasis" — put it in Page Text and it gets rendered as body copy.
 </Warning>
 
-**各字段怎么写：**
+**How to write each field:**
 
-- **配图与素材**：写清图表类型和要表达的内容，如 `折线图：2020-2025 营收增长，突出 2023 年拐点`；素材图片用 Markdown 引用，如 `![说明](/files/xxx/image.png)`。建议不超过 3 项。
-- **版式与重点**：第一句写版式结构（如 `上标题下两栏`、`左文右图`、`横向时间线`、`大图铺底文字浮层`），第二句写视觉重点（观众第一眼该看到什么）。建议不超过两句。
+- **Visuals & Assets**: Spell out the chart type and what it should convey, e.g. `Line chart: revenue growth 2020-2025, highlight the 2023 inflection point`. Reference asset images with Markdown, e.g. `![caption](/files/xxx/image.png)`. Keep it to 3 items or fewer.
+- **Layout & Emphasis**: First sentence for the layout structure (e.g. `title on top, two columns below`, `text left, image right`, `horizontal timeline`, `full-bleed image with text overlay`), second sentence for the visual emphasis (what the audience should see first). Two sentences at most.
 
-## 自定义字段
+## Custom Fields
 
-操作栏的「**描述设置**」里可以增删字段、拖拽调整顺序，也可以添加自己的字段（如「品牌规范」）。字段胶囊上的图标表示该字段是否参与图片生成——「演讲者备注」默认不参与。
+**Description Settings** in the action bar lets you add or remove fields, drag them into a different order, and define your own (e.g. "Brand Guidelines"). The icon on a field pill indicates whether that field feeds into image generation — "Speaker Notes" doesn't by default.
 
 <Note>
-  旧项目里的「视觉元素」「视觉焦点」「排版布局」字段仍会正常显示和参与生成，无需手动迁移。新生成的描述会使用上面的新字段。
+  The older "Visual Elements", "Visual Focus", and "Layout" fields in existing projects still display and feed into generation as before, with no manual migration needed. Newly generated descriptions use the new fields above.
 </Note>
 
-## 批量生成所有描述
+## Batch Generate All Descriptions
 
-点击「**批量生成描述**」，AI 自动为每页生成描述，全部完成后可逐页查看和修改。
+Click **Batch Generate Descriptions** — AI generates descriptions for every page automatically. Review and edit page by page when done.
 
-**生成前可调整详细程度**（按钮旁边的下拉）：
+**Adjust detail level before generating** (dropdown next to the button):
 
-| 级别 | 适用场景 |
-|------|---------|
-| 精简 | 快速原型，速度优先 |
-| 默认 | 日常使用 |
-| 详细 | 精细打磨，效果优先 |
+| Level | Best for |
+|-------|---------|
+| Concise | Quick prototypes, speed priority |
+| Default | Everyday use |
+| Detailed | Fine-tuning, quality priority |
 
 <Tip>
-  描述中加入具体文字内容（如标题文案、数据），可以显著提升幻灯片上的文字渲染质量。
+  Include specific text content in descriptions (e.g., headline copy, data values) — this significantly improves text rendering quality on generated slides.
 </Tip>
 
-## 用 AI 批量修改描述
+## Refine with AI
 
-顶部输入栏支持对所有页面的描述批量调整，按 **Ctrl+Enter** 提交。
+The top input bar lets you adjust all descriptions at once. Press **Ctrl+Enter** to submit.
 
-**常用指令示例：**
-- `让所有描述更详细，加入具体的文字内容`
-- `统一改成深蓝色科技风格`
-- `第 3 页的描述加上一个数据对比表格`
-- `删除所有描述中提到"渐变背景"的部分`
+**Common commands:**
+- `Make all descriptions more detailed with specific text content`
+- `Change everything to a dark blue tech aesthetic`
+- `Add a data comparison table to page 3's description`
+- `Remove all mentions of "gradient background" from every description`
 
-## 单独重新生成某一页
+## Regenerate a Single Page
 
-每张描述卡片右上角有「**重新生成**」按钮：
+Each description card has a **Regenerate** button (🔄) in the top-right:
 
-1. 点击重新生成图标（🔄）
-2. 弹出确认框，确认后 AI 单独重新生成这一页的描述
-3. 生成完成后自动替换原内容
+1. Click the regenerate icon
+2. Confirm in the dialog
+3. AI regenerates just that page's description and replaces the old one
 
-## 手动编辑单页描述
+## Edit a Page Manually
 
-直接点击描述卡片中的文字区域，即可手动编辑该页描述，点击其他地方自动保存。
+Click directly on the text in any description card to edit it inline. Changes save automatically when you click elsewhere.
 
-## 设置描述生成要求
+## Set Description Requirements
 
-操作栏展开「**描述生成要求**」，填写对描述的整体约束，生成时 AI 会遵守。
+Expand **Description Generation Requirements** in the toolbar to add overall constraints — applied on every generation.
 
-**示例要求：**
-- `每页描述控制在 100 字以内`
-- `多使用数据和图表，少用纯文字`
-- `保持简洁的极简主义风格`
+**Example requirements:**
+- `Keep each description under 100 words`
+- `Favor data and charts over plain text`
+- `Maintain a clean minimalist style`
 
-点击「**自定义**」可以把常用要求保存为预设，之后一键追加。预设保存在当前浏览器；如果缓存结构损坏，编辑器会自动保留合法预设并清理坏记录，描述编辑仍可正常打开。
+Click **Custom** to save frequently used requirements as presets and append them later with one click. Presets are stored in the current browser. If the cache becomes malformed, the editor keeps valid presets and removes bad records automatically, so the Description Editor still opens normally.
 
-## 为某页指定参考图片
+## Add a Reference Image for a Page
 
-在描述卡片底部的编辑区域，可以上传该页的参考图片：
+At the bottom of each description card:
 
-1. 滚动到描述卡片底部，找到「**上传图片**」区域
-2. 上传或从素材库选择参考图片
-3. 填写修改指令（可选），点击「**生成图片**」
+1. Find the **Upload Images** section
+2. Upload or select a reference image from the material library
+3. Add an edit instruction (optional), then click **Generate Image**
 
-## 导入 / 导出描述
+## Import / Export
 
-点击「**导入/导出**」：
-- **导出描述**：仅导出描述内容
-- **导出大纲和描述**：导出完整内容（含要点）
-- **导入**：从文件加载描述，追加到现有页面
+Click **Import/Export**:
+- **Export Descriptions**: Export description content only
+- **Export Outline & Descriptions**: Full export including key points
+- **Import**: Load from file, appended to existing pages
 
-## 完成后
+## Next Step
 
-所有页面有描述后，右上角「**下一步 →**」会激活，点击进入[幻灯片预览](/zh/features/images)，开始生成图片。
+Once all pages have descriptions, the **Next →** button activates. Click it to go to the [Slide Preview](/features/images) and start generating images.

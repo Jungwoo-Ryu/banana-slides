@@ -5,125 +5,125 @@ import os
 import sys
 from datetime import timedelta
 
-# 基础配置 - 使用更可靠的路径计算方式
-# 在模块加载时立即计算并固定路径
-_current_file = os.path.realpath(__file__)  # 使用realpath解析所有符号链接
+# Basic Configuration - More reliable path calculations
+# Calculating and fixing the path immediately when the module is loaded
+_current_file = os.path.realpath(__file__)  # Usage realpath Parsing All Symbolic Links
 BASE_DIR = os.path.dirname(_current_file)
 PROJECT_ROOT = os.path.dirname(BASE_DIR)
 DEFAULT_FRONTEND_PORT = 3011
 DEFAULT_BACKEND_PORT = 5011
 
-# Flask配置
+# Flask Configuration
 class Config:
     """Base configuration"""
     SECRET_KEY = os.getenv('SECRET_KEY', 'your-secret-key-change-this')
-    
-    # 数据库配置
+
+    # Database Configuration
     # Use absolute path to avoid WSL path issues
     db_path = os.path.join(BASE_DIR, 'instance', 'database.db')
     SQLALCHEMY_DATABASE_URI = os.getenv(
-        'DATABASE_URL', 
+        'DATABASE_URL',
         f'sqlite:///{db_path}'
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    
-    # SQLite线程安全配置 - 关键修复
+
+    # SQLite Thread Security Configuration - Critical repairs
     SQLALCHEMY_ENGINE_OPTIONS = {
         'connect_args': {
-            'check_same_thread': False,  # 允许跨线程使用（仅SQLite）
-            'timeout': 30  # 增加超时时间
+            'check_same_thread': False,  # Allow cross-line (only) SQLite）
+            'timeout': 30  # Increase timeout
         },
-        'pool_pre_ping': True,  # 连接前检查
-        'pool_recycle': 3600,  # 1小时回收连接
+        'pool_pre_ping': True,  # Check before connecting
+        'pool_recycle': 3600,  # 1 Hourly recovery connection
     }
-    
-    # 文件存储配置
+
+    # File Storage Configuration
     UPLOAD_FOLDER = os.path.join(PROJECT_ROOT, 'uploads')
     MAX_CONTENT_LENGTH = 200 * 1024 * 1024  # 200MB max file size
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
     ALLOWED_REFERENCE_FILE_EXTENSIONS = {'pdf', 'docx', 'pptx', 'doc', 'ppt', 'xlsx', 'xls', 'csv', 'txt', 'md'}
-    
-    # AI服务配置
+
+    # AI Service Configuration
     GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY', '')
     GOOGLE_API_BASE = os.getenv('GOOGLE_API_BASE') or ''
-    
+
     # Provider format: gemini | openai | volcengine | vertex | lazyllm
     AI_PROVIDER_FORMAT = os.getenv('AI_PROVIDER_FORMAT', 'azure')
 
     # Google Cloud Vertex AI (requires AI_PROVIDER_FORMAT=vertex)
     VERTEX_PROJECT_ID = os.getenv('VERTEX_PROJECT_ID', '')
     VERTEX_LOCATION = os.getenv('VERTEX_LOCATION', 'us-central1')
-    
-    # GenAI (Gemini) 格式专用配置
-    GENAI_TIMEOUT = float(os.getenv('GENAI_TIMEOUT', '300.0'))  # Gemini 超时时间（秒）
-    GENAI_MAX_RETRIES = int(os.getenv('GENAI_MAX_RETRIES', '2'))  # Gemini 最大重试次数（应用层实现）
-    
-    # OpenAI 格式专用配置（当 AI_PROVIDER_FORMAT=openai 时使用）
-    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')  # 当 AI_PROVIDER_FORMAT=openai 时必须设置
+
+    # GenAI (Gemini) Format Special Configuration
+    GENAI_TIMEOUT = float(os.getenv('GENAI_TIMEOUT', '300.0'))  # Gemini Timeout (seconds)）
+    GENAI_MAX_RETRIES = int(os.getenv('GENAI_MAX_RETRIES', '2'))  # Gemini Maximum number of re-tests (appliance layer achieved)）
+
+    # OpenAI Format Special Configuration (when) AI_PROVIDER_FORMAT=openai Use of time）
+    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')  # Required when AI_PROVIDER_FORMAT=openai
     OPENAI_API_BASE = os.getenv('OPENAI_API_BASE') or 'https://api.openai.com/v1'
-    OPENAI_TIMEOUT = float(os.getenv('OPENAI_TIMEOUT', '480.0'))  # 8 分钟：留出 gpt-image-2 生图(~225s)+传输的余量
-    OPENAI_MAX_RETRIES = int(os.getenv('OPENAI_MAX_RETRIES', '2'))  # 减少重试次数，避免过多重试导致累积超时
+    OPENAI_TIMEOUT = float(os.getenv('OPENAI_TIMEOUT', '480.0'))  # 8 Minutes： Stay gpt-image-2 Life map(~225s)+Residual amount of the transfer
+    OPENAI_MAX_RETRIES = int(os.getenv('OPENAI_MAX_RETRIES', '2'))  # Reduce the number of retests and avoid multiple trials leading to cumulative timeout
 
     # Global output limit for text and image-understanding responses.
     TEXT_MAX_OUTPUT_TOKENS = int(os.getenv("TEXT_MAX_OUTPUT_TOKENS", os.getenv("ANTHROPIC_MAX_TOKENS", "32768")))
 
-    # Anthropic 格式专用配置（当 AI_PROVIDER_FORMAT=anthropic 时使用）
-    # 支持 ANTHROPIC_AUTH_TOKEN 作为 ANTHROPIC_API_KEY 的别名
-    # 支持 ANTHROPIC_BASE_URL 作为 ANTHROPIC_API_BASE 的别名
+    # Anthropic Format Special Configuration (when) AI_PROVIDER_FORMAT=anthropic Use of time）
+    # Support ANTHROPIC_AUTH_TOKEN As ANTHROPIC_API_KEY aliases
+    # Support ANTHROPIC_BASE_URL As ANTHROPIC_API_BASE aliases
     ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY', '') or os.getenv('ANTHROPIC_AUTH_TOKEN', '')
     ANTHROPIC_API_BASE = os.getenv('ANTHROPIC_API_BASE', '') or os.getenv('ANTHROPIC_BASE_URL', 'https://api.anthropic.com')
     ANTHROPIC_VERSION = os.getenv('ANTHROPIC_VERSION', '2023-06-01')
     ANTHROPIC_MAX_TOKENS = TEXT_MAX_OUTPUT_TOKENS  # legacy alias
 
-    # Lazyllm 格式专用配置（当 AI_PROVIDER_FORMAT=lazyllm 时使用）
-    TEXT_MODEL_SOURCE = os.getenv('TEXT_MODEL_SOURCE', '')                   # 文本生成模型厂商（留空则跟随全局 AI_PROVIDER_FORMAT）
-    IMAGE_MODEL_SOURCE = os.getenv('IMAGE_MODEL_SOURCE', '')                   # 图片生成模型厂商（留空则跟随全局 AI_PROVIDER_FORMAT）
-    IMAGE_CAPTION_MODEL_SOURCE = os.getenv('IMAGE_CAPTION_MODEL_SOURCE', '')   # 图片识别模型厂商（留空则跟随全局 AI_PROVIDER_FORMAT）
+    # Lazyllm Format Special Configuration (when) AI_PROVIDER_FORMAT=lazyllm Use of time）
+    TEXT_MODEL_SOURCE = os.getenv('TEXT_MODEL_SOURCE', '')                   # Text Generation Modeller (leave left and follow global AI_PROVIDER_FORMAT）
+    IMAGE_MODEL_SOURCE = os.getenv('IMAGE_MODEL_SOURCE', '')                   # Photo Generating Modeller (leave left and follow the whole picture) AI_PROVIDER_FORMAT）
+    IMAGE_CAPTION_MODEL_SOURCE = os.getenv('IMAGE_CAPTION_MODEL_SOURCE', '')   # Photo recognition model manufacturer (leave left behind and follow the entire site) AI_PROVIDER_FORMAT）
 
-    # 各模型类型的独立 API 配置（优先级高于全局配置）
-    # 文本模型独立配置
+    # Independence of model types API Configuration (priority above global configuration)）
+    # Text Model Independent Configuration
     TEXT_API_KEY = os.getenv('TEXT_API_KEY', '')
     TEXT_API_BASE = os.getenv('TEXT_API_BASE', '')
-    # 图像模型独立配置
+    # Image Model Independent Configuration
     IMAGE_API_KEY = os.getenv('IMAGE_API_KEY', '')
     IMAGE_API_BASE = os.getenv('IMAGE_API_BASE', '')
-    # 图片识别模型独立配置
+    # Image Identification Model Independent Configuration
     IMAGE_CAPTION_API_KEY = os.getenv('IMAGE_CAPTION_API_KEY', '')
     IMAGE_CAPTION_API_BASE = os.getenv('IMAGE_CAPTION_API_BASE', '')
-    
-    # AI 模型配置
+
+    # AI Model Configuration
     TEXT_MODEL = os.getenv('TEXT_MODEL', 'gpt-5.5')
     IMAGE_MODEL = os.getenv('IMAGE_MODEL', 'gpt-image-1')
 
-    # MinerU 文件解析服务配置
+    # MinerU File parsing service configuration
     MINERU_TOKEN = os.getenv('MINERU_TOKEN', '')
     MINERU_API_BASE = os.getenv('MINERU_API_BASE', '')
-    
-    # 图片识别模型配置
+
+    # Picture Recognition Model Configuration
     IMAGE_CAPTION_MODEL = os.getenv('IMAGE_CAPTION_MODEL', 'gpt-5.5')
-    
-    # 并发配置
+
+    # Combination Configuration
     MAX_DESCRIPTION_WORKERS = int(os.getenv('MAX_DESCRIPTION_WORKERS', '3'))
     MAX_IMAGE_WORKERS = int(os.getenv('MAX_IMAGE_WORKERS', '3'))
-    
-    # 图片生成配置
+
+    # Picture Generation Configuration
     DEFAULT_ASPECT_RATIO = "16:9"
     DEFAULT_RESOLUTION = "2K"
-    # 图片质量档位（OpenAI 兼容图片模型: auto/low/medium/high/xhigh/max）
-    # xhigh / max 需要 gpt-image-2.5 及更新模型，旧模型会自动回落到 high
+    # Picture quality slot（OpenAI Compatible image model: auto/low/medium/high/xhigh/max）
+    # xhigh / max Yes. gpt-image-2.5 And update the model, the old model will automatically fall back. high
     IMAGE_QUALITY = os.getenv('IMAGE_QUALITY', 'auto')
-    
-    # 日志配置
+
+    # Log Configuration
     LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
     WERKZEUG_LOG_LEVEL = (os.getenv('WERKZEUG_LOG_LEVEL') or 'INFO').strip().upper()
-    
-    # CORS配置
+
+    # CORS Configuration
     CORS_ORIGINS = os.getenv('CORS_ORIGINS', f'http://localhost:{DEFAULT_FRONTEND_PORT}').split(',')
-    
-    # 输出语言配置
-    # 可选值: 'zh' (中文), 'ja' (日本語), 'en' (English), 'auto' (自动)
+
+    # Output Language Configuration
+    # Optional value: 'zh' (Chinese), 'ja' (Japanese), 'en' (English), 'auto' (Auto)
     OUTPUT_LANGUAGE = os.getenv('OUTPUT_LANGUAGE', 'ko')
-    
+
     # Explicit adapters; no implicit external OCR or parser uploads.
     DOCUMENT_PARSER = os.getenv('DOCUMENT_PARSER', 'local')
     DOCUMENT_PARSER_URL = os.getenv('DOCUMENT_PARSER_URL', '')
@@ -137,7 +137,7 @@ class Config:
     AZURE_OPENAI_API_VERSION = os.getenv('AZURE_OPENAI_API_VERSION', '2025-04-01-preview')
     TTS_ENABLED = os.getenv('TTS_ENABLED', 'false').lower() == 'true'
 
-    # TTS 视频导出配置
+    # TTS Video Export Configuration
     TTS_DEFAULT_VOICE_ZH = os.getenv('TTS_DEFAULT_VOICE_ZH', 'zh-CN-XiaoxiaoNeural')
     TTS_DEFAULT_VOICE_EN = os.getenv('TTS_DEFAULT_VOICE_EN', 'en-US-JennyNeural')
     TTS_DEFAULT_VOICE_JA = os.getenv('TTS_DEFAULT_VOICE_JA', 'ja-JP-NanamiNeural')
@@ -159,7 +159,7 @@ class ProductionConfig(Config):
     DEBUG = False
 
 
-# 根据环境变量选择配置
+# Select Configuration Based on Environmental Variables
 config_map = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,

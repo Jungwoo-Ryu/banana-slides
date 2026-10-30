@@ -281,7 +281,7 @@ def patch_template_asset(project_id: str, asset_id: str):
     if 'analysis_json' in data:
         analysis_data = data['analysis_json']
         if analysis_data is not None and not isinstance(analysis_data, dict):
-            return bad_request('analysis_json 必须是一个字典')
+            return bad_request('analysis_json Must be a dictionary.')
         asset.set_analysis(analysis_data)
         asset.user_edited_analysis = True
         touched = True
@@ -317,7 +317,7 @@ def delete_template_asset(project_id: str, asset_id: str):
     # We don't rely on the DB FK ON DELETE SET NULL because SQLite does not
     # enforce foreign keys unless PRAGMA foreign_keys=ON (not set here); doing
     # it in the update keeps the reset database-agnostic and puts those pages
-    # back into the "未确认" state per PRD §11.
+    # back into the "Not confirmed" state per PRD §11.
     if referenced_page_ids:
         Page.query.filter(Page.id.in_(referenced_page_ids)).update(
             {

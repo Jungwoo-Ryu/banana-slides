@@ -1,70 +1,70 @@
 ---
-title: "逐页模板"
-description: "为整份 PPT 统一风格，或为每一页单独指定模板"
+title: "Per-Page Templates"
+description: "Apply one consistent style to a whole deck, or pick a template for each page individually"
 ---
 
-模板让生成的每一页都贴合你想要的视觉风格。Banana Slides 支持两种使用方式：**统一模板**（整份统一）和**每页独立模板**（每页可不同）。
+Templates make every generated page match the visual style you want. Banana Slides supports two modes: **unified template** (one style for the whole deck) and **per-page templates** (each page can differ).
 
-## 两种模式
+## The two modes
 
-| 模式 | 含义 | 适合 |
-|------|------|------|
-| 统一模板 | 所有页面使用同一张模板 | 风格统一的常规汇报、课件 |
-| 每页独立模板 | 每页可绑定不同模板 | 封面、数据页、结尾页风格各异的精装演示 |
+| Mode | Meaning | Best for |
+|------|---------|----------|
+| Unified template | All pages use the same template | Consistent reports and lecture decks |
+| Per-page templates | Each page can bind a different template | Polished decks where cover, data, and closing pages each have their own style |
 
 <Note>
-  **底层数据语义**：无论哪种模式，每一页都各自记录自己的模板。统一模板模式只表示「当前所有页面恰好选了同一张模板」，它是一种界面提示，而不是独立的数据形态。因此两种模式可以随时来回切换，不会丢失数据结构。
+  **Underlying data semantics**: regardless of mode, every page records its own template. Unified-template mode simply means "all pages currently happen to use the same template" — it is a UI hint, not a separate data shape. That's why you can switch back and forth at any time without losing structure.
 </Note>
 
-## 统一模板：创建时一次选定
+## Unified template: pick once at creation
 
-在首页创建项目时选择「**统一模板**」，并在模板选择区点选或上传一张模板。创建后该模板会自动赋给所有页面，直接进入大纲编辑，无需额外配置。
+When creating a project on the home page, choose **Unified template** and select or upload one template in the template area. After creation, that template is applied to every page automatically and you go straight to the outline editor — no extra configuration needed.
 
-## 每页独立模板：项目模板库
+## Per-page templates: the project template library
 
-在首页选择「**每页独立模板**」创建项目后，先进入大纲与描述编辑；完成描述后点击「**下一步**」进入**模板配置**页（此后也可随时从预览页顶部的「**模板配置**」入口进入）。这里管理整个项目的**模板库**：
+After creating a project with **Per-page templates**, you first edit the outline and descriptions; clicking **Next** after the descriptions step opens the **Template Setup** page (also reachable any time afterward from the **Template Setup** entry at the top of the preview page). This is where you manage the project's **template library**:
 
-### 上传模板
+### Upload templates
 
-- **上传模板**：单张图片直接加入模板库
-- **上传 PDF**：上传一份多页 PDF（如品牌手册、风格 deck），系统自动按页拆分成多张模板图片，逐页加入模板库
+- **Upload template**: add a single image directly to the library
+- **Upload PDF**: upload a multi-page PDF (e.g. a brand book or style deck); the system automatically splits it page by page into template images and adds each to the library
 
-### AI 模板解析
+### AI template analysis
 
-每张模板上传后，AI 会自动解析它的视觉特征（配色、版式、文字区域、图像区域等），用于后续的自动匹配。
+After each template is uploaded, the AI automatically analyzes its visual characteristics (color palette, layout, text regions, image regions, etc.) for use in auto-matching.
 
-- 解析进行中会显示状态，页面会自动刷新图片与 PDF 拆分页的解析进度；完成后可在模板卡片上**编辑解析结果**和补充**模板标记**
-- 若某张模板解析失败，它仍可被**手动选择**用于生成，只是不会进入自动匹配的候选池；可点击重新解析
+- Analysis status is shown while in progress, and the page automatically refreshes analysis progress for images and PDF-split pages; once complete you can **edit the analysis** and add a **template label** on the card
+- If a template fails analysis, it can still be **selected manually** for generation — it just won't enter the auto-match candidate pool; you can re-run analysis
 
-### 一键自动匹配
+### One-click auto-match
 
-点击「**自动匹配**」，AI 会综合每页的标题与描述、以及模板库中各模板的风格，为每一页推荐最合适的模板，并给出匹配理由和置信度。匹配后你可以逐页复核：
+Click **Auto-match** and the AI considers each page's title and description together with every template's style in the library, then recommends the best-fit template for each page along with a reason and confidence score. You can then review page by page:
 
-- 页面描述尚未完成、模板仍在解析或没有解析成功的模板时，自动匹配会保持不可用并显示具体原因；就绪后自动恢复，避免生成中的页面内容被提前刷新
-- 已匹配的页面会显示推荐来源与理由
-- AI 无法确定的页面保持「未确认」，由你手动指定
+- Auto-match stays disabled with a specific reason while page descriptions are incomplete, templates are still being analyzed, or no template has completed analysis; it becomes available automatically when ready, preventing in-progress page content from being refreshed too early
+- Matched pages show the recommendation source and reason
+- Pages the AI can't decide stay "Unconfirmed" for you to assign manually
 
-### 逐页绑定
+### Per-page binding
 
-在每个页面卡片上可以随时手动**选择模板**，覆盖自动匹配结果，或为「未确认」的页面指定模板。每页也支持单独的**文字模板**（用文字描述该页的风格）。
+On each page card you can manually **select a template** at any time to override the auto-match result, or assign a template to an "Unconfirmed" page. Each page also supports its own **text template** (describing that page's style in words).
 
-## 切换模式
+## Switching modes
 
-两种模式可在任意阶段双向切换，已生成的图片不会被切换动作清除。
+You can switch between the two modes in both directions at any stage, and already-generated images are never wiped by the switch.
 
-**每页独立模板 → 统一模板**：点击「**转为统一模板**」。由于要把所有页面统一成同一张模板，系统会弹窗让你**从现有模板库选一张**（或上传新模板）作为统一模板，确认后所有页面统一引用它。
+**Per-page → unified**: click **Switch to unified**. Because all pages must converge on one template, a dialog asks you to **pick one from the existing library** (or upload a new one) as the unifying template; once confirmed, every page references it.
 
 <Warning>
-  转为统一模板会用所选模板覆盖每一页原本的模板绑定。已经生成的图片会保留，但重新生成某页时会使用新的统一模板。
+  Switching to unified overwrites each page's original template binding with the chosen one. Already-generated images are kept, but regenerating a page will use the new unifying template.
 </Warning>
 
-**统一模板 → 每页独立模板**：点击「**转为每页独立模板**」，项目进入每页独立模板模式并解锁模板库。所有页面先继承当前已选的模板，之后可逐页调整。
+**Unified → per-page**: click **Switch to per-page**; the project enters per-page template mode and the library unlocks. Every page first inherits the currently selected template, after which you can adjust them page by page.
 
-## 删除模板的影响
+## Effect of deleting a template
 
-从模板库删除一张模板时，所有引用它的页面会被重置为「未确认」状态，需要重新指定模板后才能用它生成。删除前会有确认提示。
+Deleting a template from the library resets every page that referenced it to "Unconfirmed"; those pages need a new template before they can generate with one. A confirmation prompt appears before deletion.
 
-## 常见问题
+## FAQ
 
-- **生成时提示需要模板或风格描述**：请确认至少有一页绑定了模板，或在项目设置里填写了风格描述。
-- **自动匹配把多页都匹配到同一张模板**：这是正常的——AI 会综合全局判断，相近内容可能共用模板。你可以逐页手动调整。
+- **Generation says a template or style description is required**: make sure at least one page is bound to a template, or fill in a style description in project settings.
+- **Auto-match assigns the same template to several pages**: this is expected — the AI judges globally, and similar content may share a template. You can adjust any page manually.

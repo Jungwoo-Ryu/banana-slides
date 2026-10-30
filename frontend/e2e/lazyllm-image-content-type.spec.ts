@@ -48,7 +48,7 @@ test.describe('Image generation error handling (mock)', () => {
     await page.goto(`${BASE}/detail/${projectId}`)
 
     // Trigger image generation
-    const genBtn = page.locator('button').filter({ hasText: /生成图片|Generate Images/i }).first()
+    const genBtn = page.locator('button').filter({ hasText: /\u751f\u6210\u56fe\u7247|Generate Images/i }).first()
     if (await genBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
       await genBtn.click()
       // Should show some error feedback (toast / alert)

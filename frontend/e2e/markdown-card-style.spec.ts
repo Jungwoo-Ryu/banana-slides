@@ -57,7 +57,7 @@ test.describe('Markdown image size and DescriptionCard max height', () => {
     await setupMocks(page, pages);
 
     await page.goto(`${BASE}/project/${PROJECT_ID}/detail`);
-    await expect(page.locator('text=第 1 页')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=Page 1 Page')).toBeVisible({ timeout: 10000 });
 
     const img = page.locator('.markdown-content img').first();
     await expect(img).toBeVisible({ timeout: 10000 });
@@ -75,7 +75,7 @@ test.describe('Markdown image size and DescriptionCard max height', () => {
     await setupMocks(page, pages);
 
     await page.goto(`${BASE}/project/${PROJECT_ID}/detail`);
-    await expect(page.locator('text=第 1 页')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=Page 1 Page')).toBeVisible({ timeout: 10000 });
 
     const contentArea = page.getByTestId('description-card-content');
     await expect(contentArea).toHaveClass(/max-h-96/);

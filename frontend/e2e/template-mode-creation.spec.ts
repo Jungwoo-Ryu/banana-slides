@@ -11,7 +11,7 @@
  * survives a reload:
  *   - single: one template bound to every page; all pages share that asset.
  *   - multi:  two pages bound to two distinct templates; bindings persist after
- *     reload (spec §8.3 "刷新后绑定仍在").
+ *     reload (spec §8.3 "Refreshed and bound still").
  */
 import { test, expect } from '@playwright/test'
 import {
@@ -108,12 +108,12 @@ test('mock: multi-mode toggle flips the new project to multi after Next', async 
   await stubHomeBackend(page, modeCalls)
 
   await page.goto(BASE_URL)
-  await page.getByRole('textbox').first().fill('一份关于多模板创建的演示')
+  await page.getByRole('textbox').first().fill('A presentation on the creation of multiple templates')
 
   // Enable per-page template mode.
-  await page.getByText(/每页独立模板|Per-page templates/).click()
+  await page.getByText(/\u6bcf\u9875\u72ec\u7acb\u6a21\u677f|Per-page templates/).click()
 
-  await page.getByRole('button', { name: /下一步|Next/ }).click()
+  await page.getByRole('button', { name: /\u4e0b\u4e00\u6b65|Next/ }).click()
 
   // Home must PATCH the project to multi mode before leaving.
   await expect.poll(() => modeCalls).toContain('multi')
@@ -124,10 +124,10 @@ test('mock: single-mode creation never PATCHes template-mode', async ({ page }) 
   await stubHomeBackend(page, modeCalls)
 
   await page.goto(BASE_URL)
-  await page.getByRole('textbox').first().fill('一份关于单模板创建的演示')
+  await page.getByRole('textbox').first().fill('A demo to create a single template')
 
   // Leave the multi toggle OFF.
-  await page.getByRole('button', { name: /下一步|Next/ }).click()
+  await page.getByRole('button', { name: /\u4e0b\u4e00\u6b65|Next/ }).click()
 
   // Allow navigation to settle, then assert no mode switch happened.
   await page.waitForURL(`**/project/mock-proj-1/**`)
@@ -172,11 +172,11 @@ test('integration: multi-mode per-page bindings persist across reload', async ({
   await page.waitForLoadState('networkidle')
 
   // No unconfirmed placeholders: both pages are bound.
-  await expect(page.getByText(/未确认|Unconfirmed/)).toHaveCount(0)
+  await expect(page.getByText(/\u672a\u786e\u8ba4|Unconfirmed/)).toHaveCount(0)
 
   await page.reload()
   await page.waitForLoadState('networkidle')
-  await expect(page.getByText(/未确认|Unconfirmed/)).toHaveCount(0)
+  await expect(page.getByText(/\u672a\u786e\u8ba4|Unconfirmed/)).toHaveCount(0)
 
   // Backend kept the two distinct bindings.
   const proj = await getProject(BACKEND_URL, projectId)

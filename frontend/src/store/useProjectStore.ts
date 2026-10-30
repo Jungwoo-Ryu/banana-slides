@@ -13,34 +13,34 @@ import { getT } from '@/utils/i18nHelper';
 const storeI18n = {
   zh: {
     store: {
-      createFailed: '创建项目失败',
-      createNoId: '项目创建失败：未返回项目ID',
-      syncFailed: '同步项目失败',
-      projectNotFound: '项目不存在，可能已被删除',
-      requestFailed: '请求失败',
-      requestFailedStatus: '请求失败: {{status}}',
-      networkError: '网络错误，请检查后端服务是否启动',
-      updateOrderFailed: '更新顺序失败',
-      newPage: '新页面',
-      addPageFailed: '添加页面失败',
-      deletePageFailed: '删除页面失败',
-      taskStartFailed: '任务启动失败',
-      taskFailed: '任务失败',
-      unknownTaskStatus: '未知任务状态: {{status}}',
-      taskQueryFailed: '任务查询失败',
-      generateOutlineFailed: '生成大纲失败',
-      generateFromDescFailed: '从描述生成失败',
-      projectIdMissing: '项目ID不存在',
-      noTaskId: '未收到任务ID',
-      generateDescFailed: '生成描述失败',
-      generateDescTimeout: '生成描述失败：轮询超时',
-      startGenerationFailed: '启动生成任务失败',
-      regenerateFailed: '重新生成失败',
-      batchGenerateFailed: '批量生成失败',
-      editImageFailed: '编辑图片失败',
-      exportLinkFailed: '导出链接获取失败',
-      exportFailed: '导出失败',
-      exportEditableFailed: '导出可编辑PPTX失败',
+      createFailed: 'Failed to create project',
+      createNoId: 'Project creation failed: no project ID returned',
+      syncFailed: 'Failed to sync project',
+      projectNotFound: 'Project not found, it may have been deleted',
+      requestFailed: 'Request failed',
+      requestFailedStatus: 'Request failed: {{status}}',
+      networkError: 'Network error, please check if the backend service is running',
+      updateOrderFailed: 'Failed to update page order',
+      newPage: 'New Page',
+      addPageFailed: 'Failed to add page',
+      deletePageFailed: 'Failed to delete page',
+      taskStartFailed: 'Failed to start task',
+      taskFailed: 'Task failed',
+      unknownTaskStatus: 'Unknown task status: {{status}}',
+      taskQueryFailed: 'Failed to query task',
+      generateOutlineFailed: 'Failed to generate outline',
+      generateFromDescFailed: 'Failed to generate from description',
+      projectIdMissing: 'Project ID not found',
+      noTaskId: 'No task ID received',
+      generateDescFailed: 'Failed to generate description',
+      generateDescTimeout: 'Failed to generate description: polling timeout',
+      startGenerationFailed: 'Failed to start generation task',
+      regenerateFailed: 'Failed to regenerate',
+      batchGenerateFailed: 'Batch generation failed',
+      editImageFailed: 'Failed to edit image',
+      exportLinkFailed: 'Failed to get export link',
+      exportFailed: 'Export failed',
+      exportEditableFailed: 'Failed to export editable PPTX',
     }
   },
   en: {
@@ -78,8 +78,8 @@ const storeI18n = {
 };
 const t = getT(storeI18n);
 
-// 清理旧原型遗留的 per-project localStorage key（交接文档 §3：旧 demo 数据不迁移）。
-// 模块加载时执行一次，把废弃的模板相关 key 直接删除。
+// Clean up the old prototype. per-project localStorage key（Handover of documents §3：Old demo Data does not migrate）。
+// Do it once when the module is loaded and connect the obsolete template key Remove Directly。
 (function cleanupLegacyTemplateLocalStorageKeys() {
   if (typeof window === 'undefined' || !window.localStorage) return;
   const legacyPrefixes = ['template_mode_', 'template_assets_', 'page_template_assign_'];
@@ -93,54 +93,54 @@ const t = getT(storeI18n);
     }
     toRemove.forEach((key) => localStorage.removeItem(key));
   } catch {
-    // localStorage 不可用时静默跳过
+    // localStorage Skip silently when not available
   }
 })();
 
 interface ProjectState {
-  // 状态
+  // Status
   currentProject: Project | null;
   isGlobalLoading: boolean;
-  // 有页面改动正在防抖队列中或写回后端（用于「保存中/已保存」提示）
+  // There are page changes in the tremors queue or backends (used for「Saving/Saved」Hint）
   isSavingPages: boolean;
   activeTaskId: string | null;
   taskProgress: { total: number; completed: number } | null;
   error: string | null;
-  // 每个页面的生成任务ID映射 (pageId -> taskId)
+  // Generating Tasks for Each Page ID Map (pageId -> taskId)
   pageGeneratingTasks: Record<string, string>;
-  // 警告消息
+  // Warning Message
   warningMessage: string | null;
-  // 流式大纲生成中
+  // Streaming outline generation
   isOutlineStreaming: boolean;
-  // 正在流式生成大纲的项目。任务仍可在后台完成，但只能更新自己的项目。
+  // Items that are streaming out the outline. Tasks can still be done backstage, but can only update their own projects。
   outlineStreamingProjectIds: string[];
-  // 流式描述生成中
+  // Streaming description generation
   isDescriptionStreaming: boolean;
-  // 项目模板库（per-page template）
+  // Project Template Library（per-page template）
   templateAssets: TemplateAsset[];
 
   // Actions
   setCurrentProject: (project: Project | null) => void;
   setGlobalLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  
-  // 项目操作
+
+  // Project Operations
   initializeProject: (type: 'idea' | 'outline' | 'description' | 'blank', content: string, templateImage?: File, templateStyle?: string, referenceFileIds?: string[], aspectRatio?: string) => Promise<void>;
   syncProject: (projectId?: string) => Promise<void>;
-  
-  // 页面操作
+
+  // Page Operations
   updatePageLocal: (pageId: string, data: any) => void;
   saveAllPages: () => Promise<void>;
   reorderPages: (newOrder: string[]) => Promise<void>;
   addNewPage: () => Promise<void>;
   deletePageById: (pageId: string) => Promise<void>;
-  
-  // 异步任务
+
+  // Step-by-step mission
   startAsyncTask: (apiCall: () => Promise<any>) => Promise<void>;
   pollTask: (taskId: string) => Promise<void>;
   pollImageTask: (taskId: string, pageIds: string[]) => void;
 
-  // 生成操作
+  // Generate Operations
   generateOutline: () => Promise<void>;
   generateOutlineStream: (lockPageCount?: boolean) => Promise<{ complete: boolean; active: boolean } | undefined>;
   generateFromDescription: () => Promise<void>;
@@ -158,13 +158,13 @@ interface ProjectState {
       uploadedFiles?: File[];
     }
   ) => Promise<void>;
-  
-  // 导出
+
+  // Export
   exportPPTX: (pageIds?: string[]) => Promise<void>;
   exportPDF: (pageIds?: string[]) => Promise<void>;
   exportEditablePPTX: (filename?: string, pageIds?: string[]) => Promise<void>;
 
-  // 每页模板（per-page template）
+  // Templates per Page（per-page template）
   loadTemplateAssets: (projectId: string) => Promise<TemplateAsset[]>;
   uploadTemplateAsset: (projectId: string, file: File, opts?: { userLabel?: string; bindToPageId?: string }) => Promise<TemplateAsset>;
   uploadTemplatePdf: (projectId: string, file: File) => Promise<string>;
@@ -180,43 +180,43 @@ interface ProjectState {
 }
 
 export const useProjectStore = create<ProjectState>((set, get) => {
-  // 把一页的字段分发到各自的后端端点
+  // Send one page field to their backends
   const savePageFields = async (projectId: string, pageId: string, data: any) => {
     const promises: Promise<any>[] = [];
 
-    // 如果更新的是 description_content，使用专门的端点
+    // If it’s updated description_content，Use specific endpoints
     if (data.description_content) {
       promises.push(api.updatePageDescription(projectId, pageId, data.description_content));
     }
 
-    // 如果更新的是 outline_content，使用专门的端点
+    // If it’s updated outline_content，Use specific endpoints
     if (data.outline_content) {
       promises.push(api.updatePageOutline(projectId, pageId, data.outline_content));
     }
 
-    // 如果更新的是 narration_text，使用专门的端点
-    // （通用端点只接受 part，narration 走这里才能真正落库）
+    // If it’s updated narration_text，Use specific endpoints
+    // （General Endpoint Accepts Only part，narration This is where we’re going to get to the bottom of this.）
     if ('narration_text' in data) {
       promises.push(api.updatePageNarration(projectId, pageId, data.narration_text ?? ''));
     }
 
-    // 如果更新的是 part 字段，使用通用端点
+    // If it’s updated part fields, using generic endpoints
     if ('part' in data) {
       promises.push(api.updatePage(projectId, pageId, { part: data.part }));
     }
 
-    // 如果没有特定的内容更新，使用通用端点
+    // Use common endpoint if no specific content update is available
     if (promises.length === 0) {
       await api.updatePage(projectId, pageId, data);
     } else {
-      // 并行执行所有更新请求
+      // Implement all updates in parallel
       await Promise.all(promises);
     }
   };
 
-  // 待写回后端的页面改动：pageId -> 合并后的字段。
-  // 防抖计时器是全局共享的，所以这里必须累积而不是覆盖参数，
-  // 否则 1s 内连续编辑多个字段（或切页后继续编辑）会丢掉先前的改动。
+  // Page changes to be written backend：pageId -> Merged Fields。
+  // The vibrating timer is shared across the board, so it has to accumulate, not overwhelm, parameters.，
+  // Otherwise... 1s Continuous editing of multiple fields (or continued editing after cutting pages) will remove previous changes。
   const pendingPageUpdates = new Map<string, { projectId: string; data: any }>();
 
   const flushPageUpdates = async () => {
@@ -229,11 +229,11 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         entries.map(([pageId, { projectId, data }]) => savePageFields(projectId, pageId, data))
       );
 
-      // API调用成功后，同步项目状态以更新updated_at
-      // 图片生成期间 poll 已在 2s 同步，跳过以避免并发竞态
-      // 用户可能在防抖窗口内切走了项目，此时同步会把当前项目覆盖成旧项目
-      // 队列可能混着多个项目的改动（防抖窗口内切了项目），所以要看整个队列里
-      // 有没有当前项目的写回，而不是只看第一条
+      // API Sync project status to update after successful call updated_at
+      // Picture generation time poll Already 2s Sync, skip to avoid simultaneous competition
+      // The user may have cut the item off in the shivering window, at which point the sync will cover the current item into an old one
+      // The queue may be mixed with multiple project changes.
+      // Is there a copy of the current project, not just the first one?
       const { syncProject, pageGeneratingTasks, currentProject } = get();
       const touchedCurrentProject =
         !!currentProject && entries.some(([, update]) => update.projectId === currentProject.project_id);
@@ -241,11 +241,11 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         await syncProject(currentProject!.id);
       }
     } catch (error: any) {
-      console.error('保存页面失败:', error);
-      // 可以在这里添加错误提示，但为了避免频繁提示，暂时只记录日志
-      // 如果需要，可以通过事件系统或toast通知用户
+      console.error('Failed to save page:', error);
+      // You can add error tips here, but only logs are recorded for the time being in order to avoid frequent tips.
+      // If necessary, through the event system or toast Notify users
     } finally {
-      // 队列可能在本次 flush 期间又被写入，只有排空时才算保存结束
+      // The queue could be this time. flush Period is written again, only when empty is saved is finished
       if (pendingPageUpdates.size === 0) set({ isSavingPages: false });
     }
   };
@@ -258,13 +258,13 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       projectId,
       data: { ...(existing?.data ?? {}), ...data },
     });
-    // 逐字输入时避免重复 set 触发无谓的重渲染
+    // Duplication during word-to-word input set Trigger unnecessary heavy rendering
     if (!get().isSavingPages) set({ isSavingPages: true });
     debouncedFlushPageUpdates();
   };
 
   return {
-  // 初始状态
+  // Initial Status
   currentProject: null,
   isGlobalLoading: false,
   isSavingPages: false,
@@ -283,7 +283,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
   setGlobalLoading: (loading) => set({ isGlobalLoading: loading }),
   setError: (error) => set({ error }),
 
-  // 初始化项目
+  // Initialization project
   initializeProject: async (type, content, templateImage, templateStyle, referenceFileIds, aspectRatio) => {
     set({ isGlobalLoading: true, error: null });
     try {
@@ -291,7 +291,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       const normalizedContent = typeof content === 'string' ? content.trim() : '';
 
       if (type === 'blank') {
-        // 空白项目没有任何文本内容，必须显式声明类型
+        // Blank items have no text content and must be clearly stated type
         request.creation_type = 'blank';
       } else if (type === 'idea') {
         request.idea_prompt = normalizedContent;
@@ -301,17 +301,17 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         request.description_text = normalizedContent;
       }
 
-      // 添加风格描述（如果有）
+      // Add style description (if available)）
       if (templateStyle && templateStyle.trim()) {
         request.template_style = templateStyle.trim();
       }
 
-      // 添加画面比例（如果有）
+      // Add image ratio (if any)）
       if (aspectRatio) {
         request.image_aspect_ratio = aspectRatio;
       }
 
-      // 1. 创建项目
+      // 1. Create Item
       const response = await api.createProject(request);
       const projectId = response.data?.project_id;
 
@@ -319,35 +319,35 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         throw new Error(t('store.createNoId'));
       }
 
-      // 2. 关联参考文件到项目（在生成之前，确保 AI 能读取参考文件）
+      // 2. Link reference file to project (Ensure before generation) AI Read reference files）
       if (referenceFileIds && referenceFileIds.length > 0) {
         try {
           await Promise.all(
             referenceFileIds.map(fileId => api.associateFileToProject(fileId, projectId))
           );
-          devLog(`[初始化项目] 已关联 ${referenceFileIds.length} 个参考文件`);
+          devLog(`[Initialization project] Association ${referenceFileIds.length} Reference document`);
         } catch (error) {
-          console.warn('[初始化项目] 关联参考文件失败:', error);
+          console.warn('[Initialization project] Link reference file failed:', error);
         }
       }
 
-      // 3. 如果有模板图片，上传模板
+      // 3. Upload template if you have a template picture
       if (templateImage) {
         try {
           await api.uploadTemplate(projectId, templateImage);
         } catch (error) {
-          console.warn('模板上传失败:', error);
-          // 模板上传失败不影响项目创建，继续执行
+          console.warn('Template upload failed:', error);
+          // Template upload failure does not affect project creation, continue
         }
       }
 
-      // 4. 获取完整项目信息。大纲/描述入口的 AI 生成由大纲页的 SSE 流程接管。
+      // 4. Gets full project information./Describe the entrance. AI Generates an outline page SSE Process takeover。
       const projectResponse = await api.getProject(projectId);
       const project = normalizeProject(projectResponse.data);
 
       if (project) {
         set({ currentProject: project });
-        // 保存到 localStorage
+        // Save To localStorage
         localStorage.setItem('currentProjectId', project.id!);
       }
     } catch (error: any) {
@@ -358,11 +358,11 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     }
   },
 
-  // 同步项目数据
+  // Sync Project Data
   syncProject: async (projectId?: string) => {
     const { currentProject } = get();
 
-    // 如果没有提供 projectId，尝试从 currentProject 或 localStorage 获取
+    // If not provided projectId，Try From currentProject or localStorage Access
     let targetProjectId = projectId;
     if (!targetProjectId) {
       if (currentProject?.id) {
@@ -373,7 +373,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     }
 
     if (!targetProjectId) {
-      console.warn('syncProject: 没有可用的项目ID');
+      console.warn('syncProject: No items available ID');
       return;
     }
 
@@ -381,29 +381,29 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       const response = await api.getProject(targetProjectId);
       if (response.data) {
         const project = normalizeProject(response.data);
-        devLog('[syncProject] 同步项目数据:', {
+        devLog('[syncProject] Sync Project Data:', {
           projectId: project.id,
           pagesCount: project.pages?.length || 0,
           status: project.status
         });
         set({ currentProject: project });
-        // 确保 localStorage 中保存了项目ID
+        // Ensure localStorage saved items in ID
         localStorage.setItem('currentProjectId', project.id!);
       }
     } catch (error: any) {
-      // 提取更详细的错误信息
+      // Extract more detailed error information
       let errorMessage = t('store.syncFailed');
       let shouldClearStorage = false;
-      
+
       if (error.response) {
-        // 服务器返回了错误响应
+        // The server returned the error response
         const errorData = error.response.data;
         if (error.response.status === 404) {
-          // 404错误：项目不存在，清除localStorage
+          // 404 Error： Project does not exist, cleared localStorage
           errorMessage = errorData?.error?.message || t('store.projectNotFound');
           shouldClearStorage = true;
         } else if (errorData?.error?.message) {
-          // 从后端错误格式中提取消息
+          // Extract messages from backend error format
           errorMessage = errorData.error.message;
         } else if (errorData?.message) {
           errorMessage = errorData.message;
@@ -413,17 +413,17 @@ export const useProjectStore = create<ProjectState>((set, get) => {
           errorMessage = t('store.requestFailedStatus', { status: error.response.status });
         }
       } else if (error.request) {
-        // 请求已发送但没有收到响应
+        // Request sent but no response received
         errorMessage = t('store.networkError');
       } else if (error.message) {
-        // 其他错误
+        // other errors
         errorMessage = error.message;
       }
-      
-      // 如果项目不存在，清除localStorage并重置当前项目
-      // 不显示错误toast，因为这通常是自动同步时发现的过期项目ID
+
+      // If Project does not exist, Clear localStorage and reset the current item
+      // Do not show errors toast，Because it’s usually an expired item discovered during automatic sync. ID
       if (shouldClearStorage) {
-        console.warn('[syncProject] 项目不存在，清除localStorage');
+        console.warn('[syncProject] Project does not exist, clean localStorage');
         localStorage.removeItem('currentProjectId');
         set({ currentProject: null });
       } else {
@@ -432,7 +432,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     }
   },
 
-  // 本地更新页面（乐观更新）
+  // Local update page (optimistic update)）
   updatePageLocal: (pageId, data) => {
     const { currentProject } = get();
     if (!currentProject) return;
@@ -448,29 +448,29 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       },
     });
 
-    // 防抖后调用API
+    // Call after shivering API
     debouncedUpdatePage(currentProject.project_id, pageId, data);
   },
 
-  // 立即保存所有页面的更改（用于保存按钮）
-  // 等待防抖完成，然后同步项目状态以确保updated_at更新
+  // Save all page changes immediately (for saving buttons)）
+  // Waiting for the shivering to be completed and then synchronize the project status to ensure updated_at Update
   saveAllPages: async () => {
     const { currentProject } = get();
     if (!currentProject) return;
 
-    // 等待防抖延迟时间（1秒）+ 额外时间确保API调用完成
+    // Waiting for the shaking delay（1 sec）+ Additional time to ensure API Call Completed
     await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // 同步项目状态，这会从后端获取最新的updated_at
+
+    // Sync Project Status. This will get the latest from the backend. updated_at
     await get().syncProject(currentProject.project_id);
   },
 
-  // 重新排序页面
+  // Reorder Page
   reorderPages: async (newOrder) => {
     const { currentProject } = get();
     if (!currentProject) return;
 
-    // 乐观更新
+    // Optimistic Update
     const reorderedPages = newOrder
       .map((id) => currentProject.pages.find((p) => p.id === id))
       .filter(Boolean) as any[];
@@ -486,12 +486,12 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       await api.updatePagesOrder(currentProject.project_id, newOrder);
     } catch (error: any) {
       set({ error: error.message || t('store.updateOrderFailed') });
-      // 失败后重新同步
+      // Sync after Failed
       await get().syncProject();
     }
   },
 
-  // 添加新页面
+  // Add New Page
   addNewPage: async () => {
     const { currentProject } = get();
     if (!currentProject) return;
@@ -511,7 +511,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     }
   },
 
-  // 删除页面
+  // Delete Page
   deletePageById: async (pageId) => {
     const { currentProject } = get();
     if (!currentProject) return;
@@ -524,106 +524,106 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     }
   },
 
-  // 启动异步任务
+  // Start a staggered mission.
   startAsyncTask: async (apiCall) => {
-    devLog('[异步任务] 启动异步任务...');
+    devLog('[Step-by-step mission] Start a staggered mission....');
     set({ isGlobalLoading: true, error: null });
     try {
       const response = await apiCall();
-      devLog('[异步任务] API响应:', response);
-      
-      // task_id 在 response.data 中
+      devLog('[Step-by-step mission] API Response:', response);
+
+      // task_id Yes. response.data Medium
       const taskId = response.data?.task_id;
       if (taskId) {
-        devLog('[异步任务] 收到task_id:', taskId, '开始轮询...');
+        devLog('[Step-by-step mission] Copy that. task_id:', taskId, 'Start a rotation....');
         set({ activeTaskId: taskId });
         await get().pollTask(taskId);
       } else {
-        console.warn('[异步任务] 响应中没有task_id，可能是同步操作:', response);
-        // 同步操作完成后，刷新项目数据
+        console.warn('[Step-by-step mission] No response. task_id，Could be a sync operation.:', response);
+        // Refresh project data after the sync operation is completed
         await get().syncProject();
         set({ isGlobalLoading: false });
       }
     } catch (error: any) {
-      console.error('[异步任务] 启动失败:', error);
+      console.error('[Step-by-step mission] Starting Failed:', error);
       set({ error: error.message || t('store.taskStartFailed'), isGlobalLoading: false });
       throw error;
     }
   },
 
-  // 轮询任务状态
+  // Query Task Status
   pollTask: async (taskId) => {
-    devLog(`[轮询] 开始轮询任务: ${taskId}`);
+    devLog(`[Rotation] Start a rotation.: ${taskId}`);
     const { currentProject } = get();
     if (!currentProject) {
-      console.warn('[轮询] 没有当前项目，停止轮询');
+      console.warn('[Rotation] No current item, stop Query');
       return;
     }
     const projectId = currentProject.id!;
 
     const poll = async () => {
       try {
-        devLog(`[轮询] 查询任务状态: ${taskId}`);
+        devLog(`[Rotation] Query Task Status: ${taskId}`);
         const response = await api.getTaskStatus(projectId, taskId);
         const task = response.data;
-        
+
         if (!task) {
-          console.warn('[轮询] 响应中没有任务数据');
+          console.warn('[Rotation] No task data in response');
           return;
         }
 
-        // 更新进度
+        // Update progress
         if (task.progress) {
           set({ taskProgress: task.progress });
         }
 
-        devLog(`[轮询] Task ${taskId} 状态: ${task.status}`, task);
+        devLog(`[Rotation] Task ${taskId} Status: ${task.status}`, task);
 
-        // 检查任务状态
+        // Check Task Status
         if (task.status === 'COMPLETED') {
-          devLog(`[轮询] Task ${taskId} 已完成，刷新项目数据`);
-          
-          // 如果是导出可编辑PPTX任务，检查是否有下载链接
+          devLog(`[Rotation] Task ${taskId} Completed, update item data`);
+
+          // Editable if Exportable PPTX Tasks, check for download links
           if (task.task_type === 'EXPORT_EDITABLE_PPTX' && task.progress) {
-            const progress = typeof task.progress === 'string' 
-              ? JSON.parse(task.progress) 
+            const progress = typeof task.progress === 'string'
+              ? JSON.parse(task.progress)
               : task.progress;
-            
+
             const downloadUrl = progress?.download_url;
             if (downloadUrl) {
-              devLog('[导出可编辑PPTX] 从任务响应中获取下载链接:', downloadUrl);
-              // 延迟一下，确保状态更新完成后再打开下载链接
+              devLog('[Export Editable PPTX] Fetch download links from task response:', downloadUrl);
+              // Delay to make sure the status update is complete before opening the download link.
               setTimeout(() => {
                 triggerDownload(downloadUrl);
               }, 500);
             } else {
-              console.warn('[导出可编辑PPTX] 任务完成但没有下载链接');
+              console.warn('[Export Editable PPTX] Task completed without downloading links');
             }
           }
-          
-          set({ 
-            activeTaskId: null, 
-            taskProgress: null, 
-            isGlobalLoading: false 
+
+          set({
+            activeTaskId: null,
+            taskProgress: null,
+            isGlobalLoading: false
           });
-          // 刷新项目数据
+          // Refresh Item Data
           await get().syncProject();
         } else if (task.status === 'FAILED') {
-          console.error(`[轮询] Task ${taskId} 失败:`, task.error_message || task.error);
-          set({ 
+          console.error(`[Rotation] Task ${taskId} Failed:`, task.error_message || task.error);
+          set({
             error: normalizeErrorMessage(task.error_message || task.error || t('store.taskFailed')),
             activeTaskId: null,
             taskProgress: null,
             isGlobalLoading: false
           });
         } else if (task.status === 'PENDING' || task.status === 'PROCESSING') {
-          // 继续轮询（PENDING 或 PROCESSING）
-          devLog(`[轮询] Task ${taskId} 处理中，2秒后继续轮询...`);
+          // We’ll continue our rounds.（PENDING or PROCESSING）
+          devLog(`[Rotation] Task ${taskId} Processing，2 Continue the inquiry in seconds....`);
           setTimeout(poll, 2000);
         } else {
-          // 未知状态，停止轮询
-          console.warn(`[轮询] Task ${taskId} 未知状态: ${task.status}，停止轮询`);
-          set({ 
+          // Unknown status, stop quizing
+          console.warn(`[Rotation] Task ${taskId} Unknown status: ${task.status}，Stop Query`);
+          set({
             error: `${t('store.unknownTaskStatus', { status: task.status })}`,
             activeTaskId: null,
             taskProgress: null,
@@ -631,8 +631,8 @@ export const useProjectStore = create<ProjectState>((set, get) => {
           });
         }
       } catch (error: any) {
-        console.error('任务轮询错误:', error);
-        set({ 
+        console.error('Job Rotation Error:', error);
+        set({
           error: normalizeErrorMessage(error.message || t('store.taskQueryFailed')),
           activeTaskId: null,
           isGlobalLoading: false
@@ -643,7 +643,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     await poll();
   },
 
-  // 生成大纲（同步操作，不需要轮询）
+  // Generate outline (sync operation, no questioner required)）
   generateOutline: async () => {
     const { currentProject } = get();
     if (!currentProject) return;
@@ -651,16 +651,16 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     set({ isGlobalLoading: true, error: null });
     try {
       const response = await api.generateOutline(currentProject.id!);
-      devLog('[生成大纲] API响应:', response);
-      
-      // 刷新项目数据，确保获取最新的大纲页面
+      devLog('[Generate Outline] API Response:', response);
+
+      // Refresh project data to ensure access to the latest outline page
       await get().syncProject();
-      
-      // 再次确认数据已更新
+
+      // Reconfirm the data as updated
       const { currentProject: updatedProject } = get();
-      devLog('[生成大纲] 刷新后的项目:', updatedProject?.pages.length, '个页面');
+      devLog('[Generate Outline] Refreshed Items:', updatedProject?.pages.length, 'Pages');
     } catch (error: any) {
-      console.error('[生成大纲] 错误:', error);
+      console.error('[Generate Outline] Error:', error);
       const message =
         error.response?.data?.error?.message ||
         error.response?.data?.message ||
@@ -673,7 +673,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     }
   },
 
-  // 流式生成大纲（SSE，逐页渲染）
+  // Fluid Generating Outline（SSE，Page-by-page rendering）
   generateOutlineStream: async (lockPageCount?: boolean) => {
     const { currentProject } = get();
     const projectId = currentProject?.id;
@@ -748,7 +748,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         onPage: (page) => { pageQueue.push(page); },
         onDone: (data) => { streamResult.value = data; },
         onError: (message) => {
-          console.error('[流式大纲] 错误:', message);
+          console.error('[Fluid Outline] Error:', message);
           if (isViewingTargetProject()) {
             set({ error: normalizeErrorMessage(message) });
           }
@@ -766,16 +766,16 @@ export const useProjectStore = create<ProjectState>((set, get) => {
           const normalized = normalizeProject({ ...proj, pages: streamResult.value.pages });
           set({ currentProject: normalized });
         }
-        devLog('[流式大纲] 完成:', streamResult.value.total, '个页面');
+        devLog('[Fluid Outline] Completed:', streamResult.value.total, 'Pages');
         return { complete: streamResult.value.complete ?? false, active: isViewingTargetProject() };
       } else {
         return { complete: false, active: isViewingTargetProject() };
       }
     } catch (error: any) {
-      console.error('[流式大纲] 错误:', error);
+      console.error('[Fluid Outline] Error:', error);
       streamDone = true;
       if (!isViewingTargetProject()) {
-        // 已切换离开发起生成的项目：过期失败不再抛出，避免在后来打开的项目中弹提示
+        // Toggled away from the project generated from the launch： expired failed to throw again to avoid a bullet in the item that was later opened
         return { complete: false, active: false };
       }
       set({ error: normalizeErrorMessage(error.message || t('store.generateOutlineFailed')) });
@@ -785,7 +785,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     }
   },
 
-  // 从描述生成大纲和页面描述（同步操作）
+  // Generate outline and page description from description (sync operation)）
   generateFromDescription: async () => {
     const { currentProject } = get();
     if (!currentProject) return;
@@ -793,16 +793,16 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     set({ isGlobalLoading: true, error: null });
     try {
       const response = await api.generateFromDescription(currentProject.id!);
-      devLog('[从描述生成] API响应:', response);
-      
-      // 刷新项目数据，确保获取最新的大纲和描述
+      devLog('[Generate from Description] API Response:', response);
+
+      // Update project data to ensure access to up-to-date outlines and descriptions
       await get().syncProject();
-      
-      // 再次确认数据已更新
+
+      // Reconfirm the data as updated
       const { currentProject: updatedProject } = get();
-      devLog('[从描述生成] 刷新后的项目:', updatedProject?.pages.length, '个页面');
+      devLog('[Generate from Description] Refreshed Items:', updatedProject?.pages.length, 'Pages');
     } catch (error: any) {
-      console.error('[从描述生成] 错误:', error);
+      console.error('[Generate from Description] Error:', error);
       set({ error: error.message || t('store.generateFromDescFailed') });
       throw error;
     } finally {
@@ -810,7 +810,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     }
   },
 
-  // 生成描述（根据设置选择流式或并行模式）
+  // Generate description (select flow or parallel mode according to settings)）
   generateDescriptions: async (detailLevel?: string) => {
     const { currentProject } = get();
     if (!currentProject || !currentProject.project_id) return;
@@ -818,7 +818,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     const pages = currentProject.pages.filter((p) => p.id);
     if (pages.length === 0) return;
 
-    // 检查描述生成模式，优先从 sessionStorage 缓存读取以避免额外 API 调用
+    // Check the profile generation mode with priority sessionStorage Cache Read to Avoid Extra API Call
     let mode: string = 'streaming';
     try {
       const cached = sessionStorage.getItem('banana-settings');
@@ -831,7 +831,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     } catch { /* ignore */ }
 
     if (mode === 'streaming') {
-      // 流式模式
+      // Fluid Mode
       set({ isDescriptionStreaming: true, error: null });
 
       const updatedPages = currentProject.pages.map((page) =>
@@ -881,7 +881,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
           onDescription: (data) => { descQueue.push(data); },
           onDone: (data) => { streamResult.value = data; },
           onError: (message) => {
-            console.error('[流式描述] 错误:', message);
+            console.error('[Fluid Description] Error:', message);
             set({ error: normalizeErrorMessage(message) });
             streamDone = true;
           },
@@ -900,14 +900,14 @@ export const useProjectStore = create<ProjectState>((set, get) => {
               ...(streamResult.value.warning ? { error: streamResult.value.warning } : {}),
             });
           }
-          devLog('[流式描述] 完成:', streamResult.value.total, '个页面');
+          devLog('[Fluid Description] Completed:', streamResult.value.total, 'Pages');
         } else {
-          // 无 streamResult.value（SSE error 或连接中断）→ 从后端恢复真实状态
+          // None streamResult.value（SSE error Interrupted or connected）→ Restore real status from backend
           await get().syncProject();
           set({ isDescriptionStreaming: false });
         }
       } catch (error: any) {
-        console.error('[流式描述] 错误:', error);
+        console.error('[Fluid Description] Error:', error);
         streamDone = true;
         await get().syncProject();
         set({
@@ -917,7 +917,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         throw error;
       }
     } else {
-      // 并行模式（原有逻辑）
+      // Parallel mode (old logic)）
       set({ error: null });
 
       const updatedPages = currentProject.pages.map((page) =>
@@ -966,10 +966,10 @@ export const useProjectStore = create<ProjectState>((set, get) => {
               }
             }
           } catch (error: any) {
-            console.error('[生成描述] 轮询错误:', error);
+            console.error('[Generate Description] Query error:', error);
             pollErrors++;
             if (pollErrors >= 10) {
-              console.error('[生成描述] 轮询错误次数过多，停止轮询');
+              console.error('[Generate Description] Too many bugs. Stop.');
               set({
                 taskProgress: null,
                 activeTaskId: null,
@@ -986,7 +986,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         setTimeout(pollAndSync, 2000);
 
       } catch (error: any) {
-        console.error('[生成描述] 启动任务失败:', error);
+        console.error('[Generate Description] Failed to start task:', error);
         await get().syncProject();
         set({ error: normalizeErrorMessage(error.message || t('store.startGenerationFailed')) });
         throw error;
@@ -994,21 +994,21 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     }
   },
 
-  // 生成单页描述
+  // Generate a single page description
   generatePageDescription: async (pageId: string, detailLevel?: string) => {
     const { currentProject } = get();
     if (!currentProject) return;
 
-    // 如果该页面正在生成，不重复提交
+    // If this page is being generated, do not duplicate
     const targetPage = currentProject.pages.find((p) => p.id === pageId);
     if (targetPage?.status === 'GENERATING_DESCRIPTION') {
-      devLog(`[生成描述] 页面 ${pageId} 正在生成中，跳过重复请求`);
+      devLog(`[Generate Description] Page ${pageId} Generating, skipping duplicate requests`);
       return;
     }
 
     set({ error: null });
 
-    // 乐观更新：设置页面状态为 GENERATING_DESCRIPTION
+    // Optimistic update： set the page status to GENERATING_DESCRIPTION
     const updatedPages = currentProject.pages.map((page) =>
       page.id === pageId ? { ...page, status: 'GENERATING_DESCRIPTION' as const } : page
     );
@@ -1025,32 +1025,32 @@ export const useProjectStore = create<ProjectState>((set, get) => {
             page.id === pageId ? { ...page, ...updatedPageData } : page
           );
           set({ currentProject: { ...latestProject, pages: newPages } });
-          devLog(`[生成描述] 页面 ${pageId} 描述已更新，数据来自 API 响应`);
+          devLog(`[Generate Description] Page ${pageId} Description updated, data from API Response`);
         }
       }
     } catch (error: any) {
-      // 恢复页面状态
+      // Restore Page Status
       await get().syncProject();
       set({ error: normalizeErrorMessage(error.message || t('store.generateDescFailed')) });
       throw error;
     }
   },
 
-  // 重新生成 PPT 翻新项目的单页（重新解析原 PDF 并提取内容）
+  // Regenerated PPT Single page of the renovation project (resolved) PDF And extract the content.）
   regenerateRenovationPage: async (pageId: string, keepLayout: boolean = false) => {
     const { currentProject } = get();
     if (!currentProject) return;
 
-    // 如果该页面正在生成，不重复提交
+    // If this page is being generated, do not duplicate
     const targetPage = currentProject.pages.find((p) => p.id === pageId);
     if (targetPage?.status === 'GENERATING_DESCRIPTION') {
-      devLog(`[PPT翻新] 页面 ${pageId} 正在生成中，跳过重复请求`);
+      devLog(`[PPT Renovation] Page ${pageId} Generating, skipping duplicate requests`);
       return;
     }
 
     set({ error: null });
 
-    // 乐观更新：设置页面状态为 GENERATING_DESCRIPTION
+    // Optimistic update： set the page status to GENERATING_DESCRIPTION
     const updatedPages = currentProject.pages.map((page) =>
       page.id === pageId ? { ...page, status: 'GENERATING_DESCRIPTION' as const } : page
     );
@@ -1067,7 +1067,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
             page.id === pageId ? { ...page, ...updatedPageData } : page
           );
           set({ currentProject: { ...latestProject, pages: newPages } });
-          devLog(`[PPT翻新] 页面 ${pageId} 大纲和描述已更新`);
+          devLog(`[PPT Renovation] Page ${pageId} Outline and description updated`);
         }
       }
     } catch (error: any) {
@@ -1077,13 +1077,13 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     }
   },
 
-  // 生成单页图片（用于预览页的手动重新生成）
+  // Generate single-page pictures (manual regeneration for preview pages)）
   generatePageImage: async (pageId: string, forceRegenerate: boolean = false) => {
     const { currentProject } = get();
     if (!currentProject) return;
 
     if (get().pageGeneratingTasks[pageId]) {
-      devLog(`[单页生成] 页面 ${pageId} 正在生成中，跳过重复请求`);
+      devLog(`[Single Page Generation] Page ${pageId} Generating, skipping duplicate requests`);
       return;
     }
 
@@ -1094,7 +1094,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       const taskId = response.data?.task_id;
 
       if (taskId) {
-        devLog(`[单页生成] 收到 task_id: ${taskId}，开始轮询页面 ${pageId}`);
+        devLog(`[Single Page Generation] Copy that. task_id: ${taskId}，Start Query Page ${pageId}`);
         set((state) => ({
           pageGeneratingTasks: {
             ...state.pageGeneratingTasks,
@@ -1108,69 +1108,69 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         await get().syncProject();
       }
     } catch (error: any) {
-      console.error('[单页生成] 启动失败:', error);
+      console.error('[Single Page Generation] Starting Failed:', error);
       await get().syncProject();
       throw error;
     }
   },
 
-  // 生成图片（非阻塞，每个页面显示生成状态）
+  // Generate pictures (without blocking, each page shows the generation status)）
   generateImages: async (pageIds?: string[]) => {
     const { currentProject, pageGeneratingTasks } = get();
     if (!currentProject) return;
 
-    // 确定要生成的页面ID列表
+    // Determines the page to be generated ID List
     const targetPageIds = pageIds || currentProject.pages.map(p => p.id).filter((id): id is string => !!id);
-    
-    // 检查是否有页面正在生成
+
+    // Check if pages are being generated
     const alreadyGenerating = targetPageIds.filter(id => pageGeneratingTasks[id]);
     if (alreadyGenerating.length > 0) {
-      devLog(`[批量生成] ${alreadyGenerating.length} 个页面正在生成中，跳过`);
-      // 过滤掉已经在生成的页面
+      devLog(`[Batch Generation] ${alreadyGenerating.length} A page is being generated, skipping`);
+      // Filters already generated pages
       const newPageIds = targetPageIds.filter(id => !pageGeneratingTasks[id]);
       if (newPageIds.length === 0) {
-        devLog('[批量生成] 所有页面都在生成中，跳过请求');
+        devLog('[Batch Generation] All pages are being generated, skipping requests');
         return;
       }
     }
 
     set({ error: null, warningMessage: null });
-    
+
     try {
-      // 调用批量生成 API
+      // Call Bulk Generation API
       const response = await api.generateImages(currentProject.project_id, undefined, pageIds);
       const taskId = response.data?.task_id;
-      
+
       if (taskId) {
-        devLog(`[批量生成] 收到 task_id: ${taskId}，标记 ${targetPageIds.length} 个页面为生成中`);
-        
-        // 为所有目标页面设置任务ID
+        devLog(`[Batch Generation] Copy that. task_id: ${taskId}，Tags ${targetPageIds.length} Pages are being generated`);
+
+        // Set Tasks for All Destination Pages ID
         const newPageGeneratingTasks = { ...pageGeneratingTasks };
         targetPageIds.forEach(id => {
           newPageGeneratingTasks[id] = taskId;
         });
         set({ pageGeneratingTasks: newPageGeneratingTasks });
-        
-        // 立即同步一次项目数据，以获取后端设置的 'QUEUED' 状态
+
+        // Synchronize the project data immediately to get the backend settings 'QUEUED' Status
         await get().syncProject();
 
-        // 开始轮询批量任务状态（非阻塞）
+        // Commence bulk task rotation (non-obstruction)）
         get().pollImageTask(taskId, targetPageIds);
       } else {
-        // 如果没有返回 task_id，可能是同步接口，直接刷新
+        // If you do not return task_id，It’s probably a sync interface. It’s just refreshing.
         await get().syncProject();
       }
     } catch (error: any) {
-      console.error('[批量生成] 启动失败:', error);
+      console.error('[Batch Generation] Starting Failed:', error);
       throw error;
     }
   },
 
-  // 轮询图片生成任务（非阻塞，支持单页和批量）
+  // Query image generation tasks (non-stop, support single pages and batches)）
   pollImageTask: async (taskId: string, pageIds: string[]) => {
     const { currentProject } = get();
     if (!currentProject) {
-      console.warn('[批量轮询] 没有当前项目，停止轮询');
+      console.warn('[Batch Rotation] No current item, stop Query');
       return;
     }
     const projectId = currentProject.id!;
@@ -1179,18 +1179,18 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       try {
         const response = await api.getTaskStatus(projectId, taskId);
         const task = response.data;
-        
+
         if (!task) {
-          console.warn('[批量轮询] 响应中没有任务数据');
+          console.warn('[Batch Rotation] No task data in response');
           return;
         }
 
-        devLog(`[批量轮询] Task ${taskId} 状态: ${task.status}`, task.progress);
+        devLog(`[Batch Rotation] Task ${taskId} Status: ${task.status}`, task.progress);
 
-        // 检查任务状态
+        // Check Task Status
         if (task.status === 'COMPLETED') {
-          devLog(`[批量轮询] Task ${taskId} 已完成，清除任务记录`);
-          // 清除所有相关页面的任务记录
+          devLog(`[Batch Rotation] Task ${taskId} Completed, clear task logs`);
+          // Clears the task log for all relevant pages
           const { pageGeneratingTasks } = get();
           const newTasks = { ...pageGeneratingTasks };
           pageIds.forEach(id => {
@@ -1198,22 +1198,22 @@ export const useProjectStore = create<ProjectState>((set, get) => {
               delete newTasks[id];
             }
           });
-          
-          // 提取警告消息（如果有）
+
+          // Extract warning messages (if any)）
           const warningMessage = task.progress?.warning_message || null;
-          
+
           set({ pageGeneratingTasks: newTasks, warningMessage });
 
-          // 刷新项目数据，并验证图片路径已更新
-          // 使用重试机制确保数据同步完成
+          // Refresh the project data and verify that the picture path has been updated
+          // Use a re-test mechanism to ensure data synchronization
           let retryCount = 0;
           const maxRetries = 5;
-          const retryDelay = 1000; // 1秒
+          const retryDelay = 1000; // 1 sec
 
           const syncWithRetry = async (): Promise<void> => {
             await get().syncProject();
 
-            // 验证所有页面的图片路径是否已更新
+            // Verify that the photo path of all pages has been updated
             const { currentProject: updatedProject } = get();
             if (updatedProject) {
               const allImagesReady = pageIds.every(pageId => {
@@ -1222,25 +1222,25 @@ export const useProjectStore = create<ProjectState>((set, get) => {
               });
 
               if (allImagesReady) {
-                devLog(`[批量轮询] 所有图片路径已同步`);
+                devLog(`[Batch Rotation] All picture paths are synchronized`);
                 return;
               }
 
               if (retryCount < maxRetries) {
                 retryCount++;
-                devLog(`[批量轮询] 图片路径尚未完全同步，${retryDelay}ms 后重试 (${retryCount}/${maxRetries})`);
+                devLog(`[Batch Rotation] The picture path is not fully synchronized，${retryDelay}ms Try again after (${retryCount}/${maxRetries})`);
                 await new Promise(resolve => setTimeout(resolve, retryDelay));
                 return syncWithRetry();
               } else {
-                console.warn(`[批量轮询] 达到最大重试次数，部分图片路径可能未同步`);
+                console.warn(`[Batch Rotation] Maximum number of retries reached, part of the picture path may not be synchronized`);
               }
             }
           };
 
           await syncWithRetry();
         } else if (task.status === 'FAILED') {
-          console.error(`[批量轮询] Task ${taskId} 失败:`, task.error_message || task.error);
-          // 清除所有相关页面的任务记录
+          console.error(`[Batch Rotation] Task ${taskId} Failed:`, task.error_message || task.error);
+          // Clears the task log for all relevant pages
           const { pageGeneratingTasks } = get();
           const newTasks = { ...pageGeneratingTasks };
           pageIds.forEach(id => {
@@ -1248,23 +1248,23 @@ export const useProjectStore = create<ProjectState>((set, get) => {
               delete newTasks[id];
             }
           });
-          set({ 
+          set({
             pageGeneratingTasks: newTasks,
             error: normalizeErrorMessage(task.error_message || task.error || t('store.batchGenerateFailed'))
           });
-          // 刷新项目数据以更新页面状态
+          // Refresh project data to update page status
           await get().syncProject();
         } else if (task.status === 'PENDING' || task.status === 'PROCESSING') {
-          // 检查警告消息
+          // Check Warning Messages
           const newWarning = task.progress?.warning_message;
           if (newWarning && get().warningMessage !== newWarning) {
             set({ warningMessage: newWarning });
           }
-          // 继续轮询，同时同步项目数据以更新页面状态
-          devLog(`[批量轮询] Task ${taskId} 处理中，同步项目数据...`);
+          // Continue the Query and synchronize the project data to update the page status
+          devLog(`[Batch Rotation] Task ${taskId} Processing, synchronization of project data...`);
           await get().syncProject();
 
-          // 逐个释放已完成的页面，让缩略图立刻显示
+          // Release completed pages on a case-by-case basis so that thumbnails are displayed immediately
           const { currentProject: proj, pageGeneratingTasks: pgt } = get();
           if (proj) {
             const updated = { ...pgt };
@@ -1272,8 +1272,8 @@ export const useProjectStore = create<ProjectState>((set, get) => {
             pageIds.forEach(id => {
               if (updated[id] === taskId) {
                 const page = proj.pages.find(p => p.id === id);
-                // 只释放已完成或失败的页面，避免误释放尚未被线程池拾取的页面
-                // （未拾取的页面仍为 DESCRIPTION_GENERATED，不应提前释放）
+                // Only finished or failed pages will be released to avoid misleashing pages that have not been picked up by the thread pool
+                // （Unfinished Pages DESCRIPTION_GENERATED，No early release）
                 if (page && (page.status === 'COMPLETED' || page.status === 'FAILED')) {
                   delete updated[id];
                   changed = true;
@@ -1283,11 +1283,11 @@ export const useProjectStore = create<ProjectState>((set, get) => {
             if (changed) set({ pageGeneratingTasks: updated });
           }
 
-          devLog(`[批量轮询] Task ${taskId} 处理中，2秒后继续轮询...`);
+          devLog(`[Batch Rotation] Task ${taskId} Processing，2 Continue the inquiry in seconds....`);
           setTimeout(poll, 2000);
         } else {
-          // 未知状态，停止轮询
-          console.warn(`[批量轮询] Task ${taskId} 未知状态: ${task.status}，停止轮询`);
+          // Unknown status, stop quizing
+          console.warn(`[Batch Rotation] Task ${taskId} Unknown status: ${task.status}，Stop Query`);
           const { pageGeneratingTasks } = get();
           const newTasks = { ...pageGeneratingTasks };
           pageIds.forEach(id => {
@@ -1298,8 +1298,8 @@ export const useProjectStore = create<ProjectState>((set, get) => {
           set({ pageGeneratingTasks: newTasks });
         }
       } catch (error: any) {
-        console.error('[批量轮询] 轮询错误:', error);
-        // 清除所有相关页面的任务记录
+        console.error('[Batch Rotation] Query error:', error);
+        // Clears the task log for all relevant pages
         const { pageGeneratingTasks } = get();
         const newTasks = { ...pageGeneratingTasks };
         pageIds.forEach(id => {
@@ -1311,18 +1311,18 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       }
     };
 
-    // 开始轮询（不 await，立即返回让 UI 继续响应）
+    // Start a rotation (no) await，Return to Jean immediately. UI Keep responding.）
     poll();
   },
 
-  // 编辑页面图片（异步）
+  // Edit Page Pictures (Step Out)）
   editPageImage: async (pageId, editPrompt, contextImages) => {
     const { currentProject, pageGeneratingTasks } = get();
     if (!currentProject) return;
 
-    // 如果该页面正在生成，不重复提交
+    // If this page is being generated, do not duplicate
     if (pageGeneratingTasks[pageId]) {
-      devLog(`[编辑] 页面 ${pageId} 正在生成中，跳过重复请求`);
+      devLog(`[Edit] Page ${pageId} Generating, skipping duplicate requests`);
       return;
     }
 
@@ -1330,24 +1330,24 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     try {
       const response = await api.editPageImage(currentProject.project_id, pageId, editPrompt, contextImages);
       const taskId = response.data?.task_id;
-      
+
       if (taskId) {
-        // 记录该页面的任务ID
-        set({ 
+        // Tasks to record the page ID
+        set({
           pageGeneratingTasks: { ...pageGeneratingTasks, [pageId]: taskId }
         });
-        
-        // 立即同步一次项目数据，以获取后端设置的'GENERATING'状态
+
+        // Synchronize the project data immediately to get the backend settings'GENERATING'Status
         await get().syncProject();
-        
-        // 开始轮询（使用统一的轮询函数）
+
+        // Start a rotation (use a uniform inquiry function)）
         get().pollImageTask(taskId, [pageId]);
       } else {
-        // 如果没有返回task_id，可能是同步接口，直接刷新
+        // If you do not return task_id，It’s probably a sync interface. It’s just refreshing.
         await get().syncProject();
       }
     } catch (error: any) {
-      // 清除该页面的任务记录
+      // Clear Job Record for this page
       const { pageGeneratingTasks } = get();
       const newTasks = { ...pageGeneratingTasks };
       delete newTasks[pageId];
@@ -1356,7 +1356,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     }
   },
 
-  // 导出PPTX
+  // Export PPTX
   exportPPTX: async (pageIds?: string[]) => {
     const { currentProject } = get();
     if (!currentProject) return;
@@ -1364,7 +1364,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     set({ isGlobalLoading: true, error: null });
     try {
       const response = await api.exportPPTX(currentProject.project_id, pageIds);
-      // 优先使用相对路径，避免 Docker 环境下的端口问题
+      // Prioritize relative paths, avoid Docker Port problem in the environment
       const downloadUrl =
         response.data?.download_url || response.data?.download_url_absolute;
 
@@ -1373,7 +1373,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       }
 
       const filename = downloadUrl.split('/').pop()?.split('?')[0] || 'presentation.pptx';
-      // 使用浏览器或桌面原生保存对话框直接下载，避免 axios 受带宽和超时影响
+      // Direct download using browser or desktop primary saving dialogue to avoid axios Bandwidth and overtime.
       triggerDownload(downloadUrl, filename);
     } catch (error: any) {
       set({ error: error.message || t('store.exportFailed') });
@@ -1382,7 +1382,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     }
   },
 
-  // 导出PDF
+  // Export PDF
   exportPDF: async (pageIds?: string[]) => {
     const { currentProject } = get();
     if (!currentProject) return;
@@ -1390,7 +1390,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     set({ isGlobalLoading: true, error: null });
     try {
       const response = await api.exportPDF(currentProject.project_id, pageIds);
-      // 优先使用相对路径，避免 Docker 环境下的端口问题
+      // Prioritize relative paths, avoid Docker Port problem in the environment
       const downloadUrl =
         response.data?.download_url || response.data?.download_url_absolute;
 
@@ -1399,7 +1399,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
       }
 
       const filename = downloadUrl.split('/').pop()?.split('?')[0] || 'presentation.pdf';
-      // 使用浏览器或桌面原生保存对话框直接下载，避免 axios 受带宽和超时影响
+      // Direct download using browser or desktop primary saving dialogue to avoid axios Bandwidth and overtime.
       triggerDownload(downloadUrl, filename);
     } catch (error: any) {
       set({ error: error.message || t('store.exportFailed') });
@@ -1408,23 +1408,23 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     }
   },
 
-  // 导出可编辑PPTX（异步任务）
+  // Export Editable PPTX（Step-by-step mission）
   exportEditablePPTX: async (filename?: string, pageIds?: string[]) => {
     const { currentProject, startAsyncTask } = get();
     if (!currentProject) return;
 
     try {
-      devLog('[导出可编辑PPTX] 启动异步导出任务...');
-      // startAsyncTask 中的 pollTask 会在任务完成时自动处理下载
+      devLog('[Export Editable PPTX] Start a walk-out task...');
+      // startAsyncTask Medium pollTask Automatically process downloads when the task is completed
       await startAsyncTask(() => api.exportEditablePPTX(currentProject.project_id, filename, pageIds));
-      devLog('[导出可编辑PPTX] 异步任务完成');
+      devLog('[Export Editable PPTX] The stethoscope is complete.');
     } catch (error: any) {
-      console.error('[导出可编辑PPTX] 导出失败:', error);
+      console.error('[Export Editable PPTX] Export failed:', error);
       set({ error: error.message || t('store.exportEditableFailed') });
     }
   },
 
-  // ===== 每页模板（per-page template）=====
+  // ===== Templates per Page（per-page template）=====
 
   loadTemplateAssets: async (projectId) => {
     const response = await api.listTemplateAssets(projectId);
@@ -1438,8 +1438,8 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     const asset = response.data!.asset;
     const analyzeTaskId = response.data!.analyze_task_id;
     set((state) => ({ templateAssets: [...state.templateAssets, asset] }));
-    // 后台轮询解析任务，完成/失败后刷新模板库，避免“解析中”徽章一直停留到手动刷新。
-    // 失败也刷新，让 'failed' 状态浮现；用户切走项目后不刷新，避免覆盖新项目的模板库。
+    // Inquiries conducted backstage, completed./Refresh the template library after failure to avoid the ”decomposing” badge remaining until manually refreshed。
+    // Losing also refreshs, Jean. 'failed' Status emerges; user removes items without refreshing to avoid covering the template library of new items。
     if (analyzeTaskId) {
       const refreshIfCurrent = () => {
         const cur = get().currentProject;
@@ -1452,7 +1452,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         .then(refreshIfCurrent)
         .catch(refreshIfCurrent);
     }
-    // 绑定到页面时同步本地 page 字段
+    // Sync Locally When Bind to Page page Field
     if (opts?.bindToPageId) {
       const { currentProject } = get();
       if (currentProject) {
@@ -1497,7 +1497,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     set((state) => ({
       templateAssets: state.templateAssets.filter((a) => a.id !== assetId),
     }));
-    // 乐观更新：把被清空的页面字段置空
+    // Optimistic Update： Empty emptied page fields
     if (clearedPageIds.length > 0) {
       const { currentProject } = get();
       if (currentProject) {
@@ -1526,7 +1526,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
 
   reanalyzeTemplateAsset: async (projectId, assetId) => {
     const response = await api.reanalyzeTemplateAsset(projectId, assetId);
-    // 乐观更新：把该 asset 状态置 pending
+    // Optimistic update： asset Status Settings pending
     set((state) => ({
       templateAssets: state.templateAssets.map((a) =>
         a.id === assetId ? { ...a, analysis_status: 'pending', analysis_error: null } : a
@@ -1555,7 +1555,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
 
   switchTemplateMode: async (projectId, payload) => {
     await api.switchTemplateMode(projectId, payload);
-    // 模式切换可能批量改写所有页，刷新整个项目
+    // Mode Switches Possible Batch Rewrite All Pages to Refresh the Project
     await get().syncProject(projectId);
   },
 
@@ -1578,8 +1578,8 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     return response.data!.task_id;
   },
 
-  // 轮询模板相关任务（解析 / PDF 拆页 / 自动匹配），完成或失败时 resolve。
-  // 不污染全局 activeTaskId/taskProgress，便于多任务并发。
+  // Query tasks associated with the template (deparation) / PDF Open Pages / Automatically matching) when completed or failed resolve。
+  // No contamination of the whole area. activeTaskId/taskProgress，It’s easy to carry out multiple tasks.。
   pollTemplateTask: async (taskId, projectId, onProgress) => {
     // Cap the loop so a stuck/dead worker can't poll forever (~15 min).
     const MAX_ATTEMPTS = 450;

@@ -1,7 +1,7 @@
 """
-单元测试：图标主体提取
-- should_extract_subject：基于 cv flood-fill 的 icon vs photo 分类器（Optional[bool]）
-- RmbgSegmentationProvider：RMBG-2.0 ONNX 本地推理 mock 测试
+Unit Test： Icon Subject Extract
+- should_extract_subject：Based on cv flood-fill It’s... icon vs photo Catalogue（Optional[bool]）
+- RmbgSegmentationProvider：RMBG-2.0 ONNX Local reasoning mock Test
 """
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -20,7 +20,7 @@ def _white_page(w: int = 800, h: int = 600) -> np.ndarray:
 
 
 class TestShouldExtractSubject:
-    """should_extract_subject 分类器：True=icon / False=photo / None=不确定"""
+    """should_extract_subject Catalogue：True=icon / False=photo / None=I’m not sure."""
 
     def test_circle_icon_returns_true(self):
         page = _white_page()
@@ -41,8 +41,8 @@ class TestShouldExtractSubject:
         assert should_extract_subject(page, BBox(x0, y0, x1, y1)) is True
 
     def test_full_photo_filling_roi_returns_none(self):
-        # ROI 边缘和环形背景色完全不同（无 seed 匹配）→ 分类器视为"不确定"
-        # 策略上等价于 False（都不会送 RMBG）
+        # ROI Margins and circular backgrounds are completely different (nil) seed Match）→ Catalogue Considers"I’m not sure."
+        # Strategicly equal to False（They won’t give it away. RMBG）
         page = _white_page()
         x0, y0, x1, y1 = 200, 200, 400, 400
         rng = np.random.default_rng(42)
@@ -72,7 +72,7 @@ class TestShouldExtractSubject:
 
 
 def _build_mock_session(run_return):
-    """构造一个 mock 的 onnxruntime.InferenceSession。"""
+    """Construct one mock It’s... onnxruntime.InferenceSession。"""
     mock_input = MagicMock()
     mock_input.name = "input"
     mock_session = MagicMock()
@@ -82,14 +82,14 @@ def _build_mock_session(run_return):
 
 
 def _install_fake_onnxruntime(mock_session):
-    """把 sys.modules['onnxruntime'] 替换为可被 `import onnxruntime as ort` 使用的 stub。"""
+    """Take it. sys.modules['onnxruntime'] Replace with Available `import onnxruntime as ort` Use stub。"""
     fake_ort = MagicMock()
     fake_ort.InferenceSession = MagicMock(return_value=mock_session)
     return patch.dict("sys.modules", {"onnxruntime": fake_ort})
 
 
 class TestRmbgSegmentationProvider:
-    """RmbgSegmentationProvider mock 测试"""
+    """RmbgSegmentationProvider mock Test"""
 
     def _new_provider(self, model_path: Path):
         from services.ai_providers.image.rmbg_segmentation_provider import RmbgSegmentationProvider
@@ -118,7 +118,7 @@ class TestRmbgSegmentationProvider:
         model_path.write_bytes(b"fake-model")
         provider = self._new_provider(model_path)
 
-        # 多尺度输出：第一个低分辨率应被忽略，最后一个是高分辨率
+        # Multiscale output： the first low resolution should be ignored, the last is high resolution
         low_res = np.full((1, 1, 256, 256), 0.0, dtype=np.float32)
         high_res = np.full((1, 1, 1024, 1024), 1.0, dtype=np.float32)
         mock_session = _build_mock_session([low_res, high_res])
@@ -136,7 +136,7 @@ class TestRmbgSegmentationProvider:
         model_path.write_bytes(b"fake-model")
         provider = self._new_provider(model_path)
 
-        # logits 超出 [0,1] → 应套 sigmoid。-10 → ~0，10 → ~1
+        # logits Excess [0,1] → Response sigmoid。-10 → ~0，10 → ~1
         mask = np.full((1, 1, 1024, 1024), -10.0, dtype=np.float32)
         mask[0, 0, 256:768, 256:768] = 10.0
         mock_session = _build_mock_session([mask])
@@ -197,7 +197,7 @@ class TestRmbgSegmentationProvider:
 
 
 class TestBBoxExpand:
-    """BBox.expand(px, max_w, max_h) - 源头扩张图标 BBox 的工具方法"""
+    """BBox.expand(px, max_w, max_h) - Source Extension Icon BBox Tools and methodologies"""
 
     def test_expand_inside_bounds(self):
         bbox = BBox(100, 100, 200, 200).expand(5, 1000, 1000)
@@ -221,7 +221,7 @@ class TestBBoxExpand:
 class TestRmbgFactory:
     def test_factory_returns_singleton(self):
         import services.ai_providers.image.rmbg_segmentation_provider as mod
-        mod._singleton = None  # 重置单例避免和其他测试相互影响
+        mod._singleton = None  # Replacing individual cases to avoid interaction with other tests
         a = mod.create_rmbg_segmentation_provider()
         b = mod.create_rmbg_segmentation_provider()
         assert a is b

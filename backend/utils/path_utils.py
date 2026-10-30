@@ -70,20 +70,20 @@ def convert_mineru_path_to_local(
     upload_folder: Optional[Union[os.PathLike, str]] = None,
 ) -> Optional[Path]:
     """
-    将 /files/mineru/{extract_id}/{rel_path} 格式的路径转换为本地文件系统路径
-    
+    Yes, sir. /files/mineru/{extract_id}/{rel_path} Convert the format path to the local filesystem path
+
     Args:
-        mineru_path: MinerU URL 路径，格式为 /files/mineru/{extract_id}/{rel_path}
-        project_root: 项目根目录路径（如果为 None，则自动计算）
-        upload_folder: 上传根目录；传入时优先于 project_root/uploads
-        
+        mineru_path: MinerU URL Path, formatted as /files/mineru/{extract_id}/{rel_path}
+        project_root: Item root directory path (if None，Autocalculate）
+        upload_folder: Upload root directory; priority at upload project_root/uploads
+
     Returns:
-        本地文件系统路径（Path 对象），如果转换失败则返回 None
+        Local filesystem path（Path object) returns if conversion fails None
     """
     try:
         if not mineru_path.startswith('/files/mineru/'):
             return None
-        
+
         # Remove '/files/mineru/' prefix
         rel_path = mineru_path[len('/files/mineru/'):].lstrip('/\\')
 
@@ -105,33 +105,33 @@ def find_mineru_file_with_prefix(
     upload_folder: Optional[Union[os.PathLike, str]] = None,
 ) -> Optional[Path]:
     """
-    查找 MinerU 文件，支持前缀匹配
-    
-    首先尝试直接路径匹配，如果失败则尝试前缀匹配。
-    前缀匹配逻辑：如果文件名看起来像是一个前缀+扩展名（前缀长度 >= 5），
-    则在目录中查找以该前缀开头的文件。
-    
+    Find MinerU File, support prefix matching
+
+    First try direct path matching, and if you fail try prefix matching。
+    Prefix matches logic： if the file name looks like a prefix+Extension (prefix length) >= 5），
+    Finds files starting with this prefix in a directory。
+
     Args:
-        mineru_path: MinerU URL 路径，格式为 /files/mineru/{extract_id}/{rel_path}
-        project_root: 项目根目录路径（如果为 None，则自动计算）
-        upload_folder: 上传根目录；传入时优先于 project_root/uploads
-        
+        mineru_path: MinerU URL Path, formatted as /files/mineru/{extract_id}/{rel_path}
+        project_root: Item root directory path (if None，Autocalculate）
+        upload_folder: Upload root directory; priority at upload project_root/uploads
+
     Returns:
-        找到的文件路径（Path 对象），如果未找到则返回 None
+        File Path Found（Path object) returns if not found None
     """
     # First try direct path conversion
     local_path = convert_mineru_path_to_local(mineru_path, project_root, upload_folder)
-    
+
     if local_path is None:
         return None
     mineru_root = _resolve_mineru_root(project_root, upload_folder)
-    
+
     # Direct file matching
     if local_path.exists() and local_path.is_file():
         if not _is_path_within(local_path, mineru_root):
             return None
         return local_path
-    
+
     # Try prefix match using the generic function
     matched_path = find_file_with_prefix(local_path)
     if matched_path and _is_path_within(matched_path, mineru_root):
@@ -141,26 +141,26 @@ def find_mineru_file_with_prefix(
 
 def find_file_with_prefix(file_path: Path) -> Optional[Path]:
     """
-    查找文件，支持前缀匹配
-    
-    首先检查文件是否存在，如果不存在则尝试前缀匹配。
-    前缀匹配逻辑：如果文件名看起来像是一个前缀+扩展名（前缀长度 >= 5），
-    则在目录中查找以该前缀开头的文件。
-    
+    Find files, support prefix matching
+
+    First check if the file exists, and if not, try prefix matching。
+    Prefix matches logic： if the file name looks like a prefix+Extension (prefix length) >= 5），
+    Finds files starting with this prefix in a directory。
+
     Args:
-        file_path: 要查找的文件路径（Path 对象）
-        
+        file_path: File path to search for（Path Object）
+
     Returns:
-        找到的文件路径（Path 对象），如果未找到则返回 None
+        File Path Found（Path object) returns if not found None
     """
     # Direct file matching
     if file_path.exists() and file_path.is_file():
         return file_path
-    
+
     # Try prefix match if not found and filename looks like a prefix with extension
     filename = file_path.name
     dirpath = file_path.parent
-    
+
     if '.' in filename and dirpath.exists() and dirpath.is_dir():
         prefix, ext = os.path.splitext(filename)
         if len(prefix) >= 5:
@@ -174,5 +174,5 @@ def find_file_with_prefix(file_path: Path) -> Optional[Path]:
                             return matched_path
             except OSError as e:
                 logger.warning(f"Failed to list directory {dirpath}: {str(e)}")
-    
+
     return None

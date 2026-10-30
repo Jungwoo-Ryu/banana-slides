@@ -16,11 +16,11 @@ test('Codex OAuth generates an image through the settings service test', async (
   await page.goto('/settings');
   await expect(page.locator('input[value="gpt-image-2"]')).toBeVisible();
   const card = page.locator('div.py-4.border-b').filter({
-    hasText: /Generate presentation background from test image|基于测试图片生成演示文稿背景图/,
+    hasText: /Generate presentation background from test image|\u57fa\u4e8e\u6d4b\u8bd5\u56fe\u7247\u751f\u6210\u6f14\u793a\u6587\u7a3f\u80cc\u666f\u56fe/,
   });
   await expect(card).toHaveCount(1);
-  await card.getByRole('button', { name: /Start Test|开始测试/ }).click();
-  await expect(card.locator('p.text-green-600')).toContainText('图像生成模型测试成功', { timeout: 210_000 });
+  await card.getByRole('button', { name: /Start Test|\u5f00\u59cb\u6d4b\u8bd5/ }).click();
+  await expect(card.locator('p.text-green-600')).toContainText('Image generation model tested successfully', { timeout: 210_000 });
   await expect(card.locator('p.text-green-600')).toContainText(/\d+x\d+/);
   await expect(card.locator('p.text-red-600')).toHaveCount(0);
 });

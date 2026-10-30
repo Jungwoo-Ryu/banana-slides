@@ -1,27 +1,27 @@
-# Banana Slides CLI 需求规格（API 驱动，接近全量能力）
+# Banana Slides CLI Requirements specification（API Drive, close to full capacity.）
 
-## 1. 目标与非目标
+## 1. Objectives and non-objectives
 
-### 1.1 目标
+### 1.1 Objective
 
-1. 在不改动后端 API 的前提下，提供可批量执行的命令行工具 `banana-cli`。
-2. 以“纯 HTTP API 编排”为唯一依赖边界，不直接复用后端内部 Python 业务模块。
-3. 首版提供高阶批处理入口 `run jobs`，并提供低阶子命令覆盖后端主要能力域。
-4. 支持无鉴权和 `X-Access-Code` 两种现有后端模式。
-5. 产出标准化机器可读报告（JSON）和终端摘要，满足批处理追踪与失败重试。
+1. Do not change backend API provided with batchable command line tools `banana-cli`。
+2. with ”purity” HTTP API Organised as the only dependent border, not directly reuse the backend internal Python Operations module。
+3. First edition provides high-level batch processing portals `run jobs`，And provide low-level commands to cover the main back-end capability area。
+4. Support for non-challenges `X-Access-Code` Two existing backend modes。
+5. Standardized machine-readable reports for outputs（JSON）and terminal summaries to meet batch tracking and failed retesting。
 
-### 1.2 非目标
+### 1.2 Non-target
 
-1. 不实现新的后端接口、字段或返回结构。
-2. 不做 pip 对外发布或单文件二进制分发，仅支持仓库内 Python 包运行。
-3. 不改造现有 Web 前端流程或前端状态模型。
-4. 不在本期引入数据库直连能力，CLI 仅通过 HTTP。
+1. Do not achieve new backend interfaces, fields or return structures。
+2. Don’t do it. pip Publicly issued or single-document binary distribution, supported only in warehouses Python Package Run。
+3. Do not modify existing Web Front-end process or front-end state model。
+4. No direct-linking of databases introduced in the current period，CLI Passes Only HTTP。
 
-## 2. 后端能力映射矩阵（Endpoint -> CLI 子命令 -> Phase）
+## 2. Backend Capability Mapping Matrix（Endpoint -> CLI Suborder -> Phase）
 
-### 2.1 Phase 1（可用闭环 + 高频扩展）
+### 2.1 Phase 1（Available Closed Rings + HF extensions）
 
-| 方法 | Endpoint | CLI 子命令 | Phase |
+| Methodology | Endpoint | CLI Suborder | Phase |
 |---|---|---|---|
 | `GET` | `/api/projects` | `banana-cli projects list` | P1 |
 | `POST` | `/api/projects` | `banana-cli projects create` | P1 |
@@ -64,9 +64,9 @@
 | `POST` | `/api/materials/associate` | `banana-cli materials associate` | P1 |
 | `DELETE` | `/api/materials/{material_id}` | `banana-cli materials delete` | P1 |
 
-### 2.2 Phase 2（补齐接近全量）
+### 2.2 Phase 2（Completion close to full amount）
 
-| 方法 | Endpoint | CLI 子命令 | Phase |
+| Methodology | Endpoint | CLI Suborder | Phase |
 |---|---|---|---|
 | `POST` | `/api/projects/renovation` | `banana-cli renovation create` | P2 |
 | `POST` | `/api/extract-style` | `banana-cli styles extract` | P2 |
@@ -85,25 +85,25 @@
 | `GET` | `/files/materials/{filename}` | `banana-cli files fetch` | P2 |
 | `GET` | `/files/user-templates/{template_id}/{filename}` | `banana-cli files fetch` | P2 |
 
-## 3. CLI 命令契约（参数、输入输出、退出码）
+## 3. CLI Command contract (parameters, input output, exit code)）
 
-### 3.1 命令行总入口
+### 3.1 Command line main entrance
 
 ```bash
 banana-cli [GLOBAL_OPTIONS] <domain> <action> [OPTIONS]
 ```
 
-全局参数：
+Global Parameters：
 
-1. `--base-url <url>`：默认 `http://localhost:5011`。
-2. `--access-code <code>`：传入后自动注入 `X-Access-Code` 请求头。
-3. `--poll-interval <sec>`：默认 `3`。
-4. `--request-timeout <sec>`：默认 `60`。
-5. `--config <path>`：配置文件路径。
-6. `--json`：输出机器可读 JSON。
-7. `--verbose`：输出请求/轮询详细日志（不打印密钥）。
+1. `--base-url <url>`：Default `http://localhost:5011`。
+2. `--access-code <code>`：Auto-injection after entry `X-Access-Code` Request Header。
+3. `--poll-interval <sec>`：Default `3`。
+4. `--request-timeout <sec>`：Default `60`。
+5. `--config <path>`：Profile Path。
+6. `--json`：Output Machine Readable JSON。
+7. `--verbose`：Output Request/Round Detail Log (do not print keys)）。
 
-### 3.2 顶级命令面
+### 3.2 Top Command
 
 ```bash
 banana-cli run jobs --file <jobs.jsonl|jobs.csv> --report <path> [--continue-on-error] [--timeout-sec N] [--state-file <path>] [--progress-interval-sec N]
@@ -122,42 +122,42 @@ banana-cli styles extract ...
 banana-cli files fetch --url <download_url> --output <path>
 ```
 
-### 3.3 高阶命令契约：`run jobs`
+### 3.3 High command contract.：`run jobs`
 
-1. 读取 `JSONL/CSV` 任务并做前置校验（字段合法性、文件绝对路径存在性）。
-2. 逐任务执行，默认继续执行并汇总失败。
-3. 支持任务级 `policy.continue_on_error` 覆盖全局。
-4. 每个任务记录：`steps`、`tasks`、`artifacts`、`error`、`duration_sec`。
-5. 支持 `--state-file` 运行态文件：执行中持续写入 run/job/task 进度，供外部监控读取。
-6. 支持 `--progress-interval-sec` 控制终端进度日志节流。
-7. 命令结束时输出终端摘要，并写入 `--report` 指定 JSON 文件。
+1. Read `JSONL/CSV` Task and pre-validation (field validity, absolute path existence of the file)）。
+2. Task-by-task, default to continue and aggregate failed。
+3. Support task level `policy.continue_on_error` Overwrite Global。
+4. For each task record：`steps`、`tasks`、`artifacts`、`error`、`duration_sec`。
+5. Support `--state-file` Run-state document： Ongoing writing in execution run/job/task Progress for external monitoring。
+6. Support `--progress-interval-sec` Control terminal progress log flow。
+7. Output terminal summary at the end of the command and written `--report` Assign JSON Documentation。
 
-### 3.5 监控命令契约：`run monitor`
+### 3.5 Control order contract.：`run monitor`
 
-1. 读取 `run jobs --state-file` 产出的运行态 JSON。
-2. 默认单次读取后输出当前快照。
-3. `--watch` 模式按 `--interval` 周期刷新，直到 `status` 进入完成态。
-4. 全局 `--json` 可用于输出结构化结果（最终快照）。
+1. Read `run jobs --state-file` State of operation of output JSON。
+2. Default Single Read Output Current Snapshot。
+3. `--watch` Mode to Press `--interval` Periodically refresh until `status` Enter Completed State。
+4. Global `--json` Available for output structured results (final snapshot)）。
 
-### 3.4 输出与退出码
+### 3.4 Output and Exit Code
 
-退出码固定：
+Exit code fixed：
 
-1. `0`：所有任务成功。
-2. `2`：部分任务失败（至少一个成功且至少一个失败）。
-3. `1`：致命错误（配置错误、输入不可解析、报告写入失败等）。
+1. `0`：All missions are successful.。
+2. `2`：Partially failed (at least one success and at least one failure)）。
+3. `1`：Fatal error (configuration error, non-resolveable input, failure to write report, etc.)）。
 
-输出约定：
+Output engagement：
 
-1. 默认人类可读摘要。
-2. `--json` 时输出结构化 JSON（单命令响应或 run 总结）。
-3. 错误输出格式统一为：`code/message/details`。
+1. Default Human Readable Abstracts。
+2. `--json` Time output structured JSON（Single command response or run Summary）。
+3. The error output format is unified to：`code/message/details`。
 
-## 4. 批处理作业格式（JSONL 主格式 + CSV 兼容格式）
+## 4. Batch Operations Format（JSONL Main Format + CSV Compatible Format）
 
-### 4.1 JSONL 主 Schema
+### 4.1 JSONL Lord. Schema
 
-每行一个 JSON 对象：
+One per line JSON Object：
 
 ```json
 {
@@ -191,68 +191,68 @@ banana-cli files fetch --url <download_url> --output <path>
 }
 ```
 
-### 4.2 `job_type` 行为定义
+### 4.2 `job_type` Definition of conduct
 
 1. `full_generation`：
-   1. 创建项目。
-   2. 可选更新项目字段：`template_style`、`extra_requirements`。
-   3. 可选模板上传（`template_image_path`）。
-   4. 可选上传并解析 `reference_files`（全部完成后再进入生成）。
-   5. 可选上传 `material_files`。
-   6. 生成流程：
-      1. `creation_type=descriptions` 时优先调用 `/generate/from-description`。
-      2. 其余调用 `/generate/outline` -> `/generate/descriptions`（异步轮询）。
-      3. 调用 `/generate/images`（异步轮询）。
-   7. 按 `export.formats` 导出产物。
+   1. Create Item。
+   2. Optional Update Item Fields：`template_style`、`extra_requirements`。
+   3. Optional Template Uploading（`template_image_path`）。
+   4. Select to upload and parse `reference_files`（Enter generation after completion of all）。
+   5. Optional Uploads `material_files`。
+   6. Generate Process：
+      1. `creation_type=descriptions` Call first `/generate/from-description`。
+      2. Remaining Calles `/generate/outline` -> `/generate/descriptions`（A walker.）。
+      3. Call `/generate/images`（A walker.）。
+   7. Press `export.formats` Export products。
 2. `export_only`：
-   1. 使用 `project_id` 直接导出。
-   2. 不触发创建与生成。
+   1. Usage `project_id` Direct Export。
+   2. Do not trigger creation and generation。
 
-### 4.3 CSV 兼容 Schema
+### 4.3 CSV Compatibility Schema
 
-表头固定：
+Header Fixed：
 
 ```text
 job_id,job_type,creation_type,idea_prompt,outline_text,description_text,project_id,template_image_path,template_style,export_formats,options_json
 ```
 
-说明：
+Annotations：
 
-1. `export_formats` 为 `;` 分隔值，如 `pptx;pdf;editable_pptx`。
-2. 复杂字段（如 `policy/export/page_ids/reference_files/material_files`）放入 `options_json`。
-3. 解析规则：先读显式列，再用 `options_json` 合并覆盖。
+1. `export_formats` Yes. `;` Separate value, e. g. `pptx;pdf;editable_pptx`。
+2. Complex fields (e. g.) `policy/export/page_ids/reference_files/material_files`）Put it in. `options_json`。
+3. Parsing rules： read the visible column first, then use it `options_json` Merge Overwrite。
 
-### 4.4 前置校验规则
+### 4.4 Pre-validation Rules
 
-1. `job_type` 必填且必须为 `full_generation|export_only`。
-2. `export_only` 必须提供 `project_id`。
-3. `full_generation` 必须满足：
-   1. `creation_type` 有效。
-   2. `idea` 需要 `idea_prompt`。
-   3. `outline` 需要 `outline_text`。
-   4. `descriptions` 需要 `description_text`。
-4. 上传类字段路径必须为绝对路径且文件存在。
-5. `export.formats` 仅允许：`pptx|pdf|images|editable_pptx`。
+1. `job_type` It must be filled and it must be filled. `full_generation|export_only`。
+2. `export_only` Must provide `project_id`。
+3. `full_generation` It has to be met.：
+   1. `creation_type` Valid.。
+   2. `idea` Yes. `idea_prompt`。
+   3. `outline` Yes. `outline_text`。
+   4. `descriptions` Yes. `description_text`。
+4. The upload category field path must be absolute and the file exists。
+5. `export.formats` Allow only：`pptx|pdf|images|editable_pptx`。
 
-## 5. 配置与鉴权模型（配置文件、环境变量、优先级）
+## 5. Configure and Accurate Models (configuration file, environment variable, priority)）
 
-### 5.1 配置来源与优先级
+### 5.1 Configure source and priority
 
-优先级（高 -> 低）：
+Priority (high) -> Low）：
 
-1. CLI 参数。
-2. 环境变量。
-3. 配置文件。
-4. 内置默认值。
+1. CLI Parameters。
+2. Environmental variables。
+3. Profile。
+4. Internal Defaults。
 
-### 5.2 配置文件
+### 5.2 Profile
 
-默认路径：
+Default Path：
 
 1. macOS/Linux：`${XDG_CONFIG_HOME:-~/.config}/banana-slides/cli.toml`
 2. Windows：`%APPDATA%/banana-slides/cli.toml`
 
-TOML 字段：
+TOML Field：
 
 ```toml
 base_url = "http://localhost:5011"
@@ -263,7 +263,7 @@ continue_on_error = true
 report_dir = "./reports"
 ```
 
-### 5.3 环境变量
+### 5.3 Environmental variables
 
 1. `BANANA_CLI_BASE_URL`
 2. `BANANA_CLI_ACCESS_CODE`
@@ -271,65 +271,65 @@ report_dir = "./reports"
 4. `BANANA_CLI_REQUEST_TIMEOUT`
 5. `BANANA_CLI_CONTINUE_ON_ERROR`
 
-### 5.4 鉴权规则
+### 5.4 Secrecy rules
 
-1. 若 `access_code` 非空，所有 `/api/*` 请求自动添加 `X-Access-Code`。
-2. `/files/*` 下载请求不附加 `X-Access-Code`（后端当前不要求）。
-3. 不支持 Bearer Token（本期明确不做）。
+1. If `access_code` Non-empty, all. `/api/*` Request AutoAdd `X-Access-Code`。
+2. `/files/*` Download Request Not Attached `X-Access-Code`（Backend is currently not required）。
+3. Not supported Bearer Token（Not for the current period）。
 
-## 6. 错误模型、重试与超时策略
+## 6. Error model, retry and overtime policy
 
-### 6.1 错误分类
+### 6.1 Error Category
 
-1. `CONFIG_ERROR`：配置无效、URL 非法、超时参数非法。
-2. `INPUT_ERROR`：作业字段缺失、文件路径不存在、CSV/JSONL 解析失败。
-3. `HTTP_ERROR`：后端返回非 2xx。
-4. `TASK_FAILED`：异步任务状态为 `FAILED`。
-5. `TASK_TIMEOUT`：轮询超时。
-6. `IO_ERROR`：报告文件写入失败、下载失败。
+1. `CONFIG_ERROR`：Configuration Invalid、URL Illegal, time-out arguments illegal。
+2. `INPUT_ERROR`：Job field missing, file path non-existent、CSV/JSONL Parsing failed。
+3. `HTTP_ERROR`：Backend Backend Backend Backend 2xx。
+4. `TASK_FAILED`：The staggered task state is： `FAILED`。
+5. `TASK_TIMEOUT`：Interrogation timeout。
+6. `IO_ERROR`：Report file failed to write, download failed。
 
-### 6.2 重试策略
+### 6.2 Retry Policy
 
-1. 对 `GET` 请求启用自动重试：最多 `3` 次，退避 `1s/2s/4s`。
-2. 对 `POST/PUT/DELETE` 默认不自动重试（避免非幂等副作用）。
-3. 网络错误或 `5xx` 才重试；`4xx` 直接失败。
-4. `run jobs` 失败处理以任务策略为准：
-   1. `continue_on_error=true`：记录失败继续后续任务。
-   2. `continue_on_error=false`：当前任务失败后立即终止整个 run。
+1. Yeah. `GET` Request to enable automatic retry： maximum `3` Once, retreat. `1s/2s/4s`。
+2. Yeah. `POST/PUT/DELETE` Default does not automatically retry (avoid side effects such as non-single)）。
+3. Network error or `5xx` Try again.；`4xx` Direct Failure。
+4. `run jobs` Failed processing is based on mission strategy：
+   1. `continue_on_error=true`：Record failure to continue follow-up mission。
+   2. `continue_on_error=false`：Termination of the entire mission immediately after failure of the current mission run。
 
-### 6.3 超时策略
+### 6.3 Timeout Policy
 
-1. 单请求超时：`request_timeout`（默认 60 秒）。
-2. 任务轮询超时：
-   1. 命令参数 `--timeout-sec` > job `policy.timeout_sec` > 默认 `1800` 秒。
-3. `tasks wait` 到达超时后返回 `TASK_TIMEOUT`。
+1. Request Timeout：`request_timeout`（Default 60 sec）。
+2. Task rotation timed out.：
+   1. Command Arguments `--timeout-sec` > job `policy.timeout_sec` > Default `1800` sec。
+3. `tasks wait` Back after timeout. `TASK_TIMEOUT`。
 
-### 6.4 任务轮询算法
+### 6.4 Job Rotation Calculator
 
-轮询目标：
+Query Target：
 
 ```text
 GET /api/projects/{project_id}/tasks/{task_id}
 ```
 
-判定：
+Decision：
 
-1. `status=COMPLETED`：成功结束。
-2. `status=FAILED`：失败结束，错误消息来自 `error_message`。
-3. 超时：返回失败并写入报告。
+1. `status=COMPLETED`：End successfully。
+2. `status=FAILED`：End of failure. Error message from `error_message`。
+3. Timeout： Return failed and write to report。
 
-## 7. 分期实施方案（Phase 1/Phase 2）
+## 7. Phased implementation programme（Phase 1/Phase 2）
 
 ### 7.1 Phase 1
 
-范围：
+Scope：
 
-1. `run jobs` 支持 `full_generation` 与 `export_only`。
-2. 项目、任务、模板、导出命令全量。
-3. 参考文件与素材常用操作（上传/列表/关联/删除）。
-4. 页面基础编辑与单页生成命令。
+1. `run jobs` Support `full_generation` and `export_only`。
+2. Project, task, template, full number of export commands。
+3. Common operation of reference files and materials (uploading)/List/Association/Delete）。
+4. Page Basic Editor and Single Page Generation Command。
 
-实现结构（仓库内 Python 包）：
+Implementation structure (in warehouse) Python Package）：
 
 ```text
 cli/banana_cli/
@@ -357,106 +357,106 @@ cli/banana_cli/
     materials.py
 ```
 
-技术栈约束：
+Technical stack constraints：
 
-1. 命令框架：`argparse`（标准库）。
-2. HTTP：`httpx`（同步客户端）。
-3. 数据模型：`pydantic`（用于作业与报告校验）。
+1. Command Frame：`argparse`（Standard library）。
+2. HTTP：`httpx`（Sync client）。
+3. Data Model：`pydantic`（For Operations and Report Validation）。
 
 ### 7.2 Phase 2
 
-范围：
+Scope：
 
 1. `renovation create`、`styles extract`。
-2. 页面版本命令（`versions`/`set-current`）与翻新页重生。
-3. `settings test` 与 `settings test-status`。
-4. 素材下载打包与 `files fetch`。
+2. Page Version Command（`versions`/`set-current`）Rebirth with Refurbishment Page。
+3. `settings test` and `settings test-status`。
+4. Material Download Packed with `files fetch`。
 
-完成标准：
+Completion criteria：
 
-1. CLI 映射覆盖率达到 >=90% 常用后端 endpoint。
-2. 批处理/单命令两类使用方式均可稳定运行。
+1. CLI Map coverage achieved >=90% Common backends endpoint。
+2. Batch/Single commands can be used in a stable way.。
 
-## 8. 测试与验收标准
+## 8. Tests and acceptance standards
 
-### 8.1 测试层次
+### 8.1 Test Level
 
-1. 单元测试：
-   1. 作业解析（JSONL/CSV）。
-   2. 配置优先级合并。
-   3. 错误映射与退出码。
-2. 集成测试（Mock HTTP）：
-   1. `run jobs` 流程编排。
-   2. 任务轮询状态机。
-   3. 报告产物结构。
-3. 真实后端联调测试：
-   1. 对齐现有 `backend/tests/integration/test_api_full_flow.py` 主链路。
-   2. 校验 Access Code 开关两种模式。
+1. Unit Test：
+   1. Job Parsing（JSONL/CSV）。
+   2. Configure Priority Merge。
+   3. Error mapping and exit code。
+2. Integrated testing（Mock HTTP）：
+   1. `run jobs` Process organization。
+   2. Task Inquiries。
+   3. Structure of reporting products。
+3. Real backend connection test：
+   1. Alignment with Existing `backend/tests/integration/test_api_full_flow.py` Main link。
+   2. Verify Access Code Switch both modes。
 
-### 8.2 必测场景
+### 8.2 It’s gonna take place.
 
-1. 输入校验：
-   1. 字段缺失。
-   2. 路径非法。
-   3. CSV/JSONL 结构错误。
-2. 批处理失败策略：
-   1. 默认继续执行。
-   2. 任务级 fail-fast 覆盖。
-3. 异步任务：
-   1. 描述生成。
-   2. 图片生成。
-   3. 可编辑导出。
-4. 导出链路：
+1. Enter Validation：
+   1. Fields Missing。
+   2. Path is illegal。
+   3. CSV/JSONL Structure error。
+2. Batch Failed Policy：
+   1. Default Continue。
+   2. Task level fail-fast Overwrite。
+3. Step-by-step mission：
+   1. Description Generation。
+   2. Picture Generation。
+   3. Editable Export。
+4. Export links：
    1. `pptx`。
    2. `pdf`。
    3. `images`。
    4. `editable_pptx`。
-5. 参考文件与素材：
-   1. 上传。
-   2. 解析触发与状态跟踪。
-   3. 关联与删除。
-6. 报告一致性：
-   1. 终端统计。
-   2. JSON `totals/jobs` 一致。
+5. Reference documents and materials：
+   1. Upload。
+   2. Parsing Trigger and Status Track。
+   3. Association and Delete。
+6. Coherence of reporting：
+   1. Terminal statistics。
+   2. JSON `totals/jobs` Unanimously。
 
-### 8.3 验收标准
+### 8.3 Acceptance and inspection standards
 
-1. 批量 10 个作业运行后，报告完整、退出码正确。
-2. 单任务失败不影响后续任务（默认模式）。
-3. `export_only` 可在已有项目上稳定产出下载 URL。
-4. 在 `ACCESS_CODE` 开启时全部命令可正常访问 `/api/*`。
+1. Batch 10 Full report and correct exit code after operation。
+2. Failure of single task does not affect subsequent task (default mode)）。
+3. `export_only` Stable output downloads on existing items URL。
+4. Yes. `ACCESS_CODE` All commands are accessible when open `/api/*`。
 
-## 9. 风险与回滚策略
+## 9. Risk and Rollback Policy
 
-### 9.1 主要风险
+### 9.1 Main risks
 
-1. 后端异步任务耗时波动大导致轮询超时。
-2. 上传文件较大导致网络超时。
-3. 非幂等接口在网络抖动下重复触发。
-4. 不同作业输入质量差导致失败率高。
+1. Back-end heretic missions are time-consuming and volatile, leading to excessive lead times.。
+2. Large uploading of files leads to network time overruns。
+3. Non-single interfacing triggers over and over again under network shaking。
+4. High failure rate due to poor quality of different job inputs。
 
-### 9.2 风险控制
+### 9.2 Risk control
 
-1. 统一超时可配置并支持任务级覆盖。
-2. 仅对 `GET` 自动重试，写操作默认不重试。
-3. 预校验文件路径与必填字段，尽早失败。
-4. 报告中记录 step 级失败点，便于补跑。
+1. Harmonize timeout configuration and support task-level coverage。
+2. Just right. `GET` Automatically retry, write operation default not retry。
+3. Prevalidation of file paths and required fields, failure as soon as possible。
+4. Records in reports step It’s a failure. It’s easy to run.。
 
-### 9.3 回滚策略
+### 9.3 Rollback Policy
 
-1. CLI 仅新增文件与入口，不改后端协议，可随时移除 CLI 目录回滚。
-2. 若 Phase 2 风险过高，保持 Phase 1 稳定分支并冻结新增命令。
-3. 发生线上作业异常时可直接降级为低阶子命令手动执行。
+1. CLI Only add files and portals without changing backend protocols and can be removed at any time CLI Directory Roll Back。
+2. If Phase 2 It’s too risky. Hold on. Phase 1 Stabilize branches and freeze new commands。
+3. Directly downgraded to low-scale orders manually in case of online operation anomaly.。
 
-## 10. 附录（示例作业文件 + 示例报告 JSON）
+## 10. Appendix (example operational document) + Example report JSON）
 
-### 10.1 示例：`full_generation` JSONL 行
+### 10.1 Example：：`full_generation` JSONL Okay.
 
 ```json
-{"job_id":"job-ai-001","job_type":"full_generation","creation_type":"idea","idea_prompt":"生成一份关于 AI Agent 工程实践的 6 页演示文稿","template_image_path":"/Users/chenzixin/projects/banana-slides/assets/test_img.png","template_style":"科技感、深蓝主色、信息密度高","extra_requirements":"每页保持标题可读性，图文比例约 6:4","language":"zh","max_description_workers":5,"max_image_workers":6,"use_template":true,"reference_files":["/Users/chenzixin/projects/banana-slides/docs/quickstart.mdx"],"material_files":[],"export":{"formats":["pptx","pdf","editable_pptx"],"filename_prefix":"ai-agent-practice","page_ids":[],"editable_max_depth":1,"editable_max_workers":4},"policy":{"continue_on_error":true,"timeout_sec":1800}}
+{"job_id":"job-ai-001","job_type":"full_generation","creation_type":"idea","idea_prompt":"Generate a question AI Agent Engineering practice 6 Presentation","template_image_path":"/Users/chenzixin/projects/banana-slides/assets/test_img.png","template_style":"Technology, deep blues, high information density.","extra_requirements":"Maintaining title readability per page, roughly proportional to text 6:4","language":"zh","max_description_workers":5,"max_image_workers":6,"use_template":true,"reference_files":["/Users/chenzixin/projects/banana-slides/docs/quickstart.mdx"],"material_files":[],"export":{"formats":["pptx","pdf","editable_pptx"],"filename_prefix":"ai-agent-practice","page_ids":[],"editable_max_depth":1,"editable_max_workers":4},"policy":{"continue_on_error":true,"timeout_sec":1800}}
 ```
 
-### 10.2 示例：最终报告 JSON
+### 10.2 Example： Final report JSON
 
 ```json
 {
@@ -500,22 +500,22 @@ cli/banana_cli/
 }
 ```
 
-## Phase 1/Phase 2 验收 Checklist
+## Phase 1/Phase 2 Receiving and Inspection Checklist
 
 ### Phase 1
 
-- [ ] `run jobs` 支持 `full_generation` 与 `export_only`。
-- [ ] 任务报告 JSON 输出符合本 spec 的报告 schema。
-- [ ] 项目/任务/模板/导出命令可用。
-- [ ] `refs` 与 `materials` 常用命令可用。
-- [ ] 页面基础编辑与单页生成命令可用。
-- [ ] 默认“继续执行并汇总”策略生效。
-- [ ] 退出码 `0/1/2` 行为符合定义。
+- [ ] `run jobs` Support `full_generation` and `export_only`。
+- [ ] Mission report JSON Output matches this one. spec Report of the Secretary-General schema。
+- [ ] Item/Tasks/Template/Export command available。
+- [ ] `refs` and `materials` Common commands are available。
+- [ ] Page Basic Editor and Single Page Generation Commands Available。
+- [ ] Default ”Continue and Summarize” policy effective。
+- [ ] Exit Code `0/1/2` Behavior meets definition。
 
 ### Phase 2
 
-- [ ] `renovation create` 与 `styles extract` 可用。
-- [ ] 页面版本 `versions`/`set-current` 可用。
-- [ ] `settings test` 与 `settings test-status` 可用。
-- [ ] 素材下载与 `files fetch` 可用。
-- [ ] 映射覆盖率达到 >=90% 常用 endpoint。
+- [ ] `renovation create` and `styles extract` Available。
+- [ ] Page Version `versions`/`set-current` Available。
+- [ ] `settings test` and `settings test-status` Available。
+- [ ] Text Downloads and `files fetch` Available。
+- [ ] Map coverage achieved >=90% Common endpoint。

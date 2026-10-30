@@ -62,8 +62,8 @@ describe('getTemplateFile', () => {
   });
 
   it('recovers a template missing from the passed-in list via a fresh API fetch', async () => {
-    // 模拟本次会话刚上传、但调用方 state 尚未同步的场景：
-    // 传入的列表为空，getTemplateFile 应回退到后端最新列表拿到模板。
+    // Simulates where this session has just been uploaded but called state state has not synchronized yet：
+    // the supplied list is empty，getTemplateFile You should go back to the last list and get the template.。
     vi.mocked(listUserTemplates).mockResolvedValue({
       data: {
         templates: [

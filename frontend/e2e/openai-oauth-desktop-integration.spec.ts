@@ -13,7 +13,7 @@ function sqlite(sql: string): string {
 }
 
 async function expandAdvancedSettings(page: import('@playwright/test').Page) {
-  await page.getByRole('button', { name: /高级设置|Advanced Settings/ }).click();
+  await page.getByRole('button', { name: /\u9ad8\u7ea7\u8bbe\u7f6e|Advanced Settings/ }).click();
 }
 
 test('desktop UI observes OAuth credentials persisted by the real backend database', async ({ page, request }) => {
@@ -63,7 +63,7 @@ test('desktop UI observes OAuth credentials persisted by the real backend databa
     await page.goto(`${BASE_URL}/#/settings`);
     await expandAdvancedSettings(page);
     await page.getByRole('button', { name: 'Login with OpenAI' }).click();
-    await expect(page.getByRole('button', { name: /连接中|Connecting/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /\u8fde\u63a5\u4e2d|Connecting/ })).toBeVisible();
 
     sqlite(`
       UPDATE settings

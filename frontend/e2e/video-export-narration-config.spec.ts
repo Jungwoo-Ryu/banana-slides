@@ -86,19 +86,19 @@ test.describe('Video export narration config', () => {
     await page.goto(`/project/${projectId}/preview`)
     await page.waitForFunction(() => document.body.innerText.length > 50, { timeout: 15000 })
 
-    await page.locator('button:has-text("导出")').first().click()
-    await page.locator('button:has-text("导出为讲解视频")').click()
+    await page.locator('button:has-text("Export")').first().click()
+    await page.locator('button:has-text("Export to Speech Video")').click()
 
     await page.locator('select').nth(0).selectOption('confident corporate executive')
     await page.locator('select').nth(1).selectOption('potential investors and venture capitalists')
     await page.locator('select').nth(2).selectOption('inspiring, passionate, and persuasive')
-    await page.locator('button:has-text("高级配置")').click()
+    await page.locator('button:has-text("Advanced Configuration")').click()
     await page
-      .getByPlaceholder(/例如：英伟达的发展史与技术演进|For example: the history and technological evolution of Nvidia/)
+      .getByPlaceholder(/\u4f8b\u5982：\u82f1\u4f1f\u8fbe\u7684\u53d1\u5c55\u53f2\u4e0e\u6280\u672f\u6f14\u8fdb|For example: the history and technological evolution of Nvidia/)
       .fill('our company 2025 annual financial report and 2026 strategic plan')
     await page.locator('input[type="number"]').nth(0).fill('80')
     await page.locator('input[type="number"]').nth(1).fill('140')
-    await page.locator('button:has-text("开始导出")').click()
+    await page.locator('button:has-text("Start Export")').click()
 
     await expect.poll(() => exportPayload).not.toBeNull()
     expect(exportPayload.generate_narration).toBe(true)
@@ -187,25 +187,25 @@ test.describe('Video export narration config', () => {
     expect(settingsRequests).toBeGreaterThan(0)
     failSettings = true
 
-    await page.locator('button:has-text("导出")').first().click()
-    await page.getByRole('button', { name: '导出为讲解视频' }).click()
+    await page.locator('button:has-text("Export")').first().click()
+    await page.getByRole('button', { name: 'Export to Speech Video' }).click()
 
-    const loadingButton = page.getByRole('button', { name: '正在加载视频设置...' })
+    const loadingButton = page.getByRole('button', { name: 'Loading video settings...' })
     await expect(loadingButton).toBeVisible()
     await expect(loadingButton).toBeDisabled()
-    await page.locator('button:has-text("导出")').first().click()
+    await page.locator('button:has-text("Export")').first().click()
     releaseSettingsFailure()
 
-    await expect(page.getByRole('heading', { name: '讲解视频导出设置' })).toBeHidden()
-    await expect(page.getByText('无法加载视频导出设置，请重试后再导出')).toBeHidden()
+    await expect(page.getByRole('heading', { name: 'Speaking Video Export Settings' })).toBeHidden()
+    await expect(page.getByText('Could not load video export settings. Please try again before exporting')).toBeHidden()
 
-    await page.locator('button:has-text("导出")').first().click()
-    const retryButton = page.getByRole('button', { name: '导出为讲解视频' })
+    await page.locator('button:has-text("Export")').first().click()
+    const retryButton = page.getByRole('button', { name: 'Export to Speech Video' })
     await expect(retryButton).toBeEnabled()
     await retryButton.click()
-    await expect(page.getByText('无法加载视频导出设置，请重试后再导出')).toBeVisible()
-    await expect(page.getByRole('heading', { name: '讲解视频导出设置' })).toBeHidden()
-    await expect(page.getByRole('button', { name: '导出为讲解视频' })).toBeEnabled()
+    await expect(page.getByText('Could not load video export settings. Please try again before exporting')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Speaking Video Export Settings' })).toBeHidden()
+    await expect(page.getByRole('button', { name: 'Export to Speech Video' })).toBeEnabled()
   })
 
   test('shows an ElevenLabs error and initializes the first voice on retry', async ({ page }) => {
@@ -261,14 +261,14 @@ test.describe('Video export narration config', () => {
             contentType: 'application/json',
             body: JSON.stringify({
               success: true,
-              data: { voices: [{ id: 'zh-voice-1', name: '测试中文音色', languages: ['zh'] }] },
+              data: { voices: [{ id: 'zh-voice-1', name: 'Test Chinese sound', languages: ['zh'] }] },
             }),
           })
         }
         return route.fulfill({
           status: 503,
           contentType: 'application/json',
-          body: JSON.stringify({ success: false, message: '音色服务暂不可用，请稍后重试' }),
+          body: JSON.stringify({ success: false, message: 'The sound service is not available. Please try again later.' }),
         })
       }
       if (url.pathname === '/api/output-language') {
@@ -287,15 +287,15 @@ test.describe('Video export narration config', () => {
     await page.goto(`/project/${projectId}/preview`)
     await expect(page.getByText('Voice failure regression')).toBeVisible()
 
-    await page.locator('button:has-text("导出")').first().click()
-    await page.getByRole('button', { name: '导出为讲解视频' }).click()
+    await page.locator('button:has-text("Export")').first().click()
+    await page.getByRole('button', { name: 'Export to Speech Video' }).click()
 
-    await expect(page.getByText('音色服务暂不可用，请稍后重试')).toBeVisible()
-    await expect(page.getByRole('heading', { name: '讲解视频导出设置' })).toBeVisible()
+    await expect(page.getByText('The sound service is not available. Please try again later.')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Speaking Video Export Settings' })).toBeVisible()
 
-    await page.getByRole('button', { name: '取消' }).click()
-    await page.locator('button:has-text("导出")').first().click()
-    await page.getByRole('button', { name: '导出为讲解视频' }).click()
+    await page.getByRole('button', { name: 'Cancel' }).click()
+    await page.locator('button:has-text("Export")').first().click()
+    await page.getByRole('button', { name: 'Export to Speech Video' }).click()
 
     const selects = page.locator('select')
     await expect(selects).toHaveCount(4)
@@ -309,10 +309,10 @@ test.describe('Video export narration config', () => {
       await page.goto(`/project/${projectId}/preview`)
       await expect(page.getByText('Slide 1')).toBeVisible()
 
-      await page.locator('button:has-text("导出")').first().click()
-      await page.getByRole('button', { name: '导出为讲解视频' }).click()
+      await page.locator('button:has-text("Export")').first().click()
+      await page.getByRole('button', { name: 'Export to Speech Video' }).click()
 
-      await expect(page.getByRole('heading', { name: '讲解视频导出设置' })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'Speaking Video Export Settings' })).toBeVisible()
     } finally {
       try {
         await fetch(`${BACKEND_URL}/api/projects/${projectId}`, { method: 'DELETE' })

@@ -52,6 +52,6 @@ test('uploading a 3-page PDF yields 3 analyzed template assets', async ({ page }
   // The setup page library renders all 3 thumbnails.
   await page.goto(`${BASE_URL}/project/${projectId}/template-setup`)
   await page.waitForLoadState('networkidle')
-  await expect(page.getByText(/模板配置|Template Setup/)).toBeVisible()
+  await expect(page.getByText(/\u6a21\u677f\u914d\u7f6e|Template Setup/)).toBeVisible()
   await expect.poll(async () => await page.locator('img[alt]').count()).toBeGreaterThanOrEqual(3)
 })

@@ -3,10 +3,10 @@ import { X } from 'lucide-react';
 import { useT } from '@/hooks/useT';
 import { isUploadingUrl, getUploadingPreviewUrl } from '@/hooks/useImagePaste';
 
-// ImagePreviewList 组件自包含翻译
+// ImagePreviewList Component contains translation
 const imagePreviewI18n = {
   zh: {
-    imagePreview: { title: "图片预览", removeImage: "移除图片", imageLoadFailed: "图片加载失败" }
+    imagePreview: { title: "Image Preview", removeImage: "Remove Image", imageLoadFailed: "Image load failed" }
   },
   en: {
     imagePreview: { title: "Image Preview", removeImage: "Remove Image", imageLoadFailed: "Image load failed" }
@@ -20,8 +20,8 @@ interface ImagePreviewListProps {
 }
 
 /**
- * 解析markdown文本中的图片链接
- * 支持格式: ![alt](url) 或 ![](url)
+ * Parsing markdown Photo links in text
+ * Support format: ![alt](url) or ![](url)
  */
 const parseMarkdownImages = (text: string): Array<{ url: string; alt: string; fullMatch: string }> => {
   const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
@@ -40,8 +40,8 @@ const parseMarkdownImages = (text: string): Array<{ url: string; alt: string; fu
 };
 
 /**
- * 图片预览列表组件 - 横向滚动
- * 解析并显示编辑框中的所有markdown图片
+ * Picture Preview List Component - Scroll Horizontally
+ * Parsing and showing all in the edit box markdown Image
  */
 export const ImagePreviewList: React.FC<ImagePreviewListProps> = ({
   content,
@@ -49,10 +49,10 @@ export const ImagePreviewList: React.FC<ImagePreviewListProps> = ({
   className = ''
 }) => {
   const t = useT(imagePreviewI18n);
-  // 解析图片列表
+  // Parsing Picture List
   const images = useMemo(() => parseMarkdownImages(content), [content]);
 
-  // 如果没有图片，不显示组件
+  // Do not show components if no pictures
   if (images.length === 0) {
     return null;
   }
@@ -65,7 +65,7 @@ export const ImagePreviewList: React.FC<ImagePreviewListProps> = ({
         </span>
       </div>
 
-      {/* 横向滚动容器 */}
+      {/* Scrolling containers horizontally */}
       <div className="flex gap-3 overflow-x-auto pb-2">
         {images.map((image, index) => {
           const uploading = isUploadingUrl(image.url);
@@ -76,7 +76,7 @@ export const ImagePreviewList: React.FC<ImagePreviewListProps> = ({
               key={`${image.url}-${index}`}
               className="relative flex-shrink-0 group"
             >
-              {/* 图片容器 */}
+              {/* Picture container */}
               <div className="relative w-32 h-32 bg-gray-100 dark:bg-background-secondary rounded-lg overflow-hidden border-2 border-gray-200 dark:border-border-primary hover:border-banana-400 transition-colors">
                 <img
                   src={imgSrc}
@@ -95,14 +95,14 @@ export const ImagePreviewList: React.FC<ImagePreviewListProps> = ({
                   }}
                 />
 
-                {/* 上传中遮罩 */}
+                {/* Upload Mask */}
                 {uploading && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="w-5 h-5 border-2 border-banana-500 border-t-transparent rounded-full animate-spin" />
                   </div>
                 )}
 
-                {/* 删除按钮 */}
+                {/* Remove button */}
                 {onRemoveImage && !uploading && (
                   <button
                     onClick={() => onRemoveImage(image.url)}
@@ -113,7 +113,7 @@ export const ImagePreviewList: React.FC<ImagePreviewListProps> = ({
                   </button>
                 )}
 
-                {/* 悬浮时显示图片描述 */}
+                {/* Show picture description on suspension */}
                 <div className="absolute inset-x-0 bottom-0 bg-black/70 text-white text-xs p-1 opacity-0 group-hover:opacity-100 transition-opacity truncate">
                   {image.alt !== 'image' ? image.alt : decodeURIComponent(imgSrc.split('/').pop()?.replace(/_\d+\./, '.') || '')}
                 </div>

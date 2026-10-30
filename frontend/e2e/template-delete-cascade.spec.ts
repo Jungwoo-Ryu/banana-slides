@@ -2,7 +2,7 @@
  * E2E: Deleting a template asset cascades to referencing pages (PRD §11).
  *
  * A multi-mode project has one template bound to 2 pages. Deleting it from the
- * TemplateSetupPage must: clear those pages back to "未确认", show a toast with
+ * TemplateSetupPage must: clear those pages back to "Not confirmed", show a toast with
  * the affected page count, and persist the cleared state across a reload.
  */
 import { test, expect } from '@playwright/test'
@@ -32,20 +32,20 @@ test('deleting a referenced template clears its pages and persists', async ({ pa
   await page.goto(`${BASE_URL}/project/${projectId}/template-setup`)
   await page.waitForLoadState('networkidle')
 
-  // Both pages bound -> no "未确认" placeholders yet.
-  await expect(page.getByText(/模板配置|Template Setup/)).toBeVisible()
-  await expect(page.getByText(/未确认|Unconfirmed/)).toHaveCount(0)
+  // Both pages bound -> no "Not confirmed" placeholders yet.
+  await expect(page.getByText(/\u6a21\u677f\u914d\u7f6e|Template Setup/)).toBeVisible()
+  await expect(page.getByText(/\u672a\u786e\u8ba4|Unconfirmed/)).toHaveCount(0)
 
   // Delete the asset from the library and confirm.
-  await page.getByRole('button', { name: /删除|Delete/ }).first().click()
+  await page.getByRole('button', { name: /\u5220\u9664|Delete/ }).first().click()
   // Confirm dialog
-  await page.getByRole('button', { name: /确定|确认|Confirm|OK/ }).last().click()
+  await page.getByRole('button', { name: /\u786e\u5b9a|\u786e\u8ba4|Confirm|OK/ }).last().click()
 
   // Toast reports the affected page count (2).
-  await expect(page.getByText(/2 个页面|2 page/)).toBeVisible()
+  await expect(page.getByText(/2 \u4e2a\u9875\u9762|2 page/)).toBeVisible()
 
   // Both page rows now show the unconfirmed placeholder.
-  await expect(page.getByText(/未确认|Unconfirmed/)).toHaveCount(2)
+  await expect(page.getByText(/\u672a\u786e\u8ba4|Unconfirmed/)).toHaveCount(2)
 
   // Backend persisted the cleared state.
   const proj = await getProject(BACKEND_URL, projectId)
@@ -58,5 +58,5 @@ test('deleting a referenced template clears its pages and persists', async ({ pa
   // Reload — still cleared.
   await page.reload()
   await page.waitForLoadState('networkidle')
-  await expect(page.getByText(/未确认|Unconfirmed/)).toHaveCount(2)
+  await expect(page.getByText(/\u672a\u786e\u8ba4|Unconfirmed/)).toHaveCount(2)
 })

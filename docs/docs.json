@@ -14,11 +14,11 @@
         "language": "zh",
         "groups": [
           {
-            "group": "快速上手",
+            "group": "Let’s do it fast.",
             "pages": ["zh/index", "zh/quickstart", "zh/configuration", "zh/features/desktop"]
           },
           {
-            "group": "创作流程",
+            "group": "Create Process",
             "pages": [
               "zh/features/creation",
               "zh/features/outline",
@@ -28,7 +28,7 @@
             ]
           },
           {
-            "group": "素材与导出",
+            "group": "Materials and Export",
             "pages": [
               "zh/features/materials",
               "zh/features/export",
@@ -36,11 +36,11 @@
             ]
           },
           {
-            "group": "开发者",
+            "group": "Developer",
             "pages": ["zh/cli"]
           },
           {
-            "group": "其他",
+            "group": "Other",
             "pages": [
               "zh/history",
               "zh/features/overview",

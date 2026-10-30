@@ -8,16 +8,16 @@ export const emptyReport: ReportFields = {
   topic: '', purpose: '', audience: '', style: '', pages: '', points: '', requirements: '',
 };
 const labels = {
-  zh: { topic: '主题（必填）', purpose: '用途', audience: '目标受众', style: '视觉风格', pages: '预计页数', points: '内容要点', requirements: '补充要求' },
+  zh: { topic: '주제 (필수)', purpose: '목적', audience: '대상 청중', style: '디자인 스타일', pages: '예상 페이지 수', points: '핵심 내용', requirements: '추가 요구사항' },
   en: { topic: '주제 (필수)', purpose: '목적', audience: '대상 청중', style: '디자인 스타일', pages: '예상 페이지 수', points: '핵심 내용', requirements: '추가 요구사항' },
 };
 const presets = {
   zh: [
-    ['周报/月报', '汇报本期工作进展', '团队成员', '简洁清晰', '8'],
-    ['项目汇报', '汇报项目阶段成果', '项目相关方', '专业简洁', '10'],
-    ['产品介绍', '介绍产品及其价值', '潜在用户', '清晰直观', '10'],
-    ['培训课件', '讲解知识与实践方法', '培训学员', '易读易懂', '15'],
-    ['自定义', '', '', '', ''],
+    ['Weekly reports/Monthly reports', 'Reporting on the progress of work during the period', 'Team members', 'Simplicity and clarity.', '8'],
+    ['Project reporting', 'Reporting on the results of the project phase', 'Project related parties', 'Professional simplicity', '10'],
+    ['Product Introduction', 'Presentation of products and their value', 'Potential users', 'Clear visual.', '10'],
+    ['Training package', 'Presentations on knowledge and practice approaches', 'Trainers', 'It’s easy to read and understand.', '15'],
+    ['Custom', '', '', '', ''],
   ],
   en: [
     ['주간 / 월간 보고', '이번 기간 업무 현황 보고', '팀원', '명료하고 간결하게', '8'],
@@ -45,9 +45,9 @@ export const ReportForm: React.FC<{
   const names = labels[zh ? 'zh' : 'en'];
   return <fieldset disabled={disabled} className="space-y-3 mb-4" data-testid="report-form">
     <label className="block text-sm">
-      {zh ? '场景预设' : '발표 유형'}
+      {zh ? 'scene preset' : '발표 유형'}
       <select defaultValue="" className="block w-full p-2 border rounded-lg dark:bg-background-secondary" onChange={e => onChange(applyReportPreset(fields, Number(e.target.value), zh))}>
-        <option value="" disabled>{zh ? '选择场景' : '발표 유형 선택'}</option>
+        <option value="" disabled>{zh ? 'Select a scene' : '발표 유형 선택'}</option>
         {presets[zh ? 'zh' : 'en'].map(([name], index) => <option key={index} value={index}>{name}</option>)}
       </select>
     </label>
@@ -59,10 +59,10 @@ export const ReportForm: React.FC<{
           : <input className="block w-full p-2 border rounded-lg dark:bg-background-secondary" type={key === 'pages' ? 'number' : 'text'} min={key === 'pages' ? 1 : undefined} required={key === 'topic'} value={fields[key]} onChange={e => onChange({ ...fields, [key]: e.target.value })} />}
       </label>)}
     </div>
-    {!fields.topic.trim() && <p className="text-sm text-amber-700 dark:text-amber-300">{zh ? '请填写主题后继续' : '주제를 입력하세요'}</p>}
+    {!fields.topic.trim() && <p className="text-sm text-amber-700 dark:text-amber-300">{zh ? 'Please complete the subject and continue.' : '주제를 입력하세요'}</p>}
     <div className="flex items-center justify-between gap-3 text-sm">
-      <span>{zh ? 'Prompt 预览（可直接编辑；手动编辑后，更新字段不会覆盖预览）' : '프롬프트 미리보기 (직접 수정한 내용은 유지됩니다)'}</span>
-      <button type="button" className="text-blue-600 shrink-0" onClick={onRebuild}>{zh ? '从表单更新 Prompt' : '입력 내용으로 프롬프트 갱신'}</button>
+      <span>{zh ? 'Prompt Preview (directly editable; updated field does not overwrite preview)）' : '프롬프트 미리보기 (직접 수정한 내용은 유지됩니다)'}</span>
+      <button type="button" className="text-blue-600 shrink-0" onClick={onRebuild}>{zh ? 'Update from Form Prompt' : '입력 내용으로 프롬프트 갱신'}</button>
     </div>
   </fieldset>;
 };

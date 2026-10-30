@@ -28,7 +28,7 @@ test('uploaded Markdown preserves remote images without fetching them', async ({
       model: 'test-caption',
       choices: [{
         index: 0,
-        message: { role: 'assistant', content: '远程图片' },
+        message: { role: 'assistant', content: 'Remote Pictures' },
         finish_reason: 'stop',
       }],
     })

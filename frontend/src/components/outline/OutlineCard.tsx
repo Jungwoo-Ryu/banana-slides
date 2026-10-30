@@ -6,16 +6,16 @@ import { Card, useConfirm, Markdown, ShimmerOverlay, MaterialSelector } from '@/
 import { MarkdownTextarea, type MarkdownTextareaRef } from '@/components/shared/MarkdownTextarea';
 import type { Page, Material } from '@/types';
 
-// OutlineCard 组件自包含翻译
+// OutlineCard Component contains translation
 const outlineCardI18n = {
   zh: {
     outlineCard: {
-      page: "第 {{num}} 页", chapter: "章节", titleLabel: "标题",
-      keyPointsPlaceholder: "要点（每行一个，支持粘贴图片）", confirmDeletePage: "确定要删除这一页吗？",
-      confirmDeleteTitle: "确认删除",
-      uploadingImage: "正在上传图片...",
-      coverPage: "封面",
-      coverPageTooltip: "第一页为封面页，通常包含标题和副标题"
+      page: "Page {{num}}", chapter: "Chapter", titleLabel: "Title",
+      keyPointsPlaceholder: "Key points (one per line, paste images supported)", confirmDeletePage: "Are you sure you want to delete this page?",
+      confirmDeleteTitle: "Confirm Delete",
+      uploadingImage: "Uploading image...",
+      coverPage: "Cover",
+      coverPageTooltip: "This is the cover page, usually containing the title and subtitle"
     }
   },
   en: {
@@ -83,7 +83,7 @@ export const OutlineCard: React.FC<OutlineCardProps> = ({
     textareaRef.current?.insertAtCursor(markdown + '\n');
   }, []);
 
-  // 当 page prop 变化时，同步更新本地编辑状态（如果不在编辑模式）
+  // Sync local state when the page prop changes, unless the user is editing.
   useEffect(() => {
     if (!isEditing) {
       setEditTitle(outline.title);
@@ -120,7 +120,7 @@ export const OutlineCard: React.FC<OutlineCardProps> = ({
       <ShimmerOverlay show={isAiRefining} />
 
       <div className="flex items-start gap-3 relative z-10">
-        {/* 拖拽手柄 */}
+        {/* Drag handles. */}
         <div
           {...dragHandleProps}
           className="flex-shrink-0 cursor-move text-gray-400 hover:text-gray-600 pt-1"
@@ -128,9 +128,9 @@ export const OutlineCard: React.FC<OutlineCardProps> = ({
           <GripVertical size={20} />
         </div>
 
-        {/* 内容区 */}
+        {/* Content Area */}
         <div className="flex-1 min-w-0">
-          {/* 页码和章节 */}
+          {/* Page numbers and chapters */}
           <div className="flex items-center gap-2 mb-2">
             <span className="text-sm font-semibold text-gray-900 dark:text-foreground-primary">
               {t('outlineCard.page', { num: index + 1 })}
@@ -162,7 +162,7 @@ export const OutlineCard: React.FC<OutlineCardProps> = ({
           </div>
 
           {isEditing ? (
-            /* 编辑模式 */
+            /* Edit Mode */
             <div className="space-y-3" onClick={(e) => e.stopPropagation()}>
               <input
                 type="text"
@@ -202,7 +202,7 @@ export const OutlineCard: React.FC<OutlineCardProps> = ({
               </div>
             </div>
           ) : (
-            /* 查看模式 */
+            /* View Mode */
             <div>
               <h4 className="font-semibold text-gray-900 dark:text-foreground-primary mb-2">
                 {outline.title}
@@ -214,7 +214,7 @@ export const OutlineCard: React.FC<OutlineCardProps> = ({
           )}
         </div>
 
-        {/* 操作按钮 */}
+        {/* Operation button */}
         {!isEditing && (
           <div className="flex-shrink-0 flex gap-2">
             <button

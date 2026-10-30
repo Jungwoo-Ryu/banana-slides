@@ -48,7 +48,7 @@ def _build_page_from_payload(project_id, data, order_index):
 def create_page(project_id):
     """
     POST /api/projects/{project_id}/pages - Add new page
-    
+
     Request body:
     {
         "order_index": 2,
@@ -58,15 +58,15 @@ def create_page(project_id):
     """
     try:
         project = Project.query.get(project_id)
-        
+
         if not project:
             return not_found('Project')
-        
+
         data = request.get_json()
-        
+
         if not data or 'order_index' not in data:
             return bad_request("order_index is required")
-        
+
         # Only an omitted part inherits context. Explicit null/blank values
         # intentionally create an ungrouped page, and batch imports stay literal.
         if 'part' not in data:
@@ -79,22 +79,22 @@ def create_page(project_id):
 
         page = _build_page_from_payload(project_id, data, data['order_index'])
         db.session.add(page)
-        
+
         # Update other pages' order_index if necessary
         other_pages = Page.query.filter(
             Page.project_id == project_id,
             Page.order_index >= data['order_index']
         ).all()
-        
+
         for p in other_pages:
             if p.id != page.id:
                 p.order_index += 1
-        
+
         project.updated_at = datetime.utcnow()
         db.session.commit()
-        
+
         return success_response(page.to_dict(), status_code=201)
-    
+
     except Exception as e:
         db.session.rollback()
         return error_response('SERVER_ERROR', str(e), 500)
@@ -218,7 +218,7 @@ def update_page(project_id, page_id):
 
     Request body:
     {
-        "part": "章节名"
+        "part": "Chapter Name"
     }
     """
     try:
@@ -256,7 +256,7 @@ def update_page(project_id, page_id):
 def update_page_outline(project_id, page_id):
     """
     PUT /api/projects/{project_id}/pages/{page_id}/outline - Edit page outline
-    
+
     Request body:
     {
         "outline_content": {"title": "...", "points": [...]}
@@ -264,27 +264,27 @@ def update_page_outline(project_id, page_id):
     """
     try:
         page = Page.query.get(page_id)
-        
+
         if not page or page.project_id != project_id:
             return not_found('Page')
-        
+
         data = request.get_json()
-        
+
         if not data or 'outline_content' not in data:
             return bad_request("outline_content is required")
-        
+
         page.set_outline_content(data['outline_content'])
         page.updated_at = datetime.utcnow()
-        
+
         # Update project
         project = Project.query.get(project_id)
         if project:
             project.updated_at = datetime.utcnow()
-        
+
         db.session.commit()
-        
+
         return success_response(page.to_dict())
-    
+
     except Exception as e:
         db.session.rollback()
         return error_response('SERVER_ERROR', str(e), 500)
@@ -294,39 +294,39 @@ def update_page_outline(project_id, page_id):
 def update_page_description(project_id, page_id):
     """
     PUT /api/projects/{project_id}/pages/{page_id}/description - Edit description
-    
+
     Request body:
     {
         "description_content": {
             "title": "...",
             "text_content": ["...", "..."],
-            "extra_fields": {"排版布局": "..."}
+            "extra_fields": {"Page layout": "..."}
         }
     }
     """
     try:
         page = Page.query.get(page_id)
-        
+
         if not page or page.project_id != project_id:
             return not_found('Page')
-        
+
         data = request.get_json()
-        
+
         if not data or 'description_content' not in data:
             return bad_request("description_content is required")
-        
+
         page.set_description_content(data['description_content'])
         page.updated_at = datetime.utcnow()
-        
+
         # Update project
         project = Project.query.get(project_id)
         if project:
             project.updated_at = datetime.utcnow()
-        
+
         db.session.commit()
-        
+
         return success_response(page.to_dict())
-    
+
     except Exception as e:
         db.session.rollback()
         return error_response('SERVER_ERROR', str(e), 500)
@@ -336,7 +336,7 @@ def update_page_description(project_id, page_id):
 def generate_page_description(project_id, page_id):
     """
     POST /api/projects/{project_id}/pages/{page_id}/generate/description - Generate single page description
-    
+
     Request body:
     {
         "force_regenerate": false
@@ -344,14 +344,14 @@ def generate_page_description(project_id, page_id):
     """
     try:
         page = Page.query.get(page_id)
-        
+
         if not page or page.project_id != project_id:
             return not_found('Page')
-        
+
         project = Project.query.get(project_id)
         if not project:
             return not_found('Project')
-        
+
         data = request.get_json() or {}
         force_regenerate = data.get('force_regenerate', False)
         language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'zh'))
@@ -360,12 +360,12 @@ def generate_page_description(project_id, page_id):
         # Check if already generated
         if page.get_description_content() and not force_regenerate:
             return bad_request("Description already exists. Set force_regenerate=true to regenerate")
-        
+
         # Get outline content
         outline_content = page.get_outline_content()
         if not outline_content:
             return bad_request("Page must have outline content first")
-        
+
         # Reconstruct full outline
         all_pages = Page.query.filter_by(project_id=project_id).order_by(Page.order_index).all()
         outline = []
@@ -376,20 +376,20 @@ def generate_page_description(project_id, page_id):
                 if p.part:
                     page_data['part'] = p.part
                 outline.append(page_data)
-        
+
         # Initialize AI service
         ai_service = get_ai_service()
-        
+
         # Get reference files content and create project context
         from controllers.project_controller import _get_project_reference_files_content
         reference_files_content = _get_project_reference_files_content(project_id)
         project_context = ProjectContext(project, reference_files_content)
-        
+
         # Generate description
         page_data = outline_content.copy()
         if page.part:
             page_data['part'] = page.part
-        
+
         desc_result = ai_service.generate_page_description(
             project_context,
             outline,
@@ -406,15 +406,15 @@ def generate_page_description(project_id, page_id):
         }
         if desc_result.get('extra_fields'):
             desc_content['extra_fields'] = desc_result['extra_fields']
-        
+
         page.set_description_content(desc_content)
         page.status = 'DESCRIPTION_GENERATED'
         page.updated_at = datetime.utcnow()
-        
+
         db.session.commit()
-        
+
         return success_response(page.to_dict())
-    
+
     except Exception as e:
         db.session.rollback()
         return error_response('AI_SERVICE_ERROR', str(e), 503)
@@ -424,7 +424,7 @@ def generate_page_description(project_id, page_id):
 def generate_page_image(project_id, page_id):
     """
     POST /api/projects/{project_id}/pages/{page_id}/generate/image - Generate single page image
-    
+
     Request body:
     {
         "use_template": true,
@@ -433,58 +433,58 @@ def generate_page_image(project_id, page_id):
     """
     try:
         page = Page.query.get(page_id)
-        
+
         if not page or page.project_id != project_id:
             return not_found('Page')
-        
+
         project = Project.query.get(project_id)
         if not project:
             return not_found('Project')
-        
+
         data = request.get_json() or {}
         use_template = data.get('use_template', True)
         force_regenerate = data.get('force_regenerate', False)
         language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'zh'))
-        
+
         # Check if already generated
         if page.generated_image_path and not force_regenerate:
             return bad_request("Image already exists. Set force_regenerate=true to regenerate")
-        
+
         # Get description content
         desc_content = page.get_description_content()
         if not desc_content:
             return bad_request("Page must have description content first")
-        
+
         # Reconstruct full outline with part structure
         all_pages = Page.query.filter_by(project_id=project_id).order_by(Page.order_index).all()
         outline = []
         current_part = None
         current_part_pages = []
-        
+
         for p in all_pages:
             oc = p.get_outline_content()
             if not oc:
                 continue
-                
+
             page_data = oc.copy()
-            
-            # 如果当前页面属于一个 part
+
+            # If the current page belongs to one part
             if p.part:
-                # 如果这是新的 part，先保存之前的 part（如果有）
+                # If it’s new... part，Save the previous one first. part（If there is one...）
                 if current_part and current_part != p.part:
                     outline.append({
                         "part": current_part,
                         "pages": current_part_pages
                     })
                     current_part_pages = []
-                
+
                 current_part = p.part
-                # 移除 part 字段，因为它在顶层
+                # Remove part field because it’s on the top floor
                 if 'part' in page_data:
                     del page_data['part']
                 current_part_pages.append(page_data)
             else:
-                # 如果当前页面不属于任何 part，先保存之前的 part（如果有）
+                # If the current page does not belong part，Save the previous one first. part（If there is one...）
                 if current_part:
                     outline.append({
                         "part": current_part,
@@ -492,22 +492,22 @@ def generate_page_image(project_id, page_id):
                     })
                     current_part = None
                     current_part_pages = []
-                
-                # 直接添加页面
+
+                # Add Page Directly
                 outline.append(page_data)
-        
-        # 保存最后一个 part（如果有）
+
+        # Save Last part（If there is one...）
         if current_part:
             outline.append({
                 "part": current_part,
                 "pages": current_part_pages
             })
-        
+
         # Initialize services
         ai_service = get_ai_service()
-        
+
         file_service = FileService(current_app.config['UPLOAD_FOLDER'])
-        
+
         # Multi-template projects keep their template binding on each page,
         # while legacy/single-template projects keep it on the project.
         ref_image_path, page_style_text = resolve_page_template(
@@ -523,40 +523,40 @@ def generate_page_image(project_id, page_id):
             ref_image_path = None
         if not ref_image_path and not page_style_text:
             return bad_request("No template image or style description found for page")
-        
+
         # Generate prompt
         page_data = page.get_outline_content() or {}
         if page.part:
             page_data['part'] = page.part
-        
-        # 获取描述文本（可能是 text 字段或 text_content 数组）
+
+        # Fetch description text (possibly) text Field or text_content Array）
         desc_text = desc_content.get('text', '')
         if not desc_text and desc_content.get('text_content'):
-            # 如果 text 字段不存在，尝试从 text_content 数组获取
+            # If... text Field does not exist, try from text_content Numeric Fetch
             text_content = desc_content.get('text_content', [])
             if isinstance(text_content, list):
                 desc_text = '\n'.join(text_content)
             else:
                 desc_text = str(text_content)
-        
-        # 从当前页面的描述内容中提取图片 URL（在生成 prompt 之前提取，以便告知 AI）
+
+        # Extract pictures from the description of the current page URL（Generating prompt extract beforehand to inform AI）
         additional_ref_images = []
         has_material_images = False
-        
-        # 从描述文本中提取图片
+
+        # Extract pictures from the description text
         if desc_text:
             image_urls = ai_service.extract_image_urls_from_markdown(desc_text)
             if image_urls:
                 logger.info(f"Found {len(image_urls)} image(s) in page {page_id} description")
                 additional_ref_images = image_urls
                 has_material_images = True
-        
-        # 合并额外要求和风格描述
+
+        # Merge additional requirements and style description
         combined_requirements = project.extra_requirements or ""
         if project.template_style:
-            style_requirement = f"\n\nppt页面风格描述：\n\n{project.template_style}"
+            style_requirement = f"\n\nppt Page Style Description：\n\n{project.template_style}"
             combined_requirements = combined_requirements + style_requirement
-        
+
         # Create async task for image generation
         task = Task(
             project_id=project_id,
@@ -570,11 +570,11 @@ def generate_page_image(project_id, page_id):
         })
         db.session.add(task)
         db.session.commit()
-        
+
         # Get app instance for background task
         app = current_app._get_current_object()
         image_prompt_field_names = get_image_prompt_field_names()
-        
+
         # Submit background task
         task_manager.submit_task(
             task.id,
@@ -592,14 +592,14 @@ def generate_page_image(project_id, page_id):
             language,
             image_prompt_field_names
         )
-        
+
         # Return task_id immediately
         return success_response({
             'task_id': task.id,
             'page_id': page_id,
             'status': 'PENDING'
         }, status_code=202)
-    
+
     except Exception as e:
         db.session.rollback()
         return error_response('AI_SERVICE_ERROR', str(e), 503)
@@ -609,17 +609,17 @@ def generate_page_image(project_id, page_id):
 def edit_page_image(project_id, page_id):
     """
     POST /api/projects/{project_id}/pages/{page_id}/edit/image - Edit page image
-    
+
     Request body (JSON or multipart/form-data):
     {
-        "edit_instruction": "更改文本框样式为虚线",
+        "edit_instruction": "Change text box style to a dotted line",
         "context_images": {
-            "use_template": true,  // 是否使用template图片
-            "desc_image_urls": ["url1", "url2"],  // desc中的图片URL列表
-            "uploaded_image_ids": ["file1", "file2"]  // 上传的图片文件ID列表（在multipart中）
+            "use_template": true,  // Whether to use template Image
+            "desc_image_urls": ["url1", "url2"],  // desc Pictures in URL List
+            "uploaded_image_ids": ["file1", "file2"]  // Uploading photo files ID List (in multipart Medium）
         }
     }
-    
+
     For multipart/form-data:
     - edit_instruction: text field
     - use_template: text field (true/false)
@@ -628,22 +628,22 @@ def edit_page_image(project_id, page_id):
     """
     try:
         page = Page.query.get(page_id)
-        
+
         if not page or page.project_id != project_id:
             return not_found('Page')
-        
+
         if not page.generated_image_path:
             return bad_request("Page must have generated image first")
-        
+
         project = Project.query.get(project_id)
         if not project:
             return not_found('Project')
-        
+
         # Initialize services
         ai_service = get_ai_service()
-        
+
         file_service = FileService(current_app.config['UPLOAD_FOLDER'])
-        
+
         # Parse request data (support both JSON and multipart/form-data)
         if request.is_json:
             data = request.get_json()
@@ -661,13 +661,13 @@ def edit_page_image(project_id, page_id):
                     data['desc_image_urls'] = []
             else:
                 data['desc_image_urls'] = []
-        
+
         if not data or 'edit_instruction' not in data:
             return bad_request("edit_instruction is required")
-        
+
         # Get current image path
         current_image_path = file_service.get_absolute_path(page.generated_image_path)
-        
+
         # Get original description if available
         original_description = None
         desc_content = page.get_description_content()
@@ -680,28 +680,28 @@ def edit_page_image(project_id, page_id):
                     original_description = '\n'.join(desc_content['text_content'])
                 else:
                     original_description = str(desc_content['text_content'])
-        
+
         # Collect additional reference images
         additional_ref_images = []
-        
+
         # 1. Add template image if requested
         context_images = data.get('context_images', {})
         if isinstance(context_images, dict):
             use_template = context_images.get('use_template', False)
         else:
             use_template = data.get('use_template', 'false').lower() == 'true'
-        
+
         if use_template:
             template_path = file_service.get_template_path(project_id)
             if template_path:
                 additional_ref_images.append(template_path)
-        
+
         # 2. Add desc image URLs if provided
         if isinstance(context_images, dict):
             desc_image_urls = context_images.get('desc_image_urls', [])
         else:
             desc_image_urls = data.get('desc_image_urls', [])
-        
+
         if desc_image_urls:
             if isinstance(desc_image_urls, str):
                 try:
@@ -710,7 +710,7 @@ def edit_page_image(project_id, page_id):
                     desc_image_urls = []
             if isinstance(desc_image_urls, list):
                 additional_ref_images.extend(desc_image_urls)
-        
+
         # 3. Save and add uploaded files to a persistent location
         temp_dir = None
         if uploaded_files:
@@ -731,7 +731,7 @@ def edit_page_image(project_id, page_id):
                 if temp_dir and temp_dir.exists():
                     shutil.rmtree(temp_dir)
                 raise e
-        
+
         # Create async task for image editing
         task = Task(
             project_id=project_id,
@@ -745,10 +745,10 @@ def edit_page_image(project_id, page_id):
         })
         db.session.add(task)
         db.session.commit()
-        
+
         # Get app instance for background task
         app = current_app._get_current_object()
-        
+
         # Submit background task
         task_manager.submit_task(
             task.id,
@@ -765,14 +765,14 @@ def edit_page_image(project_id, page_id):
             str(temp_dir) if temp_dir else None,
             app
         )
-        
+
         # Return task_id immediately
         return success_response({
             'task_id': task.id,
             'page_id': page_id,
             'status': 'PENDING'
         }, status_code=202)
-    
+
     except Exception as e:
         db.session.rollback()
         return error_response('AI_SERVICE_ERROR', str(e), 503)
@@ -786,17 +786,17 @@ def get_page_image_versions(project_id, page_id):
     """
     try:
         page = Page.query.get(page_id)
-        
+
         if not page or page.project_id != project_id:
             return not_found('Page')
-        
+
         versions = PageImageVersion.query.filter_by(page_id=page_id)\
             .order_by(PageImageVersion.version_number.desc()).all()
-        
+
         return success_response({
             'versions': [v.to_dict() for v in versions]
         })
-    
+
     except Exception as e:
         return error_response('SERVER_ERROR', str(e), 500)
 
@@ -809,15 +809,15 @@ def set_current_image_version(project_id, page_id, version_id):
     """
     try:
         page = Page.query.get(page_id)
-        
+
         if not page or page.project_id != project_id:
             return not_found('Page')
-        
+
         version = PageImageVersion.query.get(version_id)
-        
+
         if not version or version.page_id != page_id:
             return not_found('Image Version')
-        
+
         # Mark all versions as not current
         PageImageVersion.query.filter_by(page_id=page_id).update({'is_current': False})
 
@@ -825,19 +825,19 @@ def set_current_image_version(project_id, page_id, version_id):
         version.is_current = True
         page.generated_image_path = version.image_path
 
-        # 更新 cached_image_path，指向该版本的缓存图（如果存在）
+        # Update cached_image_path，Cache map pointing to this version (if available)）
         file_service = FileService(current_app.config['UPLOAD_FOLDER'])
         cached_relative_path = file_service.get_cached_image_path(project_id, page_id, version.version_number)
         if file_service.file_exists(cached_relative_path):
             page.cached_image_path = cached_relative_path
         else:
-            # 缓存文件不存在，设置为 None，to_dict() 会回退到原图
+            # Cache file does not exist, set to None，to_dict() They’ll back up to the original map.
             page.cached_image_path = None
 
         page.updated_at = datetime.utcnow()
-        
+
         db.session.commit()
-        
+
         return success_response(page.to_dict(include_versions=True))
 
     except Exception as e:
@@ -964,7 +964,7 @@ def regenerate_renovation_page(project_id, page_id):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 旁白 (Narration) 相关接口 — TTS 播报视频
+# Narrator. (Narration) Related interfaces — TTS Broadcast video
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
@@ -975,7 +975,7 @@ def update_page_narration(project_id, page_id):
 
     Request body:
     {
-        "narration_text": "这段内容介绍了……"
+        "narration_text": "It’s about this.……"
     }
     """
     try:

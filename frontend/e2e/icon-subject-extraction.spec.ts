@@ -67,14 +67,14 @@ test.describe('Icon subject extraction toggle', () => {
     await page.goto(`/project/${projectId}/preview`);
     await page.waitForFunction(() => document.body.innerText.length > 50, { timeout: 15000 });
 
-    // Open settings modal (button name "项目设置" in zh)
-    await page.getByRole('button', { name: /^项目设置$|^Project Settings$/ }).click();
+    // Open settings modal (button name "Item Settings" in zh)
+    await page.getByRole('button', { name: /^\u9879\u76ee\u8bbe\u7f6e$|^Project Settings$/ }).click();
     // Switch to export tab in modal sidebar
-    await page.locator('aside').getByRole('button', { name: /导出设置|Export Settings/ }).click();
+    await page.locator('aside').getByRole('button', { name: /\u5bfc\u51fa\u8bbe\u7f6e|Export Settings/ }).click();
 
     // Find checkbox by label content
     const iconLabel = page.locator('label', {
-      hasText: /图标透明背景|Icon Transparent Background/,
+      hasText: /\u56fe\u6807\u900f\u660e\u80cc\u666f|Icon Transparent Background/,
     });
     await expect(iconLabel).toBeVisible();
     const iconCheckbox = iconLabel.locator('input[type="checkbox"]');
@@ -84,7 +84,7 @@ test.describe('Icon subject extraction toggle', () => {
     await iconCheckbox.uncheck();
     await expect(iconCheckbox).not.toBeChecked();
 
-    await page.getByRole('button', { name: /保存导出设置|Save Export Settings/ }).click();
+    await page.getByRole('button', { name: /\u4fdd\u5b58\u5bfc\u51fa\u8bbe\u7f6e|Save Export Settings/ }).click();
     await page.waitForTimeout(500);
 
     expect(savedPayload).toBeTruthy();
@@ -104,11 +104,11 @@ test.describe('Icon subject extraction integration', () => {
     await page.goto(`/project/${projectId}/preview`);
     await page.waitForFunction(() => document.body.innerText.length > 50, { timeout: 15000 });
 
-    await page.getByRole('button', { name: /^项目设置$|^Project Settings$/ }).click();
-    await page.locator('aside').getByRole('button', { name: /导出设置|Export Settings/ }).click();
+    await page.getByRole('button', { name: /^\u9879\u76ee\u8bbe\u7f6e$|^Project Settings$/ }).click();
+    await page.locator('aside').getByRole('button', { name: /\u5bfc\u51fa\u8bbe\u7f6e|Export Settings/ }).click();
 
     const iconLabel = page.locator('label', {
-      hasText: /图标透明背景|Icon Transparent Background/,
+      hasText: /\u56fe\u6807\u900f\u660e\u80cc\u666f|Icon Transparent Background/,
     });
     await expect(iconLabel).toBeVisible();
     const iconCheckbox = iconLabel.locator('input[type="checkbox"]');
@@ -116,18 +116,18 @@ test.describe('Icon subject extraction integration', () => {
 
     // 2. Toggle off, save
     await iconCheckbox.uncheck();
-    await page.getByRole('button', { name: /保存导出设置|Save Export Settings/ }).click();
+    await page.getByRole('button', { name: /\u4fdd\u5b58\u5bfc\u51fa\u8bbe\u7f6e|Save Export Settings/ }).click();
     // Wait for save indicator to clear
     await page.waitForTimeout(2000);
 
     // 3. Reload page, re-open modal, verify still off
     await page.reload();
     await page.waitForFunction(() => document.body.innerText.length > 50, { timeout: 15000 });
-    await page.getByRole('button', { name: /^项目设置$|^Project Settings$/ }).click();
-    await page.locator('aside').getByRole('button', { name: /导出设置|Export Settings/ }).click();
+    await page.getByRole('button', { name: /^\u9879\u76ee\u8bbe\u7f6e$|^Project Settings$/ }).click();
+    await page.locator('aside').getByRole('button', { name: /\u5bfc\u51fa\u8bbe\u7f6e|Export Settings/ }).click();
 
     const reloadedLabel = page.locator('label', {
-      hasText: /图标透明背景|Icon Transparent Background/,
+      hasText: /\u56fe\u6807\u900f\u660e\u80cc\u666f|Icon Transparent Background/,
     });
     const reloadedCheckbox = reloadedLabel.locator('input[type="checkbox"]');
     await expect(reloadedCheckbox).not.toBeChecked();

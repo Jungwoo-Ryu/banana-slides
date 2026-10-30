@@ -275,10 +275,10 @@ class OpenAIImageProvider(ImageProvider):
     Resolution support varies by provider:
     - Some providers support 2K/4K via extra_body parameters
     - Some providers only support 1K regardless of settings
-    
+
     The provider will try multiple parameter formats to maximize compatibility.
     """
-    
+
     def __init__(self, api_key: str, api_base: str = None, model: str = "gemini-3-pro-image-preview", image_api_protocol: str = 'auto', image_quality: str = 'auto'):
         """
         Initialize OpenAI image provider
@@ -306,14 +306,14 @@ class OpenAIImageProvider(ImageProvider):
         self.image_api_protocol = image_api_protocol or 'auto'
         self.image_quality = image_quality or 'auto'
         self._quality_warning_logged = False
-    
+
     def _encode_image_to_base64(self, image: Image.Image) -> str:
         """
         Encode PIL Image to base64 string
-        
+
         Args:
             image: PIL Image object
-            
+
         Returns:
             Base64 encoded string
         """
@@ -323,31 +323,31 @@ class OpenAIImageProvider(ImageProvider):
             image = image.convert('RGB')
         image.save(buffered, format="JPEG", quality=95)
         return base64.b64encode(buffered.getvalue()).decode('utf-8')
-    
+
     def _build_extra_body(self, aspect_ratio: str, resolution: str) -> dict:
         """
         Build extra_body parameters for resolution control.
-        
+
         Uses multiple format strategies to support different providers:
         1. Flat style: aspect_ratio + resolution at top level
         2. Nested style: generationConfig.imageConfig structure
-        
+
         Args:
             aspect_ratio: Image aspect ratio (e.g., "16:9", "9:16")
             resolution: Image resolution ("1K", "2K", "4K")
-            
+
         Returns:
             Dict with extra_body parameters
         """
         # Ensure resolution is uppercase (some providers require "4K" not "4k")
         resolution_upper = resolution.upper()
-        
+
         # Build comprehensive extra_body that works with multiple providers
         extra_body = {
             # Flat style parameters
             "aspect_ratio": aspect_ratio,
             "resolution": resolution_upper,
-            
+
             # Nested style structure (compatible with some providers)
             "generationConfig": {
                 "imageConfig": {
@@ -356,7 +356,7 @@ class OpenAIImageProvider(ImageProvider):
                 }
             }
         }
-        
+
         return extra_body
 
     def _is_native_images_api_model(self) -> bool:
@@ -1081,15 +1081,15 @@ class OpenAIImageProvider(ImageProvider):
     ) -> Optional[Image.Image]:
         """
         Generate image using OpenAI SDK
-        
+
         Supports resolution control via extra_body parameters for compatible providers.
         Note: Not all providers support 2K/4K resolution - some may return 1K regardless.
         Note: enable_thinking and thinking_budget are ignored (OpenAI format doesn't support thinking mode)
-        
+
         The provider will:
-        1. Try to use extra_body parameters (API易/AvalAI style) for resolution control
+        1. Try to use extra_body parameters (API Easy./AvalAI style) for resolution control
         2. Use system message for aspect_ratio as fallback
-        
+
         Args:
             prompt: The image generation prompt
             ref_images: Optional list of reference images
@@ -1097,7 +1097,7 @@ class OpenAIImageProvider(ImageProvider):
             resolution: Image resolution ("1K", "2K", "4K") - support depends on provider
             enable_thinking: Ignored, kept for interface compatibility
             thinking_budget: Ignored, kept for interface compatibility
-            
+
         Returns:
             Generated PIL Image object, or None if failed
         """
@@ -1140,7 +1140,7 @@ class OpenAIImageProvider(ImageProvider):
 
             # Build message content
             content = []
-            
+
             # Add reference images first (if any)
             if ref_images:
                 for ref_img in ref_images:
@@ -1151,13 +1151,13 @@ class OpenAIImageProvider(ImageProvider):
                             "url": f"data:image/jpeg;base64,{base64_image}"
                         }
                     })
-            
+
             # Add text prompt
             content.append({"type": "text", "text": prompt})
-            
+
             logger.debug(f"Calling OpenAI API for image generation with {len(ref_images) if ref_images else 0} reference images...")
             logger.debug(f"Config - aspect_ratio: {aspect_ratio}, resolution: {resolution}")
-            
+
             # Build extra_body with resolution parameters for compatible providers
             extra_body = self._build_extra_body(aspect_ratio, resolution)
             extra_body["modalities"] = ["text", "image"]
@@ -1174,9 +1174,9 @@ class OpenAIImageProvider(ImageProvider):
                 extra_body=extra_body,
                 stream=False,
             )
-            
+
             logger.debug("OpenAI API call completed")
-            
+
             # Extract image from response - handle different response formats
             message = response.choices[0].message
 
@@ -1210,7 +1210,7 @@ class OpenAIImageProvider(ImageProvider):
                         image = Image.open(BytesIO(image_data))
                         logger.debug(f"Successfully extracted image: {image.size}, {image.mode}")
                         return image
-            
+
             # Try standard OpenAI content format (list of content parts)
             if hasattr(message, 'content') and message.content:
                 # If content is a list (multimodal response)
@@ -1250,7 +1250,7 @@ class OpenAIImageProvider(ImageProvider):
                 elif isinstance(message.content, str):
                     content_str = message.content
                     logger.debug(f"Response content (string): {content_str[:200] if len(content_str) > 200 else content_str}")
-                    
+
                     # Try to extract Markdown image URL: ![...](url)
                     markdown_pattern = r'!\[.*?\]\((https?://[^\s\)]+)\)'
                     markdown_matches = re.findall(markdown_pattern, content_str)
@@ -1266,7 +1266,7 @@ class OpenAIImageProvider(ImageProvider):
                             return image
                         except Exception as download_error:
                             logger.warning(f"Failed to download image from Markdown URL: {download_error}")
-                    
+
                     # Try to extract plain URL (not in Markdown format)
                     url_pattern = r'(https?://[^\s\)\]]+\.(?:png|jpg|jpeg|gif|webp|bmp)(?:\?[^\s\)\]]*)?)'
                     url_matches = re.findall(url_pattern, content_str, re.IGNORECASE)
@@ -1282,7 +1282,7 @@ class OpenAIImageProvider(ImageProvider):
                             return image
                         except Exception as download_error:
                             logger.warning(f"Failed to download image from plain URL: {download_error}")
-                    
+
                     # Try to extract base64 data URL from string
                     base64_pattern = r'data:image/[^;]+;base64,([A-Za-z0-9+/=]+)'
                     base64_matches = re.findall(base64_pattern, content_str)
@@ -1313,16 +1313,16 @@ class OpenAIImageProvider(ImageProvider):
                             return image
                         except Exception as download_error:
                             logger.warning(f"Failed to download image from bare URL: {download_error}")
-            
+
             # Log raw response for debugging
             logger.warning(f"Unable to extract image. Raw message type: {type(message)}")
             logger.warning(f"Message content type: {type(getattr(message, 'content', None))}")
             raw = str(getattr(message, 'content', 'N/A'))
             logger.warning(f"Message content: {raw[:300]}{'...(truncated)' if len(raw) > 300 else ''}")
             logger.warning(f"Message all attrs: {vars(message) if hasattr(message, '__dict__') else dir(message)}"[:500])
-            
+
             raise ValueError("No valid multimodal response received from OpenAI API")
-            
+
         except Exception as e:
             error_detail = f"Error generating image with OpenAI (model={self.model}): {type(e).__name__}: {str(e)}"
             logger.error(error_detail, exc_info=True)

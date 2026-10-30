@@ -1,38 +1,38 @@
-# Banana Slides 产品改进建议（2026-07-04）
+# Banana Slides Recommendations for product improvement（2026-07-04）
 
-基于对代码结构（前后端模块、文件规模）、README/路线图、应用截图（首页、预览页等）的调研，从功能、审美、用户体验、技术方案四个维度各收束出 5 条最值得做的建议。
+Based on the code structure (back-to-back module, file size)）、README/Research on road maps, application screenshots (front page, preview page, etc.) from functional, aesthetic, user experience, technical options, each of their four dimensions 5 One of the most worthwhile recommendations。
 
-**整体判断**：产品功能面已经很宽（生成、逐页模板、素材工具箱、可编辑导出、讲解视频、CLI），当前短板不在"功能不够多"，而在生成过程的确定性/可控性、等待体验、以及支撑继续演进的代码结构。
+**Overall judgement**：Product functionality is already wide (generation, page-by-page template, material toolbox, editable export, speaking video)、CLI），The currently shortboard is not in place"It’s not enough."，And the certainty of the generation process/Controllability, waiting experience, and supporting code structures that continue to evolve。
 
-## 建议汇总表
+## Summary of recommendations
 
-| 维度 | 建议 | 要点与收益 |
+| Dimensions | Recommendations | Elements and proceeds |
 |---|---|---|
-| 功能 | 在线演示 + 分享链接 | 全屏播放、翻页、演讲备注 + 只读分享 URL（复用 AccessCodeGuard 访问码机制）；补上"生成之后"的闭环，传播杠杆最大 |
-| 功能 | 数据图表确定性渲染 | 检测描述中的数据，用 ECharts/matplotlib 先渲染真实图表再合成进页面，根治 AI 生图数字乱写的硬伤，形成对 NotebookLM 等竞品的实质差异点 |
-| 功能 | 单页多版本对比生成 | 一次生成 2–4 个候选图让用户挑（page_image_version 模型基础已在），替代"生成→不满意→重来"的循环 |
-| 功能 | 品牌套件（Brand Kit） | logo/主色/字体偏好沉淀为项目级/全局资产，自动注入生图提示词；现有文字风格模板向上抽一层 |
-| 功能 | Agent 审稿人模式 | 通读全稿→指出风格不一致/信息重复/逻辑断层→一键修复；复用质量控制模式的基础设施，比开放式 agent 更快落地 |
-| 审美 | 预览页顶栏分组降噪 | 主页/返回/项目设置/更换模板/素材生成/上一步/刷新/导出挤在一行，按"导航 \| 创作 \| 输出"分组并降权次要项 |
-| 审美 | 设计 token 体系 + 暗色模式 | 品牌黄与层级色抽成 Tailwind theme token（primary/surface/danger），顺势支持暗色模式（深色幻灯片在白底界面里对比刺眼） |
-| 审美 | 统一等待动效 | 以现有 ShimmerOverlay 为标准扩展到所有等待位（shimmer + 进度文案），替代零散 spinner |
-| 审美 | 缩略图栏状态语言统一 | "已完成/封面"标签、黄框选中态、多选 checkbox 三套视觉语言并存，统一为一套 badge 体系 |
-| 审美 | 空状态与导出仪式感 | 素材中心/历史/导出面板空态加插画 + 引导动作；导出完成用带预览缩略图的成果卡片替代普通 toast |
-| 用户体验 | 逐页实时进度面板 | 批量生成时显示每页排队/生成中/失败状态与预计剩余时间，失败页可单独重试——用户停留最久、目前最脆的环节 |
-| 用户体验 | 成本透明 | 生成前显示预估调用次数/费用，生成后显示实际消耗，避免账单惊吓（nano banana pro 单价较高，README 已自行提示） |
-| 用户体验 | 错误信息人话化 | 限流/余额不足/超时等 AI 接口错误映射为可行动提示（"额度用完→去充值/换 provider"），不直接透传原始报错 |
-| 用户体验 | 首次使用引导 | 未配置 API Key 的新用户目前在生成时才失败，应在首页检测并给出显眼的"3 步配置"引导（可复用 HelpModal 内容） |
-| 用户体验 | 键盘快捷键 + 设置搜索 | 预览页 ←/→ 翻页、E 编辑、R 重新生成；设置页加搜索框 + 分组锚点（Settings 配置项极多，深层选项难找） |
-| 技术方案 | 拆分巨型文件 | SlidePreview.tsx 3192 行、Settings.tsx 2121 行、task_manager.py 2751 行、project_controller.py 63K——不拆则所有后续改动成本持续上涨 |
-| 技术方案 | 任务持久化 + SSE 推送 | Task 记录在 SQLite 但执行态在 ThreadPoolExecutor 内存里，重启即丢；启动时恢复 in-progress 任务 + SSE 替代轮询，同时支撑进度面板 |
-| 技术方案 | prompts.py 外置化 | 66K 提示词移到 YAML/Jinja 模板文件，版本化管理、可 A/B、便于社区贡献，提示词变更不再污染 Python diff |
-| 技术方案 | 前端路由级代码分割 | React.lazy 按页面切分（Settings、SlidePreview 均为 100K+ 源码），首屏只载 Home，改善路线图中"部分完成"的加载速度 |
-| 技术方案 | API 类型契约 | 后端出 OpenAPI schema，前端生成 TS 类型，消除 250K+ controller 代码与前端的字段人肉对齐 |
+| Functions | Online Presentation + Share Link | Full-screen play, page flip, remarks on speeches + Read-only Sharing URL（Reuse AccessCodeGuard Access code mechanism; completion"After Generating"It’s a closed ring. It’s the most powerful. |
+| Functions | Data Chart Identification Render | Test the data in the description, use ECharts/matplotlib Rendering real charts and synthesizing them into pages, root. AI It’s a hard wound that’s been scribbleded. That’s right. NotebookLM The difference in the substance of the competition. |
+| Functions | Multi-page Comparison Generation | Once Generate 2–4 A list of candidates to select.（page_image_version Model basis is already in place."Generate→Unsatisfactory→Again."Looping |
+| Functions | Brand suite（Brand Kit） | logo/Main colour/Font preference settling to project level/Global assets, auto-injecting biographic hints; existing text style templates draw upwards |
+| Functions | Agent Drafter Mode | Read all drafts→Note that style is not consistent/Organisation/Logical Fault→One-key repair; reuse of quality control model infrastructure, compared to open agent It’s going to land faster. |
+| The aesthetic. | Preview Page Topbar Group Noise Reduction | Home Page/Back/Item Settings/Change Template/Material generation/Previous/Refresh/Export squeeze in line, press"Navigation \| Creation \| Output"Group and lower minor items |
+| The aesthetic. | Design token System + Dark Mode | Brand yellow and grade colour. Tailwind theme token（primary/surface/danger），Slightly supports dark colour mode (dark slides contrast to sharp eyes in white bottom interfaces)） |
+| The aesthetic. | Unified waiting for action | As Existing ShimmerOverlay Expand to all waiting slots for standard（shimmer + Progress, replace fragmentation. spinner |
+| The aesthetic. | Thumbnail Bar Status Unified Language | "Completed/Cover"Labels, Yellow Box Selection, Multiple Selection checkbox Three sets of visual languages coexist, one set. badge System |
+| The aesthetic. | Empty state and export ritual sense | Material Centre/History/Export empty panel with illustrations + guiding actions;exporting result cards with preview thumbnails instead of normal toast |
+| User Experience | Page-by-page Real-Time Progress Panel | Show Queue Every Page on Batch Generation/Generating/Failure status and projected remaining time, and failure pages can be retried separately——User’s longest-staying, current-weakest link |
+| User Experience | Cost transparency | Show the number of estimated calls before generation/Cost, when generated, show actual consumption to avoid billing shock（nano banana pro Higher unit price，README Self-introduced） |
+| User Experience | Error InfoTalk | Limited flow/Insufficient balance/Timeout AI Interface error map as actionable hint（"We’re out of range.→To charge./Switch. provider"），I don’t just pass through the original. |
+| User Experience | First Use of Guides | Unconfigured API Key The new user currently fails at the time of generation and should be tested on the front page and given a visible view"3 Step Configuration"Guidance (reusable) HelpModal Contents） |
+| User Experience | Keyboard Shortcuts + Set Search | Preview Page ←/→ Turn page、E Edit、R regenerated;setting pages with search boxes + Group anchors（Settings There are so many configurations that it’s hard to find deep options.） |
+| Technical programme | Split mega files | SlidePreview.tsx 3192 Okay.、Settings.tsx 2121 Okay.、task_manager.py 2751 Okay.、project_controller.py 63K——The cost of all subsequent changes continues to rise if not removed |
+| Technical programme | Endurance of mandates + SSE Send | Task It’s on the record. SQLite But it’s an execution. ThreadPoolExecutor RAM, restart or discard; resume on startup in-progress Tasks + SSE Replace the round and support the progress panel |
+| Technical programme | prompts.py Externalize | 66K Move hint to YAML/Jinja Template file, version management, A/B、Easy for communities to contribute, no more contamination of hints. Python diff |
+| Technical programme | Front-end route by-level code split | React.lazy Split by Page（Settings、SlidePreview Both. 100K+ Source) First Screen Only Home，Improvement in the road map"Partially completed"Load speed |
+| Technical programme | API Type of contract | Backend Out OpenAPI schema，Front-end Generation TS Type, elimination 250K+ controller Align code to front-end fields with human meat |
 
-## 跨维度优先级（若需排序）
+## Cross-dimensional priority (sorted if required)）
 
-1. **逐页实时进度面板 + 任务持久化 + SSE**（用户体验 × 技术方案）——同一个工程改造的三个面，解决最痛的等待体验。
-2. **拆分巨型文件**——"让其他所有事变便宜"的地基投资。
-3. **在线演示 + 分享链接**——传播与留存杠杆最大，技术成本低。
-4. **数据图表确定性渲染**——竞品差异化的核心点。
-5. **成本透明 + 错误人话化**——工作量小，直接决定新用户首次失败后的留存。
+1. **Page-by-page Real-Time Progress Panel + Endurance of mandates + SSE**（User Experience × Technical programme）——Three sides of the same project to fix the most painful waiting experience.。
+2. **Split mega files**——"Make everything else cheaper."Land-based investments。
+3. **Online Presentation + Share Link**——Dissemination and retention leverage highest, low technology cost。
+4. **Data Chart Identification Render**——At the heart of the difference in the competition。
+5. **Cost transparency + Wrong people.**——Small workload, deciding directly on the retention of new users after their first failure。

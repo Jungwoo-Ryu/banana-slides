@@ -6,11 +6,11 @@
 import { test, expect } from '@playwright/test'
 
 const LAZYLLM_SOURCE_LABELS = [
-  'Qwen (通义千问)',
+  'Qwen (It’s all right.)',
   'DeepSeek',
-  'GLM (智谱)',
+  'GLM (Thinking.)',
   'SiliconFlow',
-  'SenseNova (商汤)',
+  'SenseNova (Soup.)',
   'MiniMax',
   'Kimi',
 ]
@@ -18,8 +18,8 @@ const LAZYLLM_SOURCE_LABELS = [
 const ALL_SOURCE_LABELS = [
   'Gemini',
   'OpenAI',
-  '火山 Agent Plan',
-  'Doubao（豆包）',
+  'Volcanic Agent Plan',
+  'Doubao（Bean buns.）',
   'Codex (OpenAI OAuth)',
   ...LAZYLLM_SOURCE_LABELS,
 ]
@@ -93,11 +93,11 @@ test.describe('Settings: LazyLLM vendor sources', () => {
     await expect(imageSelect.locator('option[value="qwen"]')).toHaveCount(1)
     const imageOptions = await imageSelect.locator('option').allTextContents()
     const imageText = imageOptions.join('\n')
-    expect(imageText).toContain('Qwen (通义千问)')
-    expect(imageText).toContain('Doubao（豆包）')
+    expect(imageText).toContain('Qwen (It’s all right.)')
+    expect(imageText).toContain('Doubao（Bean buns.）')
     // Real OpenAI provider stays selectable for image generation.
     expect(imageText).toContain('OpenAI')
-    for (const label of ['PPIO (派欧云)', 'AIPing (爱拼)', 'DeepSeek', 'Kimi', 'SenseNova (商汤)']) {
+    for (const label of ['PPIO (Pai Owen.)', 'AIPing (Love to fight.)', 'DeepSeek', 'Kimi', 'SenseNova (Soup.)']) {
       expect(imageText).not.toContain(label)
     }
 
@@ -124,9 +124,9 @@ test.describe('Settings: LazyLLM vendor sources', () => {
     await expect(imageSelect).toHaveValue('deepseek')
     const imageText = (await imageSelect.locator('option').allTextContents()).join('\n')
     expect(imageText).toContain('DeepSeek')
-    expect(imageText).toContain('不支持图片生成')
+    expect(imageText).toContain('Image generation is not supported')
     // Capable options remain listed next to the stale value.
-    expect(imageText).toContain('Qwen (通义千问)')
+    expect(imageText).toContain('Qwen (It’s all right.)')
     expect(imageText).toContain('OpenAI')
   })
 
@@ -139,7 +139,7 @@ test.describe('Settings: LazyLLM vendor sources', () => {
     const textSelect = page.getByTestId('text_model_source-select')
     await textSelect.selectOption('minimax')
     await expect(textSelect).toHaveValue('minimax')
-    await expect(page.getByPlaceholder('输入 MiniMax API Key')).toBeVisible()
+    await expect(page.getByPlaceholder('Input MiniMax API Key')).toBeVisible()
   })
 
   test('real backend: save and reload keeps a lazyllm vendor selection', async ({ page }) => {
@@ -151,8 +151,8 @@ test.describe('Settings: LazyLLM vendor sources', () => {
     const previousValue = await textSelect.inputValue()
     await textSelect.selectOption('minimax')
     await expect(textSelect).toHaveValue('minimax')
-    await page.getByRole('button', { name: '保存设置' }).click()
-    await expect(page.getByText('设置保存成功')).toBeVisible()
+    await page.getByRole('button', { name: 'Save Settings' }).click()
+    await expect(page.getByText('Settings saved successfully')).toBeVisible()
 
     await page.reload()
     await expect(page.getByTestId('text_model_source-select')).toHaveValue('minimax')
@@ -160,7 +160,7 @@ test.describe('Settings: LazyLLM vendor sources', () => {
     // Restore the previous value (including empty) so the shared dev database
     // stays unchanged.
     await page.getByTestId('text_model_source-select').selectOption(previousValue || '')
-    await page.getByRole('button', { name: '保存设置' }).click()
-    await expect(page.getByText('设置保存成功')).toBeVisible()
+    await page.getByRole('button', { name: 'Save Settings' }).click()
+    await expect(page.getByText('Settings saved successfully')).toBeVisible()
   })
 })

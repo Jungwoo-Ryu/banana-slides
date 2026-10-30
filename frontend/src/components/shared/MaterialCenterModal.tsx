@@ -14,30 +14,30 @@ import { getImageUrl } from '@/api/client';
 const i18nDict = {
   zh: {
     mc: {
-      title: '素材中心',
-      count: '共 {{count}} 个素材',
-      empty: '暂无素材',
-      selected: '已选 {{count}} 个',
-      filterAll: '全部素材',
-      filterNone: '未关联项目',
-      moreProjects: '+ 更多项目…',
-      preview: '预览',
-      remove: '删除',
-      closePreview: '关闭预览',
-      emptyHint: '上传图片或通过素材生成功能创建素材',
+      title: 'Material Center',
+      count: '{{count}} materials',
+      empty: 'No materials',
+      selected: '{{count}} selected',
+      filterAll: 'All Materials',
+      filterNone: 'Unassociated',
+      moreProjects: '+ More projects…',
+      preview: 'Preview',
+      remove: 'Delete',
+      closePreview: 'Close Preview',
+      emptyHint: 'Upload images or create materials via the generator',
       msg: {
-        loadErr: '加载素材失败',
-        badFormat: '不支持的图片格式',
-        uploaded: '素材上传成功',
-        uploadErr: '上传素材失败',
-        noId: '无法删除：缺少素材ID',
-        deleted: '素材已删除',
-        deleteErr: '删除素材失败',
-        downloaded: '下载成功',
-        downloadErr: '下载失败',
-        zipped: '已打包 {{count}} 个素材',
-        zipErr: '批量下载失败',
-        pickFirst: '请先选择要下载的素材',
+        loadErr: 'Failed to load materials',
+        badFormat: 'Unsupported image format',
+        uploaded: 'Material uploaded',
+        uploadErr: 'Failed to upload material',
+        noId: 'Cannot delete: missing material ID',
+        deleted: 'Material deleted',
+        deleteErr: 'Failed to delete material',
+        downloaded: 'Download complete',
+        downloadErr: 'Download failed',
+        zipped: 'Packaged {{count}} materials',
+        zipErr: 'Batch download failed',
+        pickFirst: 'Select materials to download first',
       },
     },
   },
@@ -219,7 +219,7 @@ const ToolbarSection: React.FC<{
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
-        {/* 项目筛选下拉框 */}
+        {/* Zoom Under Project Filter */}
         <select
           value={state.filter}
           onChange={(e) => dispatch({ type: 'SET_FILTER', value: e.target.value })}
@@ -234,7 +234,7 @@ const ToolbarSection: React.FC<{
           ))}
         </select>
 
-        {/* 排序循环按钮 */}
+        {/* Sort Cycle Buttons */}
         <button
           onClick={() => {
             const order: Array<State['sortBy']> = ['newest', 'oldest', 'name-asc', 'name-desc'];
@@ -246,8 +246,8 @@ const ToolbarSection: React.FC<{
         >
           <ArrowUpDown size={14} />
           <span>
-            {state.sortBy === 'newest' && '从新到旧'}
-            {state.sortBy === 'oldest' && '从旧到新'}
+            {state.sortBy === 'newest' && 'From new to old'}
+            {state.sortBy === 'oldest' && 'From old to new.'}
             {state.sortBy === 'name-asc' && 'A-Z'}
             {state.sortBy === 'name-desc' && 'Z-A'}
           </span>

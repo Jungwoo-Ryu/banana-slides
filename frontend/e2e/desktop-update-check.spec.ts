@@ -15,7 +15,7 @@ async function installDesktopUpdateBridge(page: Page, startWithUpdate: boolean) 
           checkSource: 'automatic',
           update: {
             version: '0.9.0-rc.4',
-            notes: '- 更清晰的自动更新提示\n- 修复桌面端稳定性问题',
+            notes: '- A clearer automatic update hint\n- Fix desktop end stability problems',
             url,
           },
         }
@@ -45,7 +45,7 @@ async function installDesktopUpdateBridge(page: Page, startWithUpdate: boolean) 
       checkSource,
       update: {
         version: '0.9.0-rc.4',
-        notes: '- 更清晰的自动更新提示\n- 修复桌面端稳定性问题',
+        notes: '- A clearer automatic update hint\n- Fix desktop end stability problems',
         url,
       },
     });
@@ -131,17 +131,17 @@ test('startup update card supports changelog, update now, and next-launch deferr
   let dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText(/0\.9\.0-rc\.4/)).toBeVisible();
-  await expect(dialog.getByText('更清晰的自动更新提示')).toBeVisible();
+  await expect(dialog.getByText('A clearer automatic update hint')).toBeVisible();
   await expect.poll(() => page.evaluate(() => (
     window as typeof window & { __desktopUpdateTest: { downloadCalls: number } }
   ).__desktopUpdateTest.downloadCalls)).toBe(0);
 
-  await dialog.getByRole('button', { name: /查看完整更新日志|View full changelog/ }).click();
+  await dialog.getByRole('button', { name: /\u67e5\u770b\u5b8c\u6574\u66f4\u65b0\u65e5\u5fd7|View full changelog/ }).click();
   expect(await page.evaluate(() => (
     window as typeof window & { __desktopUpdateTest: { openedUrls: string[] } }
   ).__desktopUpdateTest.openedUrls)).toEqual([releaseUrl]);
 
-  await dialog.getByRole('button', { name: /稍后更新|Update later/ }).click();
+  await dialog.getByRole('button', { name: /\u7a0d\u540e\u66f4\u65b0|Update later/ }).click();
   await expect(dialog).not.toBeVisible();
   await page.evaluate(() => (
     window as typeof window & { __desktopUpdateTest: { emitCurrentState: () => void } }
@@ -151,9 +151,9 @@ test('startup update card supports changelog, update now, and next-launch deferr
   await page.reload();
   dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
-  await dialog.getByRole('button', { name: /立即更新|Update now/ }).click();
-  await expect(dialog.getByText(/已下载完成|Update downloaded/)).toBeVisible();
-  await dialog.getByRole('button', { name: /重启并更新|Restart to update/ }).click();
+  await dialog.getByRole('button', { name: /\u7acb\u5373\u66f4\u65b0|Update now/ }).click();
+  await expect(dialog.getByText(/\u5df2\u4e0b\u8f7d\u5b8c\u6210|Update downloaded/)).toBeVisible();
+  await dialog.getByRole('button', { name: /\u91cd\u542f\u5e76\u66f4\u65b0|Restart to update/ }).click();
 
   const finalState = await page.evaluate(() => (
     window as typeof window & {
@@ -175,20 +175,20 @@ test('Settings can toggle startup checks and manually start an update', async ({
   });
 
   await page.goto('/#/settings');
-  const automaticUpdateToggle = page.getByRole('switch', { name: /自动检查更新|Automatic update checks/ });
+  const automaticUpdateToggle = page.getByRole('switch', { name: /\u81ea\u52a8\u68c0\u67e5\u66f4\u65b0|Automatic update checks/ });
   await expect(automaticUpdateToggle).toHaveAttribute('aria-checked', 'true');
   await automaticUpdateToggle.click();
   await expect(automaticUpdateToggle).toHaveAttribute('aria-checked', 'false');
   await automaticUpdateToggle.click();
   await expect(automaticUpdateToggle).toHaveAttribute('aria-checked', 'true');
 
-  await page.getByRole('button', { name: /检查更新|Check for Updates/ }).click();
+  await page.getByRole('button', { name: /\u68c0\u67e5\u66f4\u65b0|Check for Updates/ }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toHaveCount(1);
-  await expect(dialog.getByText('更清晰的自动更新提示')).toBeVisible();
-  await dialog.getByRole('button', { name: /立即更新|Update now/ }).click();
-  await expect(dialog.getByText(/已下载|is ready/)).toBeVisible();
-  await dialog.getByRole('button', { name: /重启并更新|Restart to update/ }).click();
+  await expect(dialog.getByText('A clearer automatic update hint')).toBeVisible();
+  await dialog.getByRole('button', { name: /\u7acb\u5373\u66f4\u65b0|Update now/ }).click();
+  await expect(dialog.getByText(/\u5df2\u4e0b\u8f7d|is ready/)).toBeVisible();
+  await dialog.getByRole('button', { name: /\u91cd\u542f\u5e76\u66f4\u65b0|Restart to update/ }).click();
 
   const testState = await page.evaluate(() => (
     window as typeof window & {

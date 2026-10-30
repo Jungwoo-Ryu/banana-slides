@@ -85,35 +85,35 @@ test.describe('MarkdownTextarea upload dropdown - Home (mock)', () => {
   })
 
   test('upload button shows dropdown with two options', async ({ page }) => {
-    const imageBtn = page.locator('[title="上传图片"], [title="Upload image"]').first()
+    const imageBtn = page.locator('[title="Upload pictures"], [title="Upload image"]').first()
     await expect(imageBtn).toBeVisible()
 
     await imageBtn.click()
 
     // Dropdown should appear with two options
-    await expect(page.getByText(/Local upload|本地上传/)).toBeVisible()
-    await expect(page.getByText(/Select from library|从素材库选择/)).toBeVisible()
+    await expect(page.getByText(/Local upload|\u672c\u5730\u4e0a\u4f20/)).toBeVisible()
+    await expect(page.getByText(/Select from library|\u4ece\u7d20\u6750\u5e93\u9009\u62e9/)).toBeVisible()
   })
 
   test('clicking outside closes the dropdown', async ({ page }) => {
-    const imageBtn = page.locator('[title="上传图片"], [title="Upload image"]').first()
+    const imageBtn = page.locator('[title="Upload pictures"], [title="Upload image"]').first()
     await imageBtn.click()
-    await expect(page.getByText(/Local upload|本地上传/)).toBeVisible()
+    await expect(page.getByText(/Local upload|\u672c\u5730\u4e0a\u4f20/)).toBeVisible()
 
     // Click on the backdrop to dismiss
     await page.locator('.fixed.inset-0').first().click()
-    await expect(page.getByText(/Local upload|本地上传/)).not.toBeVisible()
+    await expect(page.getByText(/Local upload|\u672c\u5730\u4e0a\u4f20/)).not.toBeVisible()
   })
 
   test('"Select from library" opens MaterialSelector modal', async ({ page }) => {
     await setupMaterialMocks(page)
 
-    const imageBtn = page.locator('[title="上传图片"], [title="Upload image"]').first()
+    const imageBtn = page.locator('[title="Upload pictures"], [title="Upload image"]').first()
     await imageBtn.click()
-    await page.getByText(/Select from library|从素材库选择/).click()
+    await page.getByText(/Select from library|\u4ece\u7d20\u6750\u5e93\u9009\u62e9/).click()
 
     // MaterialSelector modal should appear
-    await expect(page.getByText(/Select Material|选择素材/)).toBeVisible()
+    await expect(page.getByText(/Select Material|\u9009\u62e9\u7d20\u6750/)).toBeVisible()
 
     // Materials should be displayed in the modal's grid (max-h-96 distinguishes it)
     const materialGrid = page.locator('.grid.grid-cols-4.max-h-96')
@@ -125,9 +125,9 @@ test.describe('MarkdownTextarea upload dropdown - Home (mock)', () => {
     await setupMaterialMocks(page)
 
     // Open dropdown → library
-    const imageBtn = page.locator('[title="上传图片"], [title="Upload image"]').first()
+    const imageBtn = page.locator('[title="Upload pictures"], [title="Upload image"]').first()
     await imageBtn.click()
-    await page.getByText(/Select from library|从素材库选择/).click()
+    await page.getByText(/Select from library|\u4ece\u7d20\u6750\u5e93\u9009\u62e9/).click()
 
     // Wait for modal and select first material
     const materialGrid = page.locator('.grid.grid-cols-4.max-h-96')
@@ -135,10 +135,10 @@ test.describe('MarkdownTextarea upload dropdown - Home (mock)', () => {
     await materialGrid.locator('> div').first().click()
 
     // Confirm selection
-    await page.getByRole('button', { name: /Confirm|确认/ }).click()
+    await page.getByRole('button', { name: /Confirm|\u786e\u8ba4/ }).click()
 
     // Modal should close
-    await expect(page.getByText(/Select Material|选择素材/).first()).not.toBeVisible()
+    await expect(page.getByText(/Select Material|\u9009\u62e9\u7d20\u6750/).first()).not.toBeVisible()
 
     // Check the editor has the image chip (sunset.png = original_filename of mat-1)
     const chip = page.locator('[contenteditable="true"]').first().locator('.md-chip')
@@ -182,13 +182,13 @@ test.describe('MarkdownTextarea upload dropdown - OutlineEditor (mock)', () => {
     await expect(editor).toBeVisible()
 
     // Click the upload/image button
-    const imageBtn = page.locator('[title="上传图片"], [title="Upload image"]').first()
+    const imageBtn = page.locator('[title="Upload pictures"], [title="Upload image"]').first()
     await imageBtn.click()
 
     // Dropdown menu should appear (positioned above the button)
     const dropdownMenu = page.locator('.absolute.bottom-full')
     await expect(dropdownMenu).toBeVisible()
-    await expect(dropdownMenu.getByText(/Local upload|本地上传/)).toBeVisible()
-    await expect(dropdownMenu.getByText(/Select from library|从素材库选择/)).toBeVisible()
+    await expect(dropdownMenu.getByText(/Local upload|\u672c\u5730\u4e0a\u4f20/)).toBeVisible()
+    await expect(dropdownMenu.getByText(/Select from library|\u4ece\u7d20\u6750\u5e93\u9009\u62e9/)).toBeVisible()
   })
 })

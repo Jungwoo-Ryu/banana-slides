@@ -29,16 +29,16 @@ import fitz  # PyMuPDF
 from utils.pptx_math import latex_to_display_text, looks_like_latex_math
 logger = logging.getLogger(__name__)
 
-# 构建阶段每处理多少个元素上报一次页内进度（同时作为看门狗心跳）
+# Number of elements for each processing phase of construction reporting on page progress (and heart beats as watchdog)）
 ELEMENT_PROGRESS_INTERVAL = 50
 
 
 class ExportError(Exception):
     """
-    导出过程中的错误异常
+    Errors during export
 
-    当 fail_fast=True 时，任何导出错误都会抛出此异常，
-    包含详细的错误信息和帮助提示。
+    When fail_fast=True, any export error raises this exception.
+    Include detailed error information and help tips。
     """
     def __init__(
         self,
@@ -51,10 +51,10 @@ class ExportError(Exception):
     ):
         """
         Args:
-            message: 错误消息
-            error_type: 错误类型 (style_extraction, text_render, image_add, inpaint, config, service)
-            details: 详细错误信息
-            help_text: 帮助提示文本
+            message: Error message
+            error_type: Error Type (style_extraction, text_render, image_add, inpaint, config, service)
+            details: Structured error details
+            help_text: Helptip Text
         """
         super().__init__(message)
         self.message = message
@@ -65,19 +65,19 @@ class ExportError(Exception):
         self.stage = stage or self.details.get('stage') or 'export'
 
     def _get_default_help_text(self, error_type: str) -> str:
-        """根据错误类型返回默认帮助提示"""
+        """Return the default help hint by error type"""
         help_texts = {
-            'style_extraction': '样式提取失败可能是由于百度OCR API配置问题。请检查「项目设置 -> 导出设置」中的配置，或尝试切换到「MinerU提取」方法。',
-            'text_render': '文本渲染失败可能是由于字体或编码问题。请检查页面内容是否包含特殊字符。',
-            'image_add': '图片添加失败可能是由于图片文件损坏或路径错误。请尝试重新生成该页面的图片。',
-            'inpaint': '背景修复失败可能是由于API配置问题。请检查「项目设置 -> 导出设置」中的背景图获取方法配置。',
-            'config': '配置错误。请检查「项目设置 -> 导出设置」中的相关配置。',
-            'service': '服务不可用。请稍后重试或联系管理员。',
+            'style_extraction': 'Style extraction failed. Check the configured OCR and text-style adapters.',
+            'text_render': 'Text rendering failed. Check fonts, encoding and special characters.',
+            'image_add': 'The image file may be corrupted or unavailable. Regenerate the slide image.',
+            'inpaint': 'Background restoration failed. Check the configured inpainting adapter.',
+            'config': 'Check the project export settings and provider configuration.',
+            'service': 'The configured service is unavailable. Check its connection and try again.',
         }
-        return help_texts.get(error_type, '如果问题持续出现，可以在「项目设置 -> 导出设置」中开启「返回半成品」选项以跳过错误继续导出。')
+        return help_texts.get(error_type, 'Check the export settings. Enable partial results only if you want to continue despite export errors.')
 
     def to_dict(self) -> Dict[str, Any]:
-        """转换为字典格式"""
+        """Convert to Dictionary Format"""
         return {
             'message': self.message,
             'error_type': self.error_type,
@@ -91,93 +91,93 @@ class ExportError(Exception):
 @dataclass
 class ExportWarnings:
     """
-    导出过程中收集的警告信息
-    
-    用于追踪哪些操作没有按预期执行，并反馈给前端
+    Warning information collected during export
+
+    To track which operations were not performed as intended and feed back to the front end
     """
-    # 样式提取失败的元素
+    # Style Ripping Failed Elements
     style_extraction_failed: List[Dict[str, Any]] = field(default_factory=list)
-    
-    # 文本渲染失败的元素
+
+    # Text render failed elements
     text_render_failed: List[Dict[str, Any]] = field(default_factory=list)
-    
-    # 图片添加失败
+
+    # Failed to add pictures
     image_add_failed: List[Dict[str, Any]] = field(default_factory=list)
-    
-    # JSON 解析失败（重试后仍失败）
+
+    # JSON Parsing failed (still failed after retesting)）
     json_parse_failed: List[Dict[str, Any]] = field(default_factory=list)
-    
-    # 其他警告
+
+    # Other Warnings
     other_warnings: List[str] = field(default_factory=list)
-    
+
     def add_style_extraction_failed(self, element_id: str, reason: str):
-        """记录样式提取失败"""
+        """Record style extraction failed"""
         self.style_extraction_failed.append({
             'element_id': element_id,
             'reason': reason
         })
-    
+
     def add_text_render_failed(self, text: str, reason: str):
-        """记录文本渲染失败"""
+        """Failed to record text rendering"""
         self.text_render_failed.append({
             'text': text[:50] + '...' if len(text) > 50 else text,
             'reason': reason
         })
-    
+
     def add_image_failed(self, path: str, reason: str):
-        """记录图片添加失败"""
+        """Failed to record picture addition"""
         self.image_add_failed.append({
             'path': path,
             'reason': reason
         })
-    
+
     def add_json_parse_failed(self, context: str, reason: str):
-        """记录 JSON 解析失败"""
+        """Records JSON Parsing failed"""
         self.json_parse_failed.append({
             'context': context,
             'reason': reason
         })
-    
+
     def add_warning(self, message: str):
-        """添加其他警告"""
+        """Add Other Warnings"""
         self.other_warnings.append(message)
-    
+
     def has_warnings(self) -> bool:
-        """是否有警告"""
+        """Is there a warning?"""
         return bool(
-            self.style_extraction_failed or 
-            self.text_render_failed or 
+            self.style_extraction_failed or
+            self.text_render_failed or
             self.image_add_failed or
             self.json_parse_failed or
             self.other_warnings
         )
-    
+
     def to_summary(self) -> List[str]:
-        """生成警告摘要（适合前端展示）"""
+        """Generate a summary of warnings (suitable for front-end presentations)）"""
         summary = []
-        
+
         if self.style_extraction_failed:
-            summary.append(f"{len(self.style_extraction_failed)} 个文本元素样式提取失败")
-        
+            summary.append(f"{len(self.style_extraction_failed)} Failed to extract text element styles")
+
         if self.text_render_failed:
-            summary.append(f"{len(self.text_render_failed)} 个文本元素渲染失败")
-        
+            summary.append(f"{len(self.text_render_failed)} Failed to render text elements")
+
         if self.image_add_failed:
-            summary.append(f"{len(self.image_add_failed)} 张图片添加失败")
-        
+            summary.append(f"{len(self.image_add_failed)} Failed to add a picture")
+
         if self.json_parse_failed:
-            summary.append(f"{len(self.json_parse_failed)} 次 AI 响应解析失败")
-        
-        for warning in self.other_warnings[:5]:  # 最多显示5条其他警告
+            summary.append(f"{len(self.json_parse_failed)} Numbers AI Reply Parsing Failed")
+
+        for warning in self.other_warnings[:5]:  # Maximum Display 5 Other Warnings
             summary.append(f"{warning}")
-        
+
         if len(self.other_warnings) > 5:
-            summary.append(f"  ...还有 {len(self.other_warnings) - 5} 条其他警告")
-        
+            summary.append(f"  ...And... {len(self.other_warnings) - 5} Other Warnings")
+
         return summary
-    
+
     def to_dict(self) -> Dict[str, Any]:
-        """转换为字典（详细信息）"""
+        """Convert to Dictionary (Details)）"""
         return {
             'style_extraction_failed': self.style_extraction_failed,
             'text_render_failed': self.text_render_failed,
@@ -185,8 +185,8 @@ class ExportWarnings:
             'json_parse_failed': self.json_parse_failed,
             'other_warnings': self.other_warnings,
             'total_warnings': (
-                len(self.style_extraction_failed) + 
-                len(self.text_render_failed) + 
+                len(self.style_extraction_failed) +
+                len(self.text_render_failed) +
                 len(self.image_add_failed) +
                 len(self.json_parse_failed) +
                 len(self.other_warnings)
@@ -277,10 +277,10 @@ class ExportService:
 
         slide_element.insert(insert_at, transition)
 
-    # NOTE: clean background生成功能已迁移到解耦的InpaintProvider实现
-    # - DefaultInpaintProvider: 基于mask的精确区域重绘（Volcengine）
-    # - GenerativeEditInpaintProvider: 基于生成式大模型的整图编辑重绘（Gemini等）
-    # 使用方式: from services.image_editability import InpaintProviderFactory
+    # NOTE: clean background Generating function moved to decoupling InpaintProvider Achieved
+    # - DefaultInpaintProvider: Based on mask Reshaping of precise areas（Volcengine）
+    # - GenerativeEditInpaintProvider: Edit repainting based on large generating models（Gemini Wait.）
+    # Usage: from services.image_editability import InpaintProviderFactory
 
     @staticmethod
     def _classify_external_failure(message: str) -> Dict[str, Any]:
@@ -291,11 +291,11 @@ class ExportService:
             (
                 'unsupported_model',
                 (
-                    '不支持图片输入', 'does not support image', 'support image input',
+                    'Image input is not supported', 'does not support image', 'support image input',
                     'unsupported image', 'image_url is only supported',
                 ),
                 'MODEL_UNSUPPORTED',
-                '图片识别模型不支持图片输入',
+                'Picture Identification Model does not support image input',
                 False,
             ),
             (
@@ -304,10 +304,10 @@ class ExportService:
                     'api key is required', 'api_key is required',
                     'google_api_key (from database settings or environment) is required',
                     'openai_api_key (from database settings or environment) is required',
-                    'not configured', 'missing api key', '未配置', '缺少 api key',
+                    'not configured', 'missing api key', 'Unconfigured', 'Missing api key',
                 ),
                 'CONFIGURATION_MISSING',
-                '缺少图片识别服务配置',
+                'Missing image recognition service configuration',
                 False,
             ),
             (
@@ -315,24 +315,24 @@ class ExportService:
                 (
                     '401', '403', 'unauthorized', 'forbidden', 'authentication',
                     'invalid api key', 'invalid_api_key', 'api key not valid',
-                    'token expired', '登录已过期',
+                    'token expired', 'Login Expired',
                 ),
                 'AUTHENTICATION',
-                '图片识别服务认证失败或登录已过期',
+                'Image Identification Service authentication failed or login expired',
                 False,
             ),
             (
                 'rate_limit',
-                ('429', 'rate limit', 'too many requests', 'qps request limit', '请求过于频繁'),
+                ('429', 'rate limit', 'too many requests', 'qps request limit', 'I’ve been asking too often.'),
                 'RATE_LIMIT',
-                '图片识别服务触发限流',
+                'Picture recognition service trigger limit stream',
                 True,
             ),
             (
                 'timeout',
                 ('timeout', 'timed out', 'deadline exceeded', 'gateway timeout'),
                 'TIMEOUT',
-                '图片识别服务请求超时',
+                'Photo recognition service request timed out',
                 True,
             ),
             (
@@ -343,31 +343,31 @@ class ExportService:
                     'remote end closed', 'max retries exceeded', 'connection refused',
                 ),
                 'NETWORK',
-                '连接图片识别服务时网络中断',
+                'Interrupt the network when connecting to photo recognition services',
                 True,
             ),
             (
                 'invalid_response',
                 (
-                    'json', '无法解析', 'invalid control character', 'empty response',
-                    '空响应', 'expected dict',
+                    'json', 'Could not initialise Bonobo', 'invalid control character', 'empty response',
+                    'Empty Response', 'expected dict',
                 ),
                 'INVALID_RESPONSE',
-                '图片识别模型返回了无法解析的内容',
+                'Image Identification Model returns undefeated content',
                 True,
             ),
             (
                 'incomplete_response',
-                ('未返回完整结果', 'missing result', 'incomplete'),
+                ('Full result not returned', 'missing result', 'incomplete'),
                 'INCOMPLETE_RESPONSE',
-                '图片识别模型返回结果不完整',
+                'Image Identification Model returns incomplete',
                 True,
             ),
             (
                 'upstream_service',
                 ('500', '502', '503', '504', 'service unavailable', 'bad gateway'),
                 'UPSTREAM_SERVICE',
-                '图片识别服务暂时不可用',
+                'Photo recognition service is temporarily unavailable',
                 True,
             ),
         )
@@ -384,7 +384,7 @@ class ExportService:
         return {
             'reason': 'unknown',
             'code_suffix': 'FAILED',
-            'summary': '图片识别服务调用失败',
+            'summary': 'Image Identification Service Call Failed',
             'retryable': False,
         }
 
@@ -449,43 +449,43 @@ class ExportService:
         reason = classification['reason']
         if reason == 'unsupported_model':
             help_text = (
-                '当前用于图片样式提取的 caption/image_caption 模型不支持图片输入。'
-                '请在设置中改成支持视觉输入的模型，或检查 OpenAI 格式下的 image caption provider / model 配置。'
+                'Current Image Style Extracts caption/image_caption Model does not support image input。'
+                'Please change the settings to a model that supports visual input, or check OpenAI Under Format image caption provider / model Configuration。'
             )
         elif reason == 'configuration_missing':
             help_text = (
-                '图片识别服务缺少必要配置。请在设置中检查 image caption provider、模型和 API Key，'
-                '保存并验证配置后重新导出。'
+                'Picture recognition service lacks the necessary configuration. Check in settings image caption provider、Models and API Key，'
+                'Re-export after saving and verifying configuration。'
             )
         elif reason == 'authentication':
             help_text = (
-                '图片识别服务的认证信息无效或已过期。请在设置中检查 image caption provider，'
-                '如果使用 Codex，请重新登录 OpenAI 账号。'
+                'The authentication information for the picture recognition service is invalid or expired. Check the settings. image caption provider，'
+                'If used Codex，Re-entry, please. OpenAI Account number。'
             )
         elif reason == 'rate_limit':
             help_text = (
-                '图片识别服务当前请求过于频繁。系统已完成自动重试；请稍后再次导出，'
-                '或减少一次导出的页数。'
+                'The photo recognition service is currently requesting too often. The system has been automatically retrying; please export it again later，'
+                'or reduce the number of exported pages at a time。'
             )
         elif reason in {'timeout', 'network', 'upstream_service'}:
             help_text = (
-                '图片识别服务在文本样式提取阶段暂时没有稳定响应。请稍后重试；'
-                '如果反复出现，请检查网络、代理及 image caption provider 状态。'
-                '若只想先拿到可编辑结果，也可以在「项目设置 -> 导出设置」中开启「返回半成品」。'
+                'Picture recognition service does not have a stable response at the text style extraction stage. Please try again later；'
+                'Check the network, agents and... image caption provider Status。'
+                'If you just want to get the editable results first, you can do it.「Item Settings -> Export Settings」Centre Opens「Return semi-finished」。'
             )
         elif reason in {'invalid_response', 'incomplete_response'}:
             help_text = (
-                '图片识别模型返回的结构化结果不完整或无法解析。请重试，或切换更稳定的视觉模型；'
-                '也可以开启「返回半成品」以跳过失败的样式。'
+                'The image recognition model returns a structured result that is incomplete or unable to resolve. Try again, or switch to a more stable visual model；'
+                'It can also be turned on.「Return semi-finished」To Skip Failed Styles。'
             )
         else:
             help_text = (
-                '文本样式提取依赖视觉模型分析文本截图。请检查 image caption provider、模型名与 API 权限；'
-                '如果只想先拿到可编辑结果，也可以在「项目设置 -> 导出设置」中开启「返回半成品」。'
+                'Text style extraction relies on visual models to analyse text screenshots. Check image caption provider、Model name and API Permissions；'
+                'If you just want to get the edit results first, you can do it.「Item Settings -> Export Settings」Centre Opens「Return semi-finished」。'
             )
 
         return ExportError(
-            message=f"文本样式提取失败：{classification['summary']}",
+            message=f"Text Style Ripping Failed：{classification['summary']}",
             error_type='style_extraction',
             details=details,
             help_text=help_text,
@@ -497,7 +497,7 @@ class ExportService:
     def _build_unexpected_export_error(message: str, stage: str) -> ExportError:
         classification = ExportService._classify_external_failure(message)
         is_external = classification['reason'] != 'unknown'
-        summary = classification['summary'] if is_external else '导出过程发生内部错误'
+        summary = classification['summary'] if is_external else 'Internal error in export process'
         details = {
             'stage': stage or 'export',
             'reason': classification['reason'],
@@ -506,15 +506,15 @@ class ExportService:
         }
         if classification['reason'] == 'configuration_missing':
             help_text = (
-                '请在设置中补全 image caption provider、模型和 API Key，保存并验证配置后重新导出。'
+                'Please fill in settings image caption provider、Models and API Key，Re-export after saving and verifying configuration。'
             )
         else:
             help_text = (
-                '请根据失败阶段检查对应服务后重试。如果只想先拿到可编辑结果，'
-                '可以在「项目设置 -> 导出设置」中开启「返回半成品」。'
+                'Check the corresponding service according to the failure phase and try again.，'
+                'Yes.「Item Settings -> Export Settings」Centre Opens「Return semi-finished」。'
             )
         return ExportError(
-            message=f"可编辑导出在“{stage or '导出'}”阶段失败：{summary}",
+            message=f"Edit Export In“{stage or 'Export'}”Stage failure：{summary}",
             error_type='service' if is_external else 'unknown',
             details=details,
             help_text=help_text,
@@ -531,7 +531,7 @@ class ExportService:
         element_kind: str,
     ) -> ExportError:
         return ExportError(
-            message=f"内容写入失败：无法添加{element_kind}",
+            message=f"Content writing failed： cannot be added{element_kind}",
             error_type='text_render',
             details={
                 'stage': 'text_render',
@@ -541,11 +541,11 @@ class ExportService:
                 'retryable': False,
                 'technical_message': ExportService._safe_technical_message(message),
             },
-            help_text='请检查失败元素中的特殊字符、公式或字体；也可以开启「返回半成品」跳过该元素。',
+            help_text='Check the special characters, formulae or fonts in the failed element; also open「Return semi-finished」Skip this element。',
             error_code='EXPORT_TEXT_RENDER_FAILED',
             stage='text_render',
         )
-    
+
     @staticmethod
     def create_pptx_from_images(
         image_paths: List[str],
@@ -556,17 +556,17 @@ class ExportService:
         """
         Create PPTX file from image paths
         Based on demo.py create_pptx_from_images()
-        
+
         Args:
             image_paths: List of absolute paths to images
             output_file: Optional output file path (if None, returns bytes)
-        
+
         Returns:
             PPTX file as bytes if output_file is None
         """
         # Create presentation
         prs = Presentation()
-        
+
         # Set author/date metadata for exported PPTX
         try:
             core = prs.core_properties
@@ -578,12 +578,12 @@ class ExportService:
             core.last_printed = None
         except Exception as e:
             logger.warning(f"Failed to set core properties: {e}")
-        
+
         # Set slide dimensions based on aspect ratio
         page_w, page_h = _get_page_size_inches(aspect_ratio)
         prs.slide_width = Inches(page_w)
         prs.slide_height = Inches(page_h)
-        
+
         valid_transition_effects = [
             effect for effect in (transition_effects or [])
             if effect in ExportService.PPTX_TRANSITION_EFFECTS
@@ -595,11 +595,11 @@ class ExportService:
             if not os.path.exists(image_path):
                 logger.warning(f"Image not found: {image_path}")
                 continue
-            
+
             # Add blank slide layout (layout 6 is typically blank)
             blank_slide_layout = prs.slide_layouts[6]
             slide = prs.slides.add_slide(blank_slide_layout)
-            
+
             # Add image to fill entire slide
             slide.shapes.add_picture(
                 image_path,
@@ -617,7 +617,7 @@ class ExportService:
                     slide,
                     transition_effect_queue.pop(),
                 )
-        
+
         # Save or return bytes
         if output_file:
             prs.save(output_file)
@@ -628,7 +628,7 @@ class ExportService:
             prs.save(pptx_bytes)
             pptx_bytes.seek(0)
             return pptx_bytes.getvalue()
-    
+
     @staticmethod
     def create_pdf_from_images(image_paths: List[str], output_file: str = None, aspect_ratio: str = '16:9') -> Optional[bytes]:
         """
@@ -780,12 +780,12 @@ class ExportService:
             )
             pdf_bytes.seek(0)
             return ExportService._add_pdf_metadata(pdf_bytes.getvalue())
-       
+
     @staticmethod
     def _add_mineru_text_to_slide(builder, slide, text_item: Dict[str, Any], scale_x: float = 1.0, scale_y: float = 1.0):
         """
         Add text item from MinerU to slide
-        
+
         Args:
             builder: PPTXBuilder instance
             slide: Target slide
@@ -796,14 +796,14 @@ class ExportService:
         text = text_item.get('text', '').strip()
         if not text:
             return
-        
+
         bbox = text_item.get('bbox')
         if not bbox or len(bbox) != 4:
             logger.warning(f"Invalid bbox for text item: {text_item}")
             return
-        
+
         original_bbox = bbox.copy()
-        
+
         # Apply scale factors to bbox
         x0, y0, x1, y1 = bbox
         bbox = [
@@ -812,21 +812,21 @@ class ExportService:
             int(x1 * scale_x),
             int(y1 * scale_y)
         ]
-        
+
         if scale_x != 1.0 or scale_y != 1.0:
             logger.debug(f"Text bbox scaled: {original_bbox} -> {bbox} (scale: {scale_x:.3f}x{scale_y:.3f})")
-        
+
         # Determine text level (only used for styling like bold, NOT for font size)
         # Font size is purely calculated from bbox dimensions
         item_type = text_item.get('type', 'text')
         text_level = text_item.get('text_level')
-        
+
         # Map to level for styling purposes (bold titles)
         if item_type == 'title' or text_level == 1:
             level = 'title'  # Will be bold
         else:
             level = 'default'
-        
+
         # Add text element
         # Note: text_level is only used for bold styling, not font size calculation
         try:
@@ -838,7 +838,7 @@ class ExportService:
             )
         except Exception as e:
             logger.error(f"Failed to add text element: {str(e)}")
-    
+
     @staticmethod
     def _add_table_cell_elements_to_slide(
         builder,
@@ -849,8 +849,8 @@ class ExportService:
     ):
         """
         Add table cell elements as individual text boxes to slide
-        这些单元格元素已经有正确的全局bbox坐标
-        
+        These cell elements already have the right global dimension. bbox Coordinates
+
         Args:
             builder: PPTXBuilder instance
             slide: Target slide
@@ -860,32 +860,32 @@ class ExportService:
         """
         from pptx.util import Pt
         from pptx.dml.color import RGBColor
-        
-        logger.info(f"开始添加表格单元格元素，共 {len(cell_elements)} 个")
-        
+
+        logger.info(f"Start adding table cell elements, all {len(cell_elements)} individual")
+
         for cell_elem in cell_elements:
             text = cell_elem.get('content', '')
             bbox_global = cell_elem.get('bbox_global', {})
-            
+
             if not text.strip():
                 continue
-            
-            # bbox_global已经是全局坐标，直接使用并应用缩放
+
+            # bbox_global It’s already global coordinates, using and applying scaling directly.
             x0 = bbox_global.get('x0', 0)
             y0 = bbox_global.get('y0', 0)
             x1 = bbox_global.get('x1', 0)
             y1 = bbox_global.get('y1', 0)
-            
-            # 构建bbox列表 [x0, y0, x1, y1] 并应用缩放
+
+            # Build bbox List [x0, y0, x1, y1] and apply scaling
             bbox = [
                 int(x0 * scale_x),
                 int(y0 * scale_y),
                 int(x1 * scale_x),
                 int(y1 * scale_y)
             ]
-            
+
             try:
-                # 使用已有的 add_text_element 方法添加文本框（不添加边框）
+                # Use Existing add_text_element Method to add text boxes (no borders added)）
                 builder.add_text_element(
                     slide=slide,
                     text=text,
@@ -893,14 +893,14 @@ class ExportService:
                     text_level=None,
                     align='center'
                 )
-                
-                logger.debug(f"  添加单元格: '{text[:10]}...' at bbox {bbox}")
-                
+
+                logger.debug(f"  Add Cells: '{text[:10]}...' at bbox {bbox}")
+
             except Exception as e:
-                logger.warning(f"添加单元格失败: {e}")
-        
-        logger.info(f"✓ 表格单元格添加完成，共 {len(cell_elements)} 个")
-    
+                logger.warning(f"Failed to add cell: {e}")
+
+        logger.info(f"✓ Table cells added, complete {len(cell_elements)} individual")
+
     @staticmethod
     def _add_mineru_image_to_slide(
         builder,
@@ -912,7 +912,7 @@ class ExportService:
     ):
         """
         Add image or table item from MinerU to slide
-        
+
         Args:
             builder: PPTXBuilder instance
             slide: Target slide
@@ -925,9 +925,9 @@ class ExportService:
         if not bbox or len(bbox) != 4:
             logger.warning(f"Invalid bbox for image item: {image_item}")
             return
-        
+
         original_bbox = bbox.copy()
-        
+
         # Apply scale factors to bbox
         x0, y0, x1, y1 = bbox
         bbox = [
@@ -936,24 +936,24 @@ class ExportService:
             int(x1 * scale_x),
             int(y1 * scale_y)
         ]
-        
+
         if scale_x != 1.0 or scale_y != 1.0:
             logger.debug(f"Item bbox scaled: {original_bbox} -> {bbox} (scale: {scale_x:.3f}x{scale_y:.3f})")
-        
-        # Check if this is a table with子元素 (cells from Baidu OCR)
+
+        # Check if this is a table with Sub-elements (cells from Baidu OCR)
         item_type = image_item.get('element_type') or image_item.get('type', 'image')
         children = image_item.get('children', [])
-        
+
         logger.debug(f"Processing {item_type} element, has {len(children)} children")
-        
+
         if children and item_type == 'table':
             # Add editable table from child elements (cells)
             try:
                 # Filter only table_cell elements
                 cell_elements = [child for child in children if child.get('element_type') == 'table_cell']
-                
+
                 if cell_elements:
-                    logger.info(f"添加可编辑表格（{len(cell_elements)}个单元格）")
+                    logger.info(f"Add Editable Tables（{len(cell_elements)}Cells）")
                     ExportService._add_table_cell_elements_to_slide(
                         builder=builder,
                         slide=slide,
@@ -965,7 +965,7 @@ class ExportService:
             except Exception as e:
                 logger.exception("Failed to add table cells, falling back to image")
                 # Fall through to add as image instead
-        
+
         # Check if this is a table with HTML data (legacy)
         html_table = image_item.get('html_table')
         if html_table and item_type == 'table':
@@ -981,13 +981,13 @@ class ExportService:
             except Exception as e:
                 logger.error(f"Failed to add table: {str(e)}, falling back to image")
                 # Fall through to add as image instead
-        
+
         # Add as image (either image type or table fallback)
         img_path_str = image_item.get('img_path', '')
         if not img_path_str:
             logger.warning(f"No img_path in item: {image_item}")
             return
-        
+
         # Try to find the image file
         # MinerU may store images in 'images/' subdirectory
         possible_paths = [
@@ -995,19 +995,19 @@ class ExportService:
             mineru_dir / 'images' / Path(img_path_str).name,
             mineru_dir / Path(img_path_str).name,
         ]
-        
+
         image_path = None
         for path in possible_paths:
             if path.exists():
                 image_path = str(path)
                 break
-        
+
         if not image_path:
             logger.warning(f"Image file not found: {img_path_str}")
             # Add placeholder
             builder.add_image_placeholder(slide, bbox)
             return
-        
+
         # Add image element
         try:
             builder.add_image_element(
@@ -1017,44 +1017,44 @@ class ExportService:
             )
         except Exception as e:
             logger.error(f"Failed to add image element: {str(e)}")
-    
+
     @staticmethod
     def _collect_text_elements_for_extraction(
         elements: List,  # List[EditableElement]
         depth: int = 0
     ) -> List[tuple]:
         """
-        递归收集所有需要提取样式的文本元素
-        
+        Recursively collect all text elements that need to extract styles
+
         Args:
-            elements: EditableElement列表
-            depth: 当前递归深度
-        
+            elements: EditableElement List
+            depth: Current Recursive Depth
+
         Returns:
-            元组列表，每个元组为 (element_id, image_path, text_content)
+            List of segments, each group being as (element_id, image_path, text_content)
         """
         text_items = []
-        
+
         for elem in elements:
             elem_type = elem.element_type
-            
-            # 文本类型元素需要提取样式
+
+            # Text type elements need to extract styles
             if elem_type in ['text', 'title', 'table_cell', 'list', 'paragraph', 'header', 'footer', 'heading', 'table_caption', 'image_caption']:
                 if elem.content and elem.image_path and os.path.exists(elem.image_path):
                     text = elem.content.strip()
                     if text:
                         text_items.append((elem.element_id, elem.image_path, text))
-            
-            # 递归处理子元素
+
+            # Recursive processing sub-elements
             if hasattr(elem, 'children') and elem.children:
                 child_items = ExportService._collect_text_elements_for_extraction(
                     elements=elem.children,
                     depth=depth + 1
                 )
                 text_items.extend(child_items)
-        
+
         return text_items
-    
+
     @staticmethod
     def _batch_extract_text_styles(
         text_items: List[tuple],
@@ -1062,30 +1062,30 @@ class ExportService:
         max_workers: int = 8
     ) -> Dict[str, Any]:
         """
-        批量并行提取文本样式（逐个裁剪区域分析）
-        
-        此方法对每一段文字的裁剪区域单独进行分析。
-        经测试，此方法效果较好，目前仍在使用。
-        
-        备选方案：_batch_extract_text_styles_with_full_image 可一次性分析全图所有文本。
-        
+        Batch parallel extract text styles (separate area-by-area analysis)）
+
+        This method analyses the cropping area of each paragraph of text separately。
+        The method was tested to be more effective and is still in use.。
+
+        Options：_batch_extract_text_styles_with_full_image One-time analysis of all text in the entire chart。
+
         Args:
-            text_items: 元组列表，每个元组为 (element_id, image_path, text_content)
-            text_attribute_extractor: 文本属性提取器
-            max_workers: 并发数
-        
+            text_items: List of segments, each group being as (element_id, image_path, text_content)
+            text_attribute_extractor: Text Properties Ripper
+            max_workers: Parallel Numbers
+
         Returns:
-            字典，key为element_id，value为TextStyleResult
+            dictionaries，key Yes. element_id，value Yes. TextStyleResult
         """
         from concurrent.futures import ThreadPoolExecutor, as_completed
-        
+
         if not text_items or not text_attribute_extractor:
             return {}
-        
-        logger.info(f"并行提取 {len(text_items)} 个文本元素的样式（并发数: {max_workers}）...")
-        
+
+        logger.info(f"Parallel extraction {len(text_items)} Styles for individual text elements (symmetrically): {max_workers}）...")
+
         results = {}
-        
+
         def extract_single(item):
             element_id, image_path, text_content = item
             try:
@@ -1095,63 +1095,63 @@ class ExportService:
                 )
                 return element_id, style
             except Exception as e:
-                logger.warning(f"提取文字样式失败 [{element_id}]: {e}")
+                logger.warning(f"Failed to extract text style [{element_id}]: {e}")
                 return element_id, None
-        
+
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = {executor.submit(extract_single, item): item[0] for item in text_items}
-            
+
             for future in as_completed(futures):
                 element_id, style = future.result()
                 if style is not None:
                     results[element_id] = style
-        
-        logger.info(f"✓ 文本样式提取完成，成功 {len(results)}/{len(text_items)} 个")
+
+        logger.info(f"✓ Text style extraction completed, successful {len(results)}/{len(text_items)} individual")
         return results
-    
+
     @staticmethod
     def _collect_text_elements_for_batch_extraction(
         elements: List,  # List[EditableElement]
         depth: int = 0
     ) -> List[Dict[str, Any]]:
         """
-        递归收集所有需要批量提取样式的文本元素（新格式，包含bbox）
-        
+        Recursive collection of all text elements that require batch extraction styles (new format, including bbox）
+
         Args:
-            elements: EditableElement列表
-            depth: 当前递归深度
-        
+            elements: EditableElement List
+            depth: Current Recursive Depth
+
         Returns:
-            字典列表，每个字典包含 element_id, bbox, content
+            Dictionary list, each of which contains element_id, bbox, content
         """
         text_items = []
-        
+
         for elem in elements:
             elem_type = elem.element_type
-            
-            # 文本类型元素需要提取样式
+
+            # Text type elements need to extract styles
             if elem_type in ['text', 'title', 'table_cell', 'list', 'paragraph', 'header', 'footer', 'heading', 'table_caption', 'image_caption']:
                 if elem.content:
                     text = elem.content.strip()
                     if text:
-                        # 使用全局坐标 bbox_global
+                        # Use global coordinates bbox_global
                         bbox = elem.bbox_global if hasattr(elem, 'bbox_global') and elem.bbox_global else elem.bbox
                         text_items.append({
                             'element_id': elem.element_id,
                             'bbox': [bbox.x0, bbox.y0, bbox.x1, bbox.y1],
                             'content': text
                         })
-            
-            # 递归处理子元素
+
+            # Recursive processing sub-elements
             if hasattr(elem, 'children') and elem.children:
                 child_items = ExportService._collect_text_elements_for_batch_extraction(
                     elements=elem.children,
                     depth=depth + 1
                 )
                 text_items.extend(child_items)
-        
+
         return text_items
-    
+
     @staticmethod
     def _batch_extract_text_styles_with_full_image(
         editable_images: List,  # List[EditableImage]
@@ -1159,30 +1159,30 @@ class ExportService:
         max_workers: int = 4
     ) -> Dict[str, Any]:
         """
-        【新逻辑】使用全图批量提取所有文本样式
-        
-        新方法：给 caption model 提供全图，以及提取后的所有文本 bbox 和内容，
-        让模型一次性分析所有文本的样式属性（颜色、粗体、对齐等）。
-        
-        优势：模型可以看到全局信息，分析更准确。
-        
+        【New Logic】Extract all text styles from the full chart batch
+
+        New method： Here. caption model Provide full graphics, and after extraction, all text bbox and content，
+        Allows the model to analyse the style properties of all text at once (colour, bold, alignment, etc.)）。
+
+        Advantages： Models can see global information and analyse more accurately。
+
         Args:
-            editable_images: EditableImage列表，每个对应一张PPT页面
-            text_attribute_extractor: 文本属性提取器（需要有 extract_batch_with_full_image 方法）
-            max_workers: 并发处理页面数
-        
+            editable_images: EditableImage List, one for each PPT Page
+            text_attribute_extractor: Text Properties Ripper (required) extract_batch_with_full_image Methodology）
+            max_workers: Number of simultaneous pages
+
         Returns:
-            字典，key为element_id，value为TextStyleResult
+            dictionaries，key Yes. element_id，value Yes. TextStyleResult
         """
         from concurrent.futures import ThreadPoolExecutor, as_completed
-        
+
         if not editable_images or not text_attribute_extractor:
             return {}
-        
-        # 检查提取器是否支持批量提取
+
+        # Check if the extractor supports batch extraction
         if not hasattr(text_attribute_extractor, 'extract_batch_with_full_image'):
-            logger.warning("提取器不支持 extract_batch_with_full_image 方法，回退到旧逻辑")
-            # 回退到旧逻辑
+            logger.warning("Ripper does not support extract_batch_with_full_image Method, back to old logic.")
+            # Back to the old logic.
             all_text_items = []
             for editable_img in editable_images:
                 text_items = ExportService._collect_text_elements_for_extraction(editable_img.elements)
@@ -1192,102 +1192,102 @@ class ExportService:
                 text_attribute_extractor=text_attribute_extractor,
                 max_workers=max_workers * 2
             )
-        
-        logger.info(f"【新逻辑】使用全图批量分析 {len(editable_images)} 页的文本样式...")
-        
+
+        logger.info(f"【New Logic】Use full-chart batch analysis {len(editable_images)} Text Style for Pages...")
+
         all_results = {}
-        
+
         def process_single_page(editable_img, page_idx):
-            """处理单个页面的文本样式提取"""
+            """Text Style Ripping for Processing Single Pages"""
             try:
-                # 收集该页面的所有文本元素
+                # Collects all text elements of the page
                 text_elements = ExportService._collect_text_elements_for_batch_extraction(
                     editable_img.elements
                 )
-                
+
                 if not text_elements:
-                    logger.info(f"  页面 {page_idx + 1}: 无文本元素")
+                    logger.info(f"  Page {page_idx + 1}: No text elements")
                     return {}
-                
-                logger.info(f"  页面 {page_idx + 1}: 分析 {len(text_elements)} 个文本元素...")
-                
-                # 使用原始图片路径作为全图
+
+                logger.info(f"  Page {page_idx + 1}: Analysis {len(text_elements)} Text elements...")
+
+                # Use original picture path as full map
                 full_image_path = editable_img.image_path
-                
-                # 调用批量提取方法
+
+                # Call for batch extraction methods
                 page_results = text_attribute_extractor.extract_batch_with_full_image(
                     full_image=full_image_path,
                     text_elements=text_elements
                 )
-                
-                logger.info(f"  页面 {page_idx + 1}: 成功提取 {len(page_results)} 个元素的样式")
+
+                logger.info(f"  Page {page_idx + 1}: Successfully extracted {len(page_results)} Styles for individual elements")
                 return page_results
-                
+
             except Exception as e:
-                logger.error(f"页面 {page_idx + 1} 文本样式提取失败: {e}", exc_info=True)
+                logger.error(f"Page {page_idx + 1} Text Style Ripping Failed: {e}", exc_info=True)
                 return {}
-        
-        # 并发处理所有页面
+
+        # Combine all pages
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = {
-                executor.submit(process_single_page, img, idx): idx 
+                executor.submit(process_single_page, img, idx): idx
                 for idx, img in enumerate(editable_images)
             }
-            
+
             for future in as_completed(futures):
                 page_idx = futures[future]
                 try:
                     page_results = future.result()
                     all_results.update(page_results)
                 except Exception as e:
-                    logger.error(f"页面 {page_idx + 1} 处理失败: {e}")
-        
+                    logger.error(f"Page {page_idx + 1} Process failed: {e}")
+
         total_elements = sum(
             len(ExportService._collect_text_elements_for_batch_extraction(img.elements))
             for img in editable_images
         )
-        logger.info(f"✓ 全图批量文本样式提取完成，成功 {len(all_results)}/{total_elements} 个")
-        
+        logger.info(f"✓ Full batch text style extraction completed, successful {len(all_results)}/{total_elements} individual")
+
         return all_results
-    
+
     @staticmethod
     def _batch_extract_text_styles_hybrid(
         editable_images: List,  # List[EditableImage]
         text_attribute_extractor,
         max_workers: int = 8,
         fail_fast: bool = False,
-        on_progress=None,  # 可选：(done, total, label) -> None，用于进度上报与心跳
+        on_progress=None,  # Optional：(done, total, label) -> None，For progress reporting and heartbeats.
     ) -> Tuple[Dict[str, Any], List[Tuple[str, str]]]:
         """
-        【混合策略】结合全局识别和单个裁剪识别的优势
-        
-        策略：
-        - 全局识别（全图分析）：获取 is_bold、is_italic、is_underline、text_alignment
-          因为这些属性需要看整体布局和上下文才能判断准确
-        - 单个裁剪识别：获取 font_color
-          因为颜色需要精确看局部像素才能识别准确
-        
+        【Mixed Policy】Combining global recognition and individual tailor identification advantages
+
+        Policy：
+        - Global recognition (total analysis)： Access is_bold、is_italic、is_underline、text_alignment
+          Because these properties need to look at the overall layout and context in order to be accurate.
+        - Individual cropping recognition： capture font_color
+          Because the color requires an accurate look at local pixels to be accurate.
+
         Args:
-            editable_images: EditableImage列表，每个对应一张PPT页面
-            text_attribute_extractor: 文本属性提取器
-            max_workers: 并发数
-            fail_fast: 遇到错误是否立即抛出
-            on_progress: 可选回调 (done, total, label)，每完成一个识别任务调用一次
-        
+            editable_images: EditableImage List, one for each PPT Page
+            text_attribute_extractor: Text Properties Ripper
+            max_workers: Parallel Numbers
+            fail_fast: Whether or not to throw the error immediately
+            on_progress: Optional Backtracking (done, total, label)，Call every identification mission completed
+
         Returns:
             (results, failed_extractions):
-            - results: 字典，key为element_id，value为TextStyleResult（合并后的结果）
-            - failed_extractions: 失败列表，每项为 (element_id, error_reason)
+            - results: dictionaries，key Yes. element_id，value Yes. TextStyleResult（Consolidated Results）
+            - failed_extractions: Failed list, each as (element_id, error_reason)
         """
         from concurrent.futures import ThreadPoolExecutor, as_completed
         from services.image_editability.text_attribute_extractors import TextStyleResult
-        
+
         if not editable_images or not text_attribute_extractor:
             return {}, []
-        
-        # 检查提取器是否支持批量提取
+
+        # Check if the extractor supports batch extraction
         if not hasattr(text_attribute_extractor, 'extract_batch_with_full_image'):
-            logger.warning("提取器不支持混合策略，回退到单个裁剪识别")
+            logger.warning("The extractor does not support the mix policy, retreating to single crop recognition")
             all_text_items = []
             for editable_img in editable_images:
                 text_items = ExportService._collect_text_elements_for_extraction(editable_img.elements)
@@ -1297,38 +1297,38 @@ class ExportService:
                 text_attribute_extractor=text_attribute_extractor,
                 max_workers=max_workers
             )
-            return results, []  # 回退方法暂不收集失败信息
-        
-        logger.info(f"【混合策略】开始分析 {len(editable_images)} 页的文本样式...")
-        logger.info(f"  - 全局识别: is_bold, is_italic, is_underline, text_alignment")
-        logger.info(f"  - 单个识别: font_color")
-        
-        # Step 1: 收集所有文本元素
-        all_text_items = []  # 用于单个裁剪识别 (element_id, image_path, content)
-        page_text_elements = {}  # 用于全局识别 {page_idx: [text_elements]}
-        
+            return results, []  # Revert method does not collect failed information for now.
+
+        logger.info(f"【Mixed Policy】Start analysis. {len(editable_images)} Text Style for Pages...")
+        logger.info(f"  - Global recognition: is_bold, is_italic, is_underline, text_alignment")
+        logger.info(f"  - Individual Recognition: font_color")
+
+        # Step 1: Collect all text elements
+        all_text_items = []  # For individual crop recognition (element_id, image_path, content)
+        page_text_elements = {}  # For global recognition {page_idx: [text_elements]}
+
         for page_idx, editable_img in enumerate(editable_images):
-            # 收集用于单个裁剪识别的数据
+            # Collect data for individual shear identification
             text_items = ExportService._collect_text_elements_for_extraction(editable_img.elements)
             all_text_items.extend(text_items)
-            
-            # 收集用于全局识别的数据
+
+            # Collection of data for global identification
             batch_elements = ExportService._collect_text_elements_for_batch_extraction(editable_img.elements)
             if batch_elements:
                 page_text_elements[page_idx] = {
                     'image_path': editable_img.image_path,
                     'elements': batch_elements
                 }
-        
+
         if not all_text_items:
             return {}, []
-        
-        # Step 2: 并行执行两种识别
-        global_results = {}  # 全局识别结果
-        local_results = {}   # 单个裁剪识别结果
-        
+
+        # Step 2: Two identifications in parallel.
+        global_results = {}  # Global recognition results
+        local_results = {}   # Single Crop Identification Results
+
         def extract_global_for_page(page_idx, page_data):
-            """全局识别单页，并对异常或缺失结果做页级重试。"""
+            """Global recognition of single pages and retrying at the page level for abnormal or missing results。"""
             max_global_attempts = 3
             expected_element_ids = {
                 element['element_id'] for element in page_data['elements']
@@ -1356,7 +1356,7 @@ class ExportService:
                     missing_element_ids = expected_element_ids - set(best_results.keys())
 
                     logger.info(
-                        "全局识别页面 %s 第 %s/%s 次完成: expected=%s returned=%s accumulated=%s missing=%s",
+                        "Global Recognition Page %s Page %s/%s It’s done again.: expected=%s returned=%s accumulated=%s missing=%s",
                         page_idx + 1,
                         attempt,
                         max_global_attempts,
@@ -1371,7 +1371,7 @@ class ExportService:
 
                     last_exception = None
                     logger.warning(
-                        "全局识别页面 %s 第 %s/%s 次返回不完整，将重试: missing_sample=%s",
+                        "Global Recognition Page %s Page %s/%s Once returns incomplete, try again: missing_sample=%s",
                         page_idx + 1,
                         attempt,
                         max_global_attempts,
@@ -1380,7 +1380,7 @@ class ExportService:
                 except Exception as e:
                     last_exception = str(e)
                     logger.warning(
-                        "全局识别页面 %s 第 %s/%s 次失败，将重试: %s",
+                        "Global Recognition Page %s Page %s/%s Once failed, try again.: %s",
                         page_idx + 1,
                         attempt,
                         max_global_attempts,
@@ -1388,20 +1388,20 @@ class ExportService:
                     )
 
             logger.error(
-                "全局识别页面 %s 重试耗尽: expected=%s returned=%s last_error=%s",
+                "Global Recognition Page %s It’s exhausting.: expected=%s returned=%s last_error=%s",
                 page_idx + 1,
                 len(expected_element_ids),
                 len(best_results),
-                last_exception or "全局识别未返回完整结果",
+                last_exception or "Global recognition did not return the full result",
             )
             page_error = last_exception if (not best_results or not had_model_response) else None
             return page_idx, best_results, page_error
-        
-        # 收集失败信息
+
+        # Can not open message
         failed_extractions = []  # [(element_id, reason), ...]
-        
+
         def extract_local_single(item):
-            """单个裁剪识别"""
+            """Individual crop recognition"""
             element_id, image_path, text_content = item
             try:
                 style = text_attribute_extractor.extract(
@@ -1414,7 +1414,7 @@ class ExportService:
                 if style and not is_error:
                     return element_id, style, None
                 else:
-                    error_msg = style.metadata.get('error', '样式提取返回空') if style else "样式提取返回空"
+                    error_msg = style.metadata.get('error', 'Style Ripback Empty') if style else "Style Ripback Empty"
                     if fail_fast:
                         raise ExportService._build_style_extraction_error(
                             error_msg,
@@ -1425,9 +1425,9 @@ class ExportService:
                         )
                     return element_id, None, error_msg
             except ExportError:
-                raise  # 重新抛出 ExportError
+                raise  # Throw again ExportError
             except Exception as e:
-                logger.warning(f"单个识别失败 [{element_id}]: {e}")
+                logger.warning(f"Individual recognition failed [{element_id}]: {e}")
                 if fail_fast:
                     raise ExportService._build_style_extraction_error(
                         str(e),
@@ -1437,9 +1437,9 @@ class ExportService:
                         operation='local_element_style',
                     )
                 return element_id, None, str(e)
-        
-        # 并发执行全局识别和单个裁剪识别
-        logger.info(f"  并发执行: 全局识别 {len(page_text_elements)} 页 + 单个识别 {len(all_text_items)} 个元素...")
+
+        # Also execute global and individual crop recognition
+        logger.info(f"  Complementary execution: Global recognition {len(page_text_elements)} Page + Individual Recognition {len(all_text_items)} An element...")
 
         total_tasks = len(page_text_elements) + len(all_text_items)
         completed_tasks = 0
@@ -1451,25 +1451,25 @@ class ExportService:
                 try:
                     on_progress(completed_tasks, total_tasks, label)
                 except Exception as exc:
-                    logger.debug(f"样式提取进度回调失败: {exc}")
-        
+                    logger.debug(f"Style extract progress correction failed: {exc}")
+
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            # 提交全局识别任务
+            # Commit global recognition task
             global_futures = {
                 executor.submit(extract_global_for_page, idx, data): ('global', idx)
                 for idx, data in page_text_elements.items()
             }
-            
-            # 提交单个裁剪识别任务
+
+            # Submit single crop recognition task
             local_futures = {
                 executor.submit(extract_local_single, item): ('local', item[0])
                 for item in all_text_items
             }
-            
-            # 收集全局识别结果
+
+            # Collect global recognition results
             for future in as_completed(global_futures):
                 task_type, page_idx = global_futures[future]
-                notify_progress(f"全局识别第 {page_idx + 1} 页")
+                notify_progress(f"Global Identification No. {page_idx + 1} Page")
                 try:
                     _, page_results, page_error = future.result()
                     global_results.update(page_results)
@@ -1486,11 +1486,11 @@ class ExportService:
                                 operation='global_page_style',
                             )
                         failed_extractions.extend(
-                            (element_id, f"全局识别失败: {page_error}")
+                            (element_id, f"Global recognition failed: {page_error}")
                             for element_id in expected_element_ids
                         )
                     elif missing_element_ids:
-                        reason = "全局识别未返回完整结果"
+                        reason = "Global recognition did not return the full result"
                         if fail_fast:
                             raise ExportService._build_style_extraction_error(
                                 reason,
@@ -1500,7 +1500,7 @@ class ExportService:
                             )
                         failed_extractions.extend((element_id, reason) for element_id in missing_element_ids)
                 except Exception as e:
-                    logger.error(f"全局识别任务失败: {e}")
+                    logger.error(f"Global recognition of tasks failed: {e}")
                     if fail_fast:
                         if isinstance(e, ExportError):
                             raise
@@ -1514,14 +1514,14 @@ class ExportService:
                         element['element_id'] for element in page_text_elements[page_idx]['elements']
                     ]
                     failed_extractions.extend(
-                        (element_id, f"全局识别失败: {e}")
+                        (element_id, f"Global recognition failed: {e}")
                         for element_id in expected_element_ids
                     )
-            
-            # 收集单个裁剪识别结果
+
+            # Collect a single crop identification result
             for future in as_completed(local_futures):
                 task_type, element_id = local_futures[future]
-                notify_progress("单个元素识别")
+                notify_progress("Individual element recognition")
                 try:
                     elem_id, style, error = future.result()
                     if style is not None:
@@ -1529,30 +1529,30 @@ class ExportService:
                     if error:
                         failed_extractions.append((elem_id, error))
                 except Exception as e:
-                    logger.error(f"单个识别任务失败: {e}")
+                    logger.error(f"Failed to recognize task on an individual basis: {e}")
                     if fail_fast:
                         raise
                     failed_extractions.append((element_id, str(e)))
-        
-        # Step 3: 合并结果
-        # 优先使用全局识别的布局属性，使用单个识别的颜色属性
+
+        # Step 3: Merge Results
+        # Prefer layout properties identified globally, using single recognized colour properties
         merged_results = {}
-        
+
         all_element_ids = set(global_results.keys()) | set(local_results.keys())
-        
+
         for element_id in all_element_ids:
             global_style = global_results.get(element_id)
             local_style = local_results.get(element_id)
-            
+
             if global_style and local_style:
-                # 混合：颜色用单个识别（包括 colored_segments），布局用全局识别
+                # Mixed： Colour identified individually (includes) colored_segments），Layout with global recognition
                 merged_results[element_id] = TextStyleResult(
-                    font_color_rgb=local_style.font_color_rgb,  # 单个识别的颜色
-                    colored_segments=local_style.colored_segments,  # 单个识别的多颜色片段
-                    is_bold=global_style.is_bold,              # 全局识别的粗体
-                    is_italic=global_style.is_italic,          # 全局识别的斜体
-                    is_underline=global_style.is_underline,    # 全局识别的下划线
-                    text_alignment=global_style.text_alignment, # 全局识别的对齐
+                    font_color_rgb=local_style.font_color_rgb,  # Individually Recognized Colours
+                    colored_segments=local_style.colored_segments,  # Single recognized multi-coloured clips
+                    is_bold=global_style.is_bold,              # Global recognized bold
+                    is_italic=global_style.is_italic,          # Italics recognized globally
+                    is_underline=global_style.is_underline,    # Underlined global recognition
+                    text_alignment=global_style.text_alignment, # Global Recognized Alignment
                     confidence=0.9,
                     metadata={
                         'source': 'hybrid',
@@ -1561,16 +1561,16 @@ class ExportService:
                     }
                 )
             elif local_style:
-                # 只有单个识别结果
+                # Only a single result.
                 merged_results[element_id] = local_style
             elif global_style:
-                # 只有全局识别结果
+                # Only global recognition.
                 merged_results[element_id] = global_style
-        
-        logger.info(f"✓ 混合策略完成: 全局识别 {len(global_results)} 个, 单个识别 {len(local_results)} 个, 合并 {len(merged_results)} 个, 失败 {len(failed_extractions)} 个")
-        
+
+        logger.info(f"✓ Mixed strategy complete.: Global recognition {len(global_results)} individual, Individual Recognition {len(local_results)} individual, Merge {len(merged_results)} individual, Failed {len(failed_extractions)} individual")
+
         return merged_results, failed_extractions
-    
+
     @staticmethod
     def create_editable_pptx_with_recursive_analysis(
         image_paths: List[str] = None,
@@ -1579,85 +1579,85 @@ class ExportService:
         slide_height_pixels: int = 1080,
         max_depth: int = 2,
         max_workers: int = 8,
-        editable_images: List = None,  # 可选：直接传入已分析的EditableImage列表
-        text_attribute_extractor = None,  # 可选：文字属性提取器，用于提取颜色、粗体、斜体等样式
-        progress_callback = None,  # 可选：进度回调函数 (step, message, percent) -> None
-        heartbeat_callback = None,  # 可选：心跳回调 (step) -> None，用于元素级细粒度存活检测（不写库）
-        export_extractor_method: str = 'hybrid',  # 组件提取方法: mineru, hybrid
-        export_inpaint_method: str = 'hybrid',  # 背景修复方法: generative, baidu, hybrid
-        enable_icon_subject_extraction: bool = False,  # 是否对小尺寸图标走百度智能抠图
-        fail_fast: bool = True  # 是否在遇到错误时立即停止（False则收集警告继续）
+        editable_images: List = None,  # Optional： Directly imported analysed EditableImage List
+        text_attribute_extractor = None,  # Optional： Text Properties Ripper, to extract colours, bold, italics, etc.
+        progress_callback = None,  # Optional： progress correction function (step, message, percent) -> None
+        heartbeat_callback = None,  # Optional： Heart beatback (step) -> None，For elemental fine particle size survival detection (no library)）
+        export_extractor_method: str = 'hybrid',  # Component extraction method: mineru, hybrid
+        export_inpaint_method: str = 'hybrid',  # Background repair method: generative, baidu, hybrid
+        enable_icon_subject_extraction: bool = False,  # Whether to walk a 100-degree smart map of a small size icon
+        fail_fast: bool = True  # Whether to stop immediately in case of a mistake（False Then collect the warning and continue.）
     ) -> Tuple[Optional[bytes], ExportWarnings]:
         """
-        使用递归图片可编辑化服务创建可编辑PPTX
-        
-        这是新的架构方法，使用ImageEditabilityService进行递归版面分析。
-        
-        两种使用方式：
-        1. 传入 image_paths：自动分析图片并生成PPTX
-        2. 传入 editable_images：直接使用已分析的结果（避免重复分析）
-        
-        配置（如 MinerU token）自动从 Flask app.config 获取。
-        
+        Create Editable Using Recursive Pictures to Edit Service PPTX
+
+        It’s a new architecture approach. ImageEditabilityService Perform recursive face analysis。
+
+        Two ways to use it：
+        1. Import image_paths：Automatically analyze pictures and generate them PPTX
+        2. Import editable_images：Direct use of analysed results (avoidance of analysis)）
+
+        Configure (e. g. MinerU token）Automatically from Flask app.config Access。
+
         Args:
-            image_paths: 图片路径列表（可选，与editable_images二选一）
-            output_file: 输出文件路径（可选）
-            slide_width_pixels: 目标幻灯片宽度
-            slide_height_pixels: 目标幻灯片高度
-            max_depth: 最大递归深度
-            max_workers: 并发处理数
-            editable_images: 已分析的EditableImage列表（可选，与image_paths二选一）
-            text_attribute_extractor: 文字属性提取器（可选），用于提取文字颜色、粗体、斜体等样式
-                可通过 TextAttributeExtractorFactory.create_caption_model_extractor() 创建
-            heartbeat_callback: 心跳回调（可选）。每个元素/子任务处理完调用一次，
-                用于让外部看门狗知道任务仍在推进（不产生数据库写入）
-            export_extractor_method: 组件提取方法 ('mineru' 或 'hybrid'，默认 'hybrid')
-            export_inpaint_method: 背景修复方法 ('generative', 'baidu', 'hybrid'，默认 'hybrid')
-            fail_fast: 是否在遇到错误时立即停止（默认 True）。设为 False 则收集警告继续导出。
+            image_paths: Picture path list (optional, with editable_images Two or one.）
+            output_file: Output file path (optional)）
+            slide_width_pixels: Target Slide Width
+            slide_height_pixels: Target Slide Height
+            max_depth: Maximum Recursive Depth
+            max_workers: Combination Number
+            editable_images: Analysed EditableImage List (optional, with image_paths Two or one.）
+            text_attribute_extractor: Text Properties Ripper (optional) to extract text colours, bold, italics, etc.
+                It’s possible. TextAttributeExtractorFactory.create_caption_model_extractor() Create
+            heartbeat_callback: Heart beat echo (optional). Every element/It’s done once with submissions.，
+                Used to inform external watchdogs that the mission is still in progress (without creating a database to write)）
+            export_extractor_method: Component extraction method ('mineru' or 'hybrid'，Default 'hybrid')
+            export_inpaint_method: Background repair method ('generative', 'baidu', 'hybrid'，Default 'hybrid')
+            fail_fast: Whether to stop immediately in case of error (default) True）。Set as False collect warning and continue to export。
 
         Returns:
-            (pptx_bytes, warnings): 元组，包含 PPTX 字节流和警告信息
-            - pptx_bytes: PPTX 文件字节流（如果 output_file 为 None），否则为 None
-            - warnings: ExportWarnings 对象，包含所有警告信息
+            (pptx_bytes, warnings): Divisions, including PPTX Bytestream and Warning Information
+            - pptx_bytes: PPTX File bytes (if) output_file Yes. None），Otherwise... None
+            - warnings: ExportWarnings Object, with all warning messages
         """
         from services.image_editability import ServiceConfig, ImageEditabilityService
         from utils.pptx_builder import PPTXBuilder
-        
-        # 初始化警告收集器
+
+        # Initialisation Warning Collector
         warnings = ExportWarnings()
-        
-        # 辅助函数：报告进度
+
+        # Auxiliary function： Report progress
         def report_progress(step: str, message: str, percent: int):
-            logger.info(f"[进度 {percent}%] {step}: {message}")
+            logger.info(f"[Progress {percent}%] {step}: {message}")
             if progress_callback:
                 try:
                     progress_callback(step, message, percent)
                 except Exception as e:
-                    logger.warning(f"进度回调失败: {e}")
+                    logger.warning(f"Progress correction failed: {e}")
 
-        # 辅助函数：只打心跳（元素级，避免每个元素都写一次数据库）
+        # Auxiliary function： heart beat only (element level, avoid writing a database once for each element)）
         def beat(step: str):
             if heartbeat_callback:
                 try:
                     heartbeat_callback(step)
                 except Exception as e:
-                    logger.debug(f"心跳回调失败: {e}")
-        
-        # 如果已提供分析结果，直接使用；否则需要分析
+                    logger.debug(f"Heart beat back failed.: {e}")
+
+        # Direct use if analytical results are provided; otherwise, analysis is required
         if editable_images is not None:
-            logger.info(f"使用已提供的 {len(editable_images)} 个分析结果创建PPTX")
-            report_progress("准备", f"使用已有分析结果（{len(editable_images)} 页）", 10)
+            logger.info(f"Use provided {len(editable_images)} analysis results to create PPTX")
+            report_progress("Ready.", f"Use available analysis（{len(editable_images)} Page）", 10)
         else:
             if not image_paths:
-                raise ValueError("必须提供 image_paths 或 editable_images 之一")
-            
+                raise ValueError("Must provide image_paths or editable_images One.")
+
             total_pages = len(image_paths)
-            logger.info(f"开始使用递归分析方法创建可编辑PPTX，共 {total_pages} 页")
-            report_progress("开始", f"准备分析 {total_pages} 页幻灯片...", 0)
-            
-            # 1. 创建ImageEditabilityService（配置自动从 Flask config 获取，使用项目导出设置）
+            logger.info(f"Starts creating editable by retrievable analysis PPTX，Total {total_pages} Page")
+            report_progress("Here we go.", f"Prepare for analysis. {total_pages} Page Slide...", 0)
+
+            # 1. Create ImageEditabilityService（Configure Automatically From Flask config Fetch, use project export settings）
             logger.info(
-                f"使用导出设置: extractor={export_extractor_method}, "
+                f"Use Export Settings: extractor={export_extractor_method}, "
                 f"inpaint={export_inpaint_method}, "
                 f"icon_subject_extraction={enable_icon_subject_extraction}"
             )
@@ -1668,11 +1668,11 @@ class ExportService:
                 enable_icon_subject_extraction=enable_icon_subject_extraction,
             )
             editability_service = ImageEditabilityService(config)
-            
-            # 2. 并发处理所有页面，生成EditableImage结构
-            report_progress("版面分析", f"开始分析 {total_pages} 张图片（并发数: {max_workers}）...", 5)
+
+            # 2. and handle all pages, generate EditableImage Structure
+            report_progress("Board Analysis", f"Start analysis. {total_pages} A picture (single number of rounds): {max_workers}）...", 5)
             from concurrent.futures import ThreadPoolExecutor, as_completed
-            
+
             editable_images = []
             completed_count = 0
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -1680,44 +1680,44 @@ class ExportService:
                     executor.submit(editability_service.make_image_editable, img_path): idx
                     for idx, img_path in enumerate(image_paths)
                 }
-                
+
                 results = [None] * len(image_paths)
                 for future in as_completed(futures):
                     idx = futures[future]
                     try:
                         results[idx] = future.result()
                         completed_count += 1
-                        beat("版面分析")
-                        # 版面分析占 5% - 40% 的进度
+                        beat("Board Analysis")
+                        # Board Analysis % 5% - 40% Progress
                         percent = 5 + int(35 * completed_count / total_pages)
-                        report_progress("版面分析", f"已完成第 {completed_count}/{total_pages} 页的版面分析", percent)
+                        report_progress("Board Analysis", f"Completed {completed_count}/{total_pages} Page analysis", percent)
                     except Exception as e:
-                        logger.error(f"处理图片 {image_paths[idx]} 失败: {e}")
+                        logger.error(f"Processing pictures {image_paths[idx]} Failed: {e}")
                         raise
-                
+
                 editable_images = results
-        
-        # 2.5. 使用混合策略提取所有文本元素的样式（如果提供了提取器）
-        # 混合策略：全局识别（粗体/斜体/下划线/对齐）+ 单个裁剪识别（颜色）
+
+        # 2.5. Use a hybrid policy to extract styles for all text elements (if a extractor is provided)）
+        # Mixed policy： global recognition (bold)/Italic/Underline/Alignment）+ Individual shear recognition (colour)）
         text_styles_cache = {}
         if text_attribute_extractor:
-            report_progress("样式提取", "开始提取文本样式（混合策略）...", 45)
-            
-            # 统计文本元素数量
+            report_progress("Style Ripping", "Start extracting text styles (mixed policy)）...", 45)
+
+            # Number of statistical text elements
             total_text_count = sum(
                 len(ExportService._collect_text_elements_for_extraction(img.elements))
                 for img in editable_images
             )
-            
+
             if total_text_count > 0:
-                report_progress("样式提取", f"混合策略分析 {total_text_count} 个文本元素...", 50)
+                report_progress("Style Ripping", f"Mixed strategy analysis {total_text_count} Text elements...", 50)
 
                 def style_progress(done: int, total: int, label: str):
-                    """样式提取阶段的心跳与进度（每 10 个元素写一次库）。"""
-                    beat("样式提取")
+                    """The heartbeat and progress of the style extraction phase (each) 10 A library of elements once written）。"""
+                    beat("Style Ripping")
                     if done % 10 == 0 or done >= total:
                         percent = 50 + int(20 * done / max(total, 1))
-                        report_progress("样式提取", f"{label}（{done}/{total}）", min(percent, 70))
+                        report_progress("Style Ripping", f"{label}（{done}/{total}）", min(percent, 70))
 
                 text_styles_cache, failed_extractions = ExportService._batch_extract_text_styles_hybrid(
                     editable_images=editable_images,
@@ -1726,55 +1726,55 @@ class ExportService:
                     fail_fast=fail_fast,
                     on_progress=style_progress
                 )
-                
-                # 记录样式提取失败的元素（详细）
+
+                # Recording failed elements of style extraction (details)）
                 for element_id, reason in failed_extractions:
                     warnings.add_style_extraction_failed(element_id, reason)
-                
-                # 记录汇总信息
+
+                # Record summary information
                 extracted_count = len(text_styles_cache)
                 failed_count = len(failed_extractions)
                 if failed_count > 0:
-                    logger.warning(f"样式提取: {failed_count}/{total_text_count} 个元素失败")
-                
-                report_progress("样式提取", f"完成 {extracted_count}/{total_text_count} 个文本样式提取（{failed_count} 个失败）", 70)
-        
-        report_progress("构建PPTX", "开始构建可编辑PPTX文件...", 75)
-        
-        # 4. 创建PPTX构建器
+                    logger.warning(f"Style Ripping: {failed_count}/{total_text_count} An element failed")
+
+                report_progress("Style Ripping", f"Completed {extracted_count}/{total_text_count} Text Style Ripping（{failed_count} A failure.）", 70)
+
+        report_progress("Build PPTX", "Start Build Editable PPTX Documentation...", 75)
+
+        # 4. Create PPTX Builder
         builder = PPTXBuilder()
         builder.create_presentation()
         builder.setup_presentation_size(slide_width_pixels, slide_height_pixels)
-        
-        # 5. 为每个页面构建幻灯片
+
+        # 5. Build slides for each page
         total_pages = len(editable_images)
         for page_idx, editable_img in enumerate(editable_images):
-            # 构建PPTX占 75% - 95% 的进度
+            # Build PPTX Jim. 75% - 95% Progress
             percent = 75 + int(20 * page_idx / total_pages)
-            report_progress("构建PPTX", f"构建第 {page_idx + 1}/{total_pages} 页...", percent)
-            logger.info(f"  构建第 {page_idx + 1}/{total_pages} 页...")
+            report_progress("Build PPTX", f"Build No. {page_idx + 1}/{total_pages} Page...", percent)
+            logger.info(f"  Build No. {page_idx + 1}/{total_pages} Page...")
 
-            # 页内元素级心跳/进度：页面元素很多时（例如密集表格）也能看出还在推进
+            # Elemental heartbeats on the page/Progress： page elements can also be seen to be advancing when they are many (e.g., intensive tables)
             page_element_count = 0
 
             def on_element(_page_idx=page_idx, _percent=percent):
                 nonlocal page_element_count
                 page_element_count += 1
-                beat("构建PPTX")
+                beat("Build PPTX")
                 if page_element_count % ELEMENT_PROGRESS_INTERVAL == 0:
                     report_progress(
-                        "构建PPTX",
-                        f"构建第 {_page_idx + 1}/{total_pages} 页"
-                        f"（已处理 {page_element_count} 个元素）...",
+                        "Build PPTX",
+                        f"Build No. {_page_idx + 1}/{total_pages} Page"
+                        f"（Processed {page_element_count} An element）...",
                         _percent,
                     )
-            
-            # 创建空白幻灯片
+
+            # Create a blank slide
             slide = builder.add_blank_slide()
-            
-            # 添加背景图（参考原实现，使用slide.shapes.add_picture）
+
+            # Add background graph (reference original realization, use) slide.shapes.add_picture）
             if editable_img.clean_background and os.path.exists(editable_img.clean_background):
-                logger.info(f"    添加clean background: {editable_img.clean_background}")
+                logger.info(f"    Add clean background: {editable_img.clean_background}")
                 try:
                     slide.shapes.add_picture(
                         editable_img.clean_background,
@@ -1786,8 +1786,8 @@ class ExportService:
                 except Exception as e:
                     logger.error(f"Failed to add background: {e}")
             else:
-                # 回退到原图
-                logger.info(f"    使用原图作为背景: {editable_img.image_path}")
+                # Back to original.
+                logger.info(f"    Use original graph as background: {editable_img.image_path}")
                 try:
                     slide.shapes.add_picture(
                         editable_img.image_path,
@@ -1798,15 +1798,15 @@ class ExportService:
                     )
                 except Exception as e:
                     logger.error(f"Failed to add background: {e}")
-            
-            # 添加所有元素（递归地）
-            # 计算缩放比例：将原始图片坐标映射到统一的幻灯片坐标
-            # 背景图已经缩放到幻灯片尺寸，所以元素坐标也需要相应缩放
+
+            # Add all elements (regression)）
+            # Calculate scaling： Map the original picture coordinates to the unified slide coordinates
+            # The background map has been scaled to the slide size, so the element coordinates need to be scaled accordingly.
             scale_x = slide_width_pixels / editable_img.width
             scale_y = slide_height_pixels / editable_img.height
-            logger.info(f"    元素数量: {len(editable_img.elements)}, 图片尺寸: {editable_img.width}x{editable_img.height}, "
-                       f"幻灯片尺寸: {slide_width_pixels}x{slide_height_pixels}, 缩放比例: {scale_x:.3f}x{scale_y:.3f}")
-            
+            logger.info(f"    Number of elements: {len(editable_img.elements)}, Picture Dimensions: {editable_img.width}x{editable_img.height}, "
+                       f"Slide Size: {slide_width_pixels}x{slide_height_pixels}, Scale: {scale_x:.3f}x{scale_y:.3f}")
+
             ExportService._add_editable_elements_to_slide(
                 builder=builder,
                 slide=slide,
@@ -1814,37 +1814,37 @@ class ExportService:
                 scale_x=scale_x,
                 scale_y=scale_y,
                 depth=0,
-                text_styles_cache=text_styles_cache,  # 使用预提取的样式缓存
-                warnings=warnings,  # 收集警告
-                fail_fast=fail_fast,  # 传递 fail_fast 参数
-                on_element=on_element  # 元素级心跳/进度
+                text_styles_cache=text_styles_cache,  # Use pre-extracted style cache
+                warnings=warnings,  # Collect Warnings
+                fail_fast=fail_fast,  # Pass fail_fast Parameters
+                on_element=on_element  # Elementary heart rate/Progress
             )
-            
-            logger.info(f"    ✓ 第 {page_idx + 1} 页完成，添加了 {len(editable_img.elements)} 个元素")
-        
-        # 5. 保存或返回字节流
-        report_progress("保存文件", "正在保存PPTX文件...", 95)
+
+            logger.info(f"    ✓ Page {page_idx + 1} Page completed. Added. {len(editable_img.elements)} An element")
+
+        # 5. Save or return bytes
+        report_progress("Save File", "Saving PPTX Documentation...", 95)
         if output_file:
             builder.save(output_file)
-            report_progress("完成", f"可编辑PPTX已保存", 100)
-            logger.info(f"✓ 可编辑PPTX已保存: {output_file}")
-            
-            # 输出警告摘要
+            report_progress("Completed", f"Editable PPTX Saved", 100)
+            logger.info(f"✓ Editable PPTX Saved: {output_file}")
+
+            # Output Warning Summary
             if warnings.has_warnings():
-                logger.warning(f"导出完成，但有 {len(warnings.to_summary())} 条警告")
-            
+                logger.warning(f"Export complete, but yes {len(warnings.to_summary())} A warning.")
+
             return None, warnings
         else:
             pptx_bytes = builder.to_bytes()
-            report_progress("完成", f"可编辑PPTX已生成", 100)
-            logger.info(f"✓ 可编辑PPTX已生成（{len(pptx_bytes)} 字节）")
-            
-            # 输出警告摘要
+            report_progress("Completed", f"Editable PPTX Generated", 100)
+            logger.info(f"✓ Editable PPTX Generated（{len(pptx_bytes)} Bytes）")
+
+            # Output Warning Summary
             if warnings.has_warnings():
-                logger.warning(f"导出完成，但有 {len(warnings.to_summary())} 条警告")
-            
+                logger.warning(f"Export complete, but yes {len(warnings.to_summary())} A warning.")
+
             return pptx_bytes, warnings
-    
+
     @staticmethod
     def _add_editable_elements_to_slide(
         builder,
@@ -1853,26 +1853,26 @@ class ExportService:
         scale_x: float = 1.0,
         scale_y: float = 1.0,
         depth: int = 0,
-        text_styles_cache: Dict[str, Any] = None,  # 预提取的文本样式缓存，key为element_id
-        warnings: 'ExportWarnings' = None,  # 警告收集器
-        fail_fast: bool = False,  # 是否在遇到错误时立即停止
-        on_element=None,  # 可选：每处理完一个元素调用一次（含递归子元素），用于心跳/页内进度
+        text_styles_cache: Dict[str, Any] = None,  # Pre-extracted text style cache，key Yes. element_id
+        warnings: 'ExportWarnings' = None,  # Warning Collector
+        fail_fast: bool = False,  # Whether to stop immediately in case of a mistake
+        on_element=None,  # Optional： One call per element processed (with a recoiled sub-element) for a heartbeat/Progress on page
     ):
         """
-        递归地将EditableElement添加到幻灯片
-        
+        Recursively. EditableElement Add to Slide
+
         Args:
-            builder: PPTXBuilder实例
-            slide: 幻灯片对象
-            elements: EditableElement列表
-            scale_x: X轴缩放因子
-            scale_y: Y轴缩放因子
-            depth: 当前递归深度
-            text_styles_cache: 预提取的文本样式缓存（可选），由 _batch_extract_text_styles 生成
-            on_element: 可选回调，每处理完一个元素调用一次（递归时同样触发）
-        
+            builder: PPTXBuilder Examples
+            slide: Slide Object
+            elements: EditableElement List
+            scale_x: X Axis Zoom Factor
+            scale_y: Y Axis Zoom Factor
+            depth: Current Recursive Depth
+            text_styles_cache: Pre-extracted text style cache (optional), by _batch_extract_text_styles Generate
+            on_element: Optional callback, once called each element after processing (also triggered at re-entry)）
+
         Note:
-            elem.image_path 现在是绝对路径，无需额外的目录参数
+            elem.image_path It’s an absolute path. No extra directory parameters.
         """
         if text_styles_cache is None:
             text_styles_cache = {}
@@ -1904,7 +1904,7 @@ class ExportService:
         def add_text_or_formula(elem, text, bbox_list, text_level='default', align='left'):
             text_style = text_styles_cache.get(elem.element_id)
             if text_style:
-                logger.debug(f"{'  ' * depth}  使用缓存的文字样式: color={text_style.font_color_rgb}, bold={text_style.is_bold}")
+                logger.debug(f"{'  ' * depth}  Use cache text styles: color={text_style.font_color_rgb}, bold={text_style.is_bold}")
 
             formula_text = choose_formula_text(text, text_style)
             if formula_text:
@@ -1929,7 +1929,7 @@ class ExportService:
                 if warnings:
                     warnings.add_text_render_failed(
                         formula_text,
-                        '公式暂不支持原生转换，已使用可读文本回退'
+                        'Formula does not support original conversion, readable text is used back'
                     )
                 return
 
@@ -1941,59 +1941,59 @@ class ExportService:
                 align=align,
                 text_style=text_style
             )
-        
+
         for elem in elements:
             elem_type = elem.element_type
-            
-            # 根据深度决定使用局部坐标还是全局坐标
-            # depth=0: 顶层元素，使用局部坐标（bbox）
-            # depth>0: 子元素，需要使用全局坐标（bbox_global）
+
+            # Use local or global coordinates depending on depth
+            # depth=0: Top element, use local coordinates（bbox）
+            # depth>0: Sub-elements, need global coordinates（bbox_global）
             if depth == 0:
-                bbox = elem.bbox  # 顶层元素使用局部坐标
+                bbox = elem.bbox  # Use local coordinates for top elements
             else:
                 bbox = elem.bbox_global if hasattr(elem, 'bbox_global') and elem.bbox_global else elem.bbox
-            
-            # 转换BBox对象为列表并应用缩放
+
+            # Convert BBox Object as List and Apply Scale
             bbox_list = [
                 int(bbox.x0 * scale_x),
                 int(bbox.y0 * scale_y),
                 int(bbox.x1 * scale_x),
                 int(bbox.y1 * scale_y)
             ]
-            
-            logger.info(f"{'  ' * depth}  添加元素: type={elem_type}, bbox={bbox_list}, content={elem.content[:30] if elem.content else None}, image_path={elem.image_path}, 使用{'全局' if depth > 0 else '局部'}坐标")
 
-            # 根据类型添加元素（参考原实现的_add_mineru_text_to_slide和_add_mineru_image_to_slide）
+            logger.info(f"{'  ' * depth}  Add Elements: type={elem_type}, bbox={bbox_list}, content={elem.content[:30] if elem.content else None}, image_path={elem.image_path}, Usage{'Global' if depth > 0 else 'Local'}Coordinates")
+
+            # Add elements according to type (references to original achieved)_add_mineru_text_to_slide and_add_mineru_image_to_slide）
             if elem_type in ['text', 'title', 'list', 'paragraph', 'header', 'footer', 'heading', 'table_caption', 'image_caption', 'equation', 'interline_equation', 'inline_equation']:
-                # 添加文本（参考_add_mineru_text_to_slide）
+                # Add text (reference)_add_mineru_text_to_slide）
                 if elem.content:
                     text = elem.content.strip()
                     if text:
                         try:
-                            # 确定文本级别
+                            # Set Text Level
                             level = 'title' if elem_type in ['title', 'heading'] else 'default'
 
                             add_text_or_formula(elem, text, bbox_list, text_level=level)
                         except Exception as e:
-                            logger.warning(f"添加文本元素失败: {e}")
+                            logger.warning(f"Failed to add text elements: {e}")
                             if fail_fast:
                                 raise ExportService._build_text_render_error(
                                     str(e),
                                     text=text,
                                     bbox=bbox_list,
-                                    element_kind='文本元素',
+                                    element_kind='Text Elements',
                                 )
                             if warnings:
                                 warnings.add_text_render_failed(text, str(e))
-            
+
             elif elem_type == 'table_cell':
-                # 添加表格单元格（带边框的文本框）
+                # Add table cells (text boxes with borders)）
                 if elem.content:
                     text = elem.content.strip()
                     if text:
                         try:
-                            # 表格单元格已经在上面统一处理了bbox_global和缩放
-                            # 直接使用bbox_list即可
+                            # The table cells have been uniformly processed above. bbox_global And scale
+                            # Direct Use bbox_list That’s fine.
                             add_text_or_formula(
                                 elem,
                                 text,
@@ -2003,23 +2003,23 @@ class ExportService:
                             )
 
                         except Exception as e:
-                            logger.warning(f"添加单元格失败: {e}")
+                            logger.warning(f"Failed to add cell: {e}")
                             if fail_fast:
                                 raise ExportService._build_text_render_error(
                                     str(e),
                                     text=text,
                                     bbox=bbox_list,
-                                    element_kind='表格单元格',
+                                    element_kind='Table Cells',
                                 )
                             if warnings:
                                 warnings.add_text_render_failed(text, str(e))
-            
+
             elif elem_type == 'table':
-                # 如果表格有子元素（单元格），使用inpainted背景 + 单元格
+                # If the table has sub-elements (cells), use inpainted Background + Cells
                 if elem.children and elem.inpainted_background_path:
-                    logger.info(f"{'  ' * depth}    表格有 {len(elem.children)} 个单元格，使用可编辑格式")
-                    
-                    # 先添加inpainted背景（干净的表格框架）
+                    logger.info(f"{'  ' * depth}    There’s a form. {len(elem.children)} cells, using editable format")
+
+                    # Add first inpainted Background (clean table frame)）
                     if os.path.exists(elem.inpainted_background_path):
                         try:
                             builder.add_image_element(
@@ -2029,8 +2029,8 @@ class ExportService:
                             )
                         except Exception as e:
                             logger.error(f"Failed to add table background: {e}")
-                    
-                    # 递归添加单元格
+
+                    # Recursive Add Cells
                     ExportService._add_editable_elements_to_slide(
                         builder=builder,
                         slide=slide,
@@ -2044,8 +2044,8 @@ class ExportService:
                         on_element=on_element
                     )
                 else:
-                    # 没有子元素，添加整体表格图片
-                    # elem.image_path 现在是绝对路径
+                    # No sub-elements, add whole table pictures
+                    # elem.image_path It’s an absolute path.
                     if elem.image_path and os.path.exists(elem.image_path):
                         try:
                             builder.add_image_element(
@@ -2058,45 +2058,45 @@ class ExportService:
                     else:
                         logger.warning(f"Table image not found: {elem.image_path}")
                         builder.add_image_placeholder(slide, bbox_list)
-            
+
             elif elem_type in ['image', 'figure', 'chart']:
-                # 检查是否应该使用递归渲染
+                # Check if retrogressive rendering should be used
                 should_use_recursive_render = False
-                
+
                 if elem.children and elem.inpainted_background_path:
-                    # 检查是否有任意子元素占据父元素绝大部分面积
+                    # Check if any child is present in most of the parent’s area.
                     parent_area = (bbox.x1 - bbox.x0) * (bbox.y1 - bbox.y0)
-                    max_child_coverage_ratio = 0.85  # 阈值
+                    max_child_coverage_ratio = 0.85  # threshold
                     has_dominant_child = False
-                    
+
                     for child in elem.children:
                         if hasattr(child, 'bbox_global') and child.bbox_global:
                             child_bbox = child.bbox_global
                         else:
                             child_bbox = child.bbox
-                        
+
                         child_area = child_bbox.area
                         coverage_ratio = child_area / parent_area if parent_area > 0 else 0
-                        
+
                         if coverage_ratio > max_child_coverage_ratio:
-                            logger.info(f"{'  ' * depth}    子元素 {child.element_id} 占父元素面积 {coverage_ratio*100:.1f}% (>{max_child_coverage_ratio*100:.0f}%)，跳过递归渲染，直接使用原图")
+                            logger.info(f"{'  ' * depth}    Sub-elements {child.element_id} Size of parent element {coverage_ratio*100:.1f}% (>{max_child_coverage_ratio*100:.0f}%)，Skip Recursive Rendering, use the original image")
                             has_dominant_child = True
                             break
-                    
+
                     should_use_recursive_render = not has_dominant_child
-                
-                # 如果有子元素且应该递归渲染
+
+                # If there are sub-elements and they should be rendered
                 if should_use_recursive_render:
-                    logger.debug(f"{'  ' * depth}    元素有 {len(elem.children)} 个子元素，递归添加")
-                    
-                    # 先添加inpainted背景
+                    logger.debug(f"{'  ' * depth}    There are elements. {len(elem.children)} Sub-Elements, Recursive Add")
+
+                    # Add first inpainted Background
                     if os.path.exists(elem.inpainted_background_path):
                         try:
                             builder.add_image_element(slide, elem.inpainted_background_path, bbox_list)
                         except Exception as e:
                             logger.error(f"Failed to add inpainted background: {e}")
-                    
-                    # 递归添加子元素
+
+                    # Recursive Add Sub-Element
                     ExportService._add_editable_elements_to_slide(
                         builder=builder,
                         slide=slide,
@@ -2110,8 +2110,8 @@ class ExportService:
                         on_element=on_element
                     )
                 else:
-                    # 没有子元素或子元素占比过大，直接添加原图
-                    # elem.image_path 现在是绝对路径
+                    # No sub-elements or sub-elements overrepresented. Add the original figure.
+                    # elem.image_path It’s an absolute path.
                     if elem.image_path and os.path.exists(elem.image_path):
                         try:
                             builder.add_image_element(
@@ -2124,14 +2124,14 @@ class ExportService:
                     else:
                         logger.warning(f"Image file not found: {elem.image_path}")
                         builder.add_image_placeholder(slide, bbox_list)
-            
+
             else:
-                # 其他类型
-                logger.debug(f"{'  ' * depth}  跳过未知类型: {elem_type}")
+                # Other types
+                logger.debug(f"{'  ' * depth}  Skip unknown type: {elem_type}")
 
             if on_element:
                 try:
                     on_element()
                 except Exception as e:
-                    logger.debug(f"元素进度回调失败: {e}")
-    
+                    logger.debug(f"Element progress correction failed: {e}")
+

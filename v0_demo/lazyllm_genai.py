@@ -5,9 +5,9 @@ This demo module provides simple APIs for image editing/generation and text gene
 using the LazyLLM framework, mimicking the style of gemini_genai.py.
 
 Supported Image Providers:
-  - qwen (阿里云通义千问)
-  - doubao (火山引擎豆包)
-  - siliconflow (硅基流动)
+  - qwen (Ali Yun-yun asked.)
+  - doubao (Volcanic engine bean bag.)
+  - siliconflow (Silicon flow)
 
 Supported Text Providers:
   - deepseek
@@ -53,7 +53,7 @@ DEFAULT_VLM_MODEL = 'qwen-vl-plus'
 
 # ===== Text Generation =====
 
-def gen_text(prompt: str, 
+def gen_text(prompt: str,
              source: str = DEFAULT_TEXT_SOURCE,
              model: str = DEFAULT_TEXT_MODEL,
             ) -> str:
@@ -95,7 +95,7 @@ def gen_image(prompt: str,
         model=model,
         type='image_editing',
     )
-    
+
     # Prepare file paths if reference image is provided
     file_paths = None
     if ref_image_path:
@@ -104,11 +104,11 @@ def gen_image(prompt: str,
         file_paths = [ref_image_path]
     response_path = client(prompt, lazyllm_files=file_paths, size=actual_resolution)
     image_path = decode_query_with_filepaths(response_path)
-    
+
     if not image_path:
         LOG.warning('No images found in response')
         return None
-    
+
     # Extract image path from response
     if isinstance(image_path, dict):
         files = image_path.get('files', [])
@@ -117,7 +117,7 @@ def gen_image(prompt: str,
         else:
             LOG.warning('No valid image path in response')
             return None
-    
+
     # Load and return image
     try:
         image = Image.open(image_path)
@@ -144,7 +144,7 @@ def describe_image(image_path: str,
         model=model,
         type='vlm',
     )
-    
+
     # Call with image file path
     result = client(prompt, lazyllm_files=[image_path])
     LOG.info(f"✓ Image description generated successfully from {source}")
@@ -157,30 +157,30 @@ if __name__ == "__main__":
     print("=" * 60)
     print("LazyLLM Demo - Text and Image Generation")
     print("=" * 60)
-    
+
     # Test 1: Text Generation
     print("\n[Test 1] Text Generation (Deepseek)")
     try:
-        text = gen_text("中国的首都是哪里?")
+        text = gen_text("Where’s the capital of China??")
         print(f"Result: {text[:100]}...")
     except Exception as e:
         print(f"Error: {e}")
-    
+
     # Test 2: JSON Text Generation
     print("\n[Test 2] JSON Text Generation")
     try:
         json_text = gen_json_text(
-            "随机生成一个JSON文件，包含姓名、年龄、性别三个字段"
+            "Generate a randomly JSON File, with three fields： name, age, sex"
         )
         print(f"Result: {json_text}")
     except Exception as e:
         print(f"Error: {e}")
-    
+
     # Test 3: Image Generation and Editing
     print("\n[Test 3] Image Generation (Qwen)")
     try:
         image = gen_image(
-            "在参考图片中插入 'lazyllm' 这串英文",
+            "Insert in Reference Pictures 'lazyllm' This string is in English.",
             ref_image_path='path/to/your/image.png', # depending on your local image path
             source="qwen",
             resolution="2K"
@@ -189,7 +189,7 @@ if __name__ == "__main__":
             print(f"✓ Image generated: {image.size}")
     except Exception as e:
         print(f"Error: {e}")
-    
+
     # Test 4: Image Description
     print("\n[Test 4] Image Description (Qwen VLM)")
     try:
@@ -202,7 +202,7 @@ if __name__ == "__main__":
             print(f"Caption: {caption}")
     except Exception as e:
         print(f"Error: {e}")
-    
+
     print("\n" + "=" * 60)
     print("Demo Complete!")
     print("=" * 60)

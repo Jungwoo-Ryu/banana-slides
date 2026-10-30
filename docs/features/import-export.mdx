@@ -21,7 +21,7 @@ Banana Slides uses Markdown files (`.md` / `.markdown` / `.txt`) to import and e
 This cover introduces the presentation topic, company name, and date.
 
 **Page Description:**
---- 页面文字 ---
+--- SLIDE_TEXT ---
 
 ### Annual Business Review
 
@@ -29,7 +29,7 @@ Company Name
 
 April 2026
 
---- 页面文字结束 ---
+--- SLIDE_TEXT_END ---
 
 Layout & Emphasis: large centered title, subtitle and date below; the title is the visual emphasis
 
@@ -42,7 +42,7 @@ Layout & Emphasis: large centered title, subtitle and date below; the title is t
 This slide summarizes industry growth, key market segments, and the main opportunity.
 
 **Page Description:**
---- 页面文字 ---
+--- SLIDE_TEXT ---
 
 ### Market Overview
 
@@ -50,7 +50,7 @@ This slide summarizes industry growth, key market segments, and the main opportu
 - Enterprise demand is accelerating faster
 - Several subsegments remain underserved
 
---- 页面文字结束 ---
+--- SLIDE_TEXT_END ---
 
 Visuals & Assets: growth bar chart, key metric cards, market segmentation diagram
 
@@ -61,10 +61,10 @@ Visuals & Assets: growth bar chart, key metric cards, market segmentation diagra
 
 | Field | Syntax | Required |
 |-------|--------|----------|
-| Page header | `## 第 N 页: Title` or `## Page N: Title` | Yes |
-| Chapter | `> 章节: Name` or `> Chapter: Name` | No |
+| Page header | `## Page N Page: Title` or `## Page N: Title` | Yes |
+| Chapter | `> Section: Name` or `> Chapter: Name` | No |
 | Outline summary | One plain sentence after the page header | No |
-| Description | `**页面描述：**` or `**Page Description:**`, with the slide body wrapped in `--- 页面文字 ---` / `--- 页面文字结束 ---` | No |
+| Description | `**Page description：**` or `**Page Description:**`, with the slide body wrapped in `--- SLIDE_TEXT ---` / `--- SLIDE_TEXT_END ---` | No |
 
 If the description ends with short extra-field lines such as `Visuals & Assets: ...` or `Layout & Emphasis: ...`, Banana Slides will preserve them on import (the older `Visual Elements: ...` and `Layout: ...` fields from existing projects are still supported).
 
@@ -84,7 +84,7 @@ You can export from both the Outline Editor and Detail Editor:
 - After you paste or upload Markdown, the import dialog previews how many pages can be detected. Import stays disabled until at least one page is recognized.
 - Imported pages are **appended in Markdown file order** in one batch — they do not replace current pages.
 - The current recommended format is one concise outline sentence after the page title. Older `**Outline Points:**` / `- point` blocks are still accepted.
-- Both Chinese and English markers are supported: `第 N 页` / `Page N`, `章节` / `Chapter`, `大纲要点` / `Outline Points`, `页面描述` / `Page Description`.
+- Both Chinese and English markers are supported: `Page N Page` / `Page N`, `Section` / `Chapter`, `Outline points` / `Outline Points`, `Page description` / `Page Description`.
 - HTML tags in imported content are automatically stripped.
 - Short trailing field lines in the description section, such as `Layout & Emphasis: ...`, are parsed as extra fields and preserved.
 - Accepts `.md`, `.markdown`, and `.txt` files. Non-text files such as PDF, Word, or images are rejected before reading, with a clear file-format message.
@@ -119,12 +119,12 @@ Copy the prompt into any AI assistant such as ChatGPT or Claude, replace the pla
 </Tip>
 
 <Tip>
-  For outline-only import, remove the `**页面描述：**` requirement from the prompt. If you prefer English markers, you can replace `第 N 页 / 章节 / 大纲要点 / 页面描述` with `Page N / Chapter / Outline Points / Page Description`.
+  For outline-only import, remove the `**Page description：**` requirement from the prompt. If you prefer English markers, you can replace `Page N Page / Section / Outline points / Page description` with `Page N / Chapter / Outline Points / Page Description`.
 </Tip>
 
 <Tip>
   Banana Slides' current built-in prompt is closer to this structure:
-  after the page title, write one concise outline sentence instead of a separate `**Outline Points:**` block; inside `**Page Description:**`, `--- 页面文字 ---` / `--- 页面文字结束 ---` should now be treated as required structure, not optional decoration.
+  after the page title, write one concise outline sentence instead of a separate `**Outline Points:**` block; inside `**Page Description:**`, `--- SLIDE_TEXT ---` / `--- SLIDE_TEXT_END ---` should now be treated as required structure, not optional decoration.
 </Tip>
 
 <Tip>
@@ -141,7 +141,7 @@ A slide that mirrors the current built-in prompt more closely should look like t
 This slide explains market growth, fragmented competition, and why enterprise demand is expanding.
 
 **Page Description:**
---- 页面文字 ---
+--- SLIDE_TEXT ---
 
 ### Market Opportunity Is Expanding Fast
 
@@ -155,7 +155,7 @@ This slide explains market growth, fragmented competition, and why enterprise de
 | Competition | Moderate | Differentiable |
 | Willingness to Pay | Clear | Fast validation |
 
---- 页面文字结束 ---
+--- SLIDE_TEXT_END ---
 
 Visuals & Assets: growth curve, comparison stat cards, subsegment diagram
 Layout & Emphasis: title on top, bullets on the left, stat cards on the right, table at the bottom; $3.2B by 2028 is the visual emphasis
@@ -178,9 +178,9 @@ Rules:
 4. Under "**Page Description:**", write the actual Markdown content that should appear on the slide.
    It may include headings, bullets, short paragraphs, emphasis, or tables when appropriate.
 5. Inside `**Page Description:**`, you must use this structure:
-   --- 页面文字 ---
+   --- SLIDE_TEXT ---
    [slide body in Markdown]
-   --- 页面文字结束 ---
+   --- SLIDE_TEXT_END ---
 6. If needed, append short one-line fields at the end of the page description, for example:
    Visuals & Assets: ...
    Layout & Emphasis: ...

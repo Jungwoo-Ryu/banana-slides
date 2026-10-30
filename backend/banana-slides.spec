@@ -10,7 +10,7 @@ cwd = os.path.abspath('.')
 backend_dir = cwd if os.path.exists(os.path.join(cwd, 'app.py')) else os.path.join(cwd, 'backend')
 project_root = os.path.dirname(backend_dir)
 
-# 手动添加 setuptools/_vendor/jaraco/text/Lorem ipsum.txt
+# Manual Add setuptools/_vendor/jaraco/text/Lorem ipsum.txt
 jaraco_text_path = os.path.join(os.path.dirname(setuptools.__file__), '_vendor', 'jaraco', 'text')
 _jaraco_datas = []
 if os.path.exists(jaraco_text_path):
@@ -81,7 +81,7 @@ hiddenimports = [
     'concurrent', 'concurrent.futures',
 ]
 
-# collect_submodules 自动抓取所有子模块，避免手动漏写
+# collect_submodules Automatically capture all submodules to avoid manual omissions
 hiddenimports += collect_submodules('google')
 hiddenimports += collect_submodules('openai')
 # LazyLLM discovers vendor adapters dynamically at runtime. PyInstaller cannot

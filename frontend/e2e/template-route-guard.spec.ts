@@ -43,5 +43,5 @@ test('multi-mode project renders template-setup without redirect', async ({ page
   await page.waitForLoadState('networkidle')
 
   expect(page.url()).toContain('/template-setup')
-  await expect(page.getByText(/模板配置|Template Setup/)).toBeVisible()
+  await expect(page.getByText(/\u6a21\u677f\u914d\u7f6e|Template Setup/)).toBeVisible()
 })

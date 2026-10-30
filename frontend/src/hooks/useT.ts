@@ -9,13 +9,13 @@ type Translations = {
 };
 
 /**
- * 获取嵌套对象的值，支持点号路径
- * 例如：getNestedValue(obj, 'home.title') 获取 obj.home.title
+ * Get the value of the embedded object, support the point number path
+ * For example：：getNestedValue(obj, 'home.title') Access obj.home.title
  */
 function getNestedValue(obj: NestedRecord, path: string): string | undefined {
   const keys = path.split('.');
   let current: unknown = obj;
-  
+
   for (const key of keys) {
     if (current && typeof current === 'object' && key in current) {
       current = (current as NestedRecord)[key];
@@ -23,23 +23,23 @@ function getNestedValue(obj: NestedRecord, path: string): string | undefined {
       return undefined;
     }
   }
-  
+
   return typeof current === 'string' ? current : undefined;
 }
 
 /**
- * 组件级 i18n hook - 智能 fallback（方案 B）
- * 
- * 优先从组件内翻译查找，找不到自动 fallback 到全局翻译。
- * 这样只需要一个 t()，调用方式完全不变！
- * 
- * 使用方式：
+ * Component Level i18n hook - Smart fallback（Programme B）
+ *
+ * Select translation search from component, no automatics found fallback To global translation。
+ * It’ll only take one. t()，The mode of call is completely unchanged.！
+ *
+ * Usage：
  * ```tsx
  * const homeI18n = {
  *   zh: {
  *     home: {
- *       title: '蕉幻',
- *       messages: { success: '成功' }
+ *       title: 'Banana Slides',
+ *       messages: { success: 'Success' }
  *     }
  *   },
  *   en: {
@@ -49,33 +49,33 @@ function getNestedValue(obj: NestedRecord, path: string): string | undefined {
  *     }
  *   }
  * };
- * 
+ *
  * const t = useT(homeI18n);
- * 
- * t('home.title')     // 从组件内翻译获取: "蕉幻"
- * t('common.save')    // 组件内没有，自动 fallback 到全局: "保存"
+ *
+ * t('home.title')     // Can not open message: "Banana Slides"
+ * t('common.save')    // Not in component, automatic fallback To Global: "Save"
  * ```
- * 
- * 这样翻译和组件放在一起，AI 一眼就能看到所有上下文！
+ *
+ * Put translation and components together like this.，AI I can see all the contexts at once.！
  */
 export function useT<T extends Translations>(translations: T) {
   const { t: globalT, i18n } = useTranslation();
   const lang = i18n.language?.startsWith('zh') ? 'zh' : 'en';
   const dict = translations[lang] || translations['zh'];
 
-  // 兼容 react-i18next 的多种调用方式：
-  // t('key') / t('key', '默认值') / t('key', { param: value })
+  // Compatibility react-i18next Multiple ways of calling：
+  // t('key') / t('key', 'Default value') / t('key', { param: value })
   return (key: string, defaultOrParams?: string | Record<string, string | number>): string => {
-    // 解析第二个参数
+    // Parsing Second Parameter
     const params = typeof defaultOrParams === 'object' ? defaultOrParams : undefined;
-    
-    // 优先从组件内翻译查找
+
+    // Prioritize translation from component
     const localValue = i18n.language?.startsWith('ko')
       ? (korean as Record<string, string>)[key] ?? getNestedValue(dict, key)
       : getNestedValue(dict, key);
-    
+
     if (localValue !== undefined) {
-      // 组件内找到了，处理插值
+      // Found in component. Processing plugs.
       let text = localValue;
       if (params) {
         Object.entries(params).forEach(([k, v]) => {
@@ -84,8 +84,8 @@ export function useT<T extends Translations>(translations: T) {
       }
       return text;
     }
-    
-    // 组件内没找到，fallback 到全局翻译（保持原始参数传递）
+
+    // It’s not found in the component.，fallback To global translation (maintenance of original parameter transfer)）
     return String(globalT(key, defaultOrParams as any));
   };
 }

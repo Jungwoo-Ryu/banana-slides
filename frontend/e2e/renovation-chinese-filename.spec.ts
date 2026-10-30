@@ -58,7 +58,7 @@ test.describe.serial('Renovation with non-ASCII filename', () => {
     const res = await request.post(`${API}/api/projects/renovation`, {
       multipart: {
         file: {
-          name: '演示文稿.pdf',   // non-ASCII filename
+          name: 'Presentation.pdf',   // non-ASCII filename
           mimeType: 'application/pdf',
           buffer: pdfBuffer,
         },

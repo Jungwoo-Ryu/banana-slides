@@ -10,17 +10,17 @@ import type { TemplateAsset } from '@/types';
 const i18n = {
   zh: {
     ssm: {
-      title: '转为统一模板',
-      desc: '所有页面将统一使用同一张模板。请选择一张现有模板，或上传一张新模板。',
-      styleLabel: '统一风格描述（可选）',
-      stylePlaceholder: '为所有页面追加统一的风格说明…',
-      uploadNew: '上传新模板',
-      uploading: '上传中…',
-      empty: '模板库为空，请上传一张模板',
-      confirm: '确认转换',
-      converting: '转换中…',
-      cancel: '取消',
-      pickFirst: '请先选择或上传一张模板',
+      title: 'Switch to unified template',
+      desc: 'All pages will use the same template. Pick an existing one, or upload a new template.',
+      styleLabel: 'Unified style description (optional)',
+      stylePlaceholder: 'Append a unified style note for all pages…',
+      uploadNew: 'Upload new template',
+      uploading: 'Uploading…',
+      empty: 'Template library is empty, please upload one',
+      confirm: 'Confirm switch',
+      converting: 'Switching…',
+      cancel: 'Cancel',
+      pickFirst: 'Pick or upload a template first',
     },
   },
   en: {
@@ -44,9 +44,9 @@ export interface SwitchToSingleModeDialogProps {
   isOpen: boolean;
   onClose: () => void;
   assets: TemplateAsset[];
-  /** 选择现有模板作为统一模板。 */
+  /** Select the existing template as a uniform template。 */
   onConfirmExisting: (assetId: string, unifiedStyleText?: string) => Promise<void>;
-  /** 上传新模板并作为统一模板。 */
+  /** Upload a new template and use it as a uniform template。 */
   onConfirmUpload: (file: File, unifiedStyleText?: string) => Promise<void>;
 }
 

@@ -10,16 +10,16 @@ import type { TemplateAsset } from '@/types';
 const i18n = {
   zh: {
     tpm: {
-      title: '选择模板',
-      none: '不使用模板',
-      uploadNew: '上传新模板',
-      uploading: '上传中…',
-      empty: '模板库为空，请先上传模板',
-      pending: '解析中',
-      processing: '解析中',
-      completed: '已解析',
-      failed: '解析失败',
-      cancel: '取消',
+      title: 'Select template',
+      none: 'No template',
+      uploadNew: 'Upload new template',
+      uploading: 'Uploading…',
+      empty: 'Template library is empty, upload one first',
+      pending: 'Analyzing',
+      processing: 'Analyzing',
+      completed: 'Analyzed',
+      failed: 'Analysis failed',
+      cancel: 'Cancel',
     },
   },
   en: {
@@ -43,11 +43,11 @@ export interface TemplatePickerModalProps {
   onClose: () => void;
   assets: TemplateAsset[];
   currentAssetId?: string | null;
-  /** 选中某张模板（或传 null 清空）。 */
+  /** Select a template (or pass) null Clear）。 */
   onSelect: (assetId: string | null) => void | Promise<void>;
-  /** 上传新模板，应返回新建的 asset 以便自动选中。 */
+  /** Upload new template, return the new one asset to select automatically。 */
   onUpload?: (file: File) => Promise<TemplateAsset>;
-  /** 是否展示"不使用模板"选项，默认 true。 */
+  /** Whether to display"Do Not Use Templates"options, default true。 */
   allowNone?: boolean;
 }
 

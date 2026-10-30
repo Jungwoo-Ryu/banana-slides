@@ -1,4 +1,4 @@
-# 镜像源配置参数（可通过 build args 覆盖）
+# Mirror Source Configuration Parameters (by build args Overwrite）
 ARG DOCKER_REGISTRY=
 ARG GHCR_REGISTRY=ghcr.io/
 ARG APT_MIRROR=
@@ -8,14 +8,14 @@ ARG APP_COMMIT_SHA=
 ARG APP_COMMIT_SHORT_SHA=
 ARG APP_BUILD_DATE=
 
-# 安装 uv（使用中间阶段避免 COPY --from 的变量展开问题）
+# Install uv（Use intermediate stage avoided COPY --from Question of extending the variable）
 FROM ${GHCR_REGISTRY}astral-sh/uv:latest AS uv
 
-# 使用 Python 3.10 作为基础镜像
-# 如果指定了 DOCKER_REGISTRY，使用镜像源；否则使用官方源
+# Usage Python 3.10 As a basic mirror,
+# If it’s specified, DOCKER_REGISTRY，Use mirror source; otherwise use official source
 FROM ${DOCKER_REGISTRY:-}python:3.10-slim
 
-# 重新声明ARG（FROM之后ARG作用域失效，需要重新声明）
+# Restatement ARG（FROM After ARG Inactivated field. Restated.）
 ARG APT_MIRROR=
 ARG PYPI_INDEX_URL=
 ARG APP_VERSION_TAG=
@@ -23,10 +23,10 @@ ARG APP_COMMIT_SHA=
 ARG APP_COMMIT_SHORT_SHA=
 ARG APP_BUILD_DATE=
 
-# 设置工作目录
+# Set Task Directory
 WORKDIR /app
 
-# 安装系统依赖（如果配置了 APT_MIRROR，先替换镜像源）
+# Installation system dependent (if configured) APT_MIRROR，Replace mirror source first）
 RUN if [ -n "$APT_MIRROR" ]; then \
         if [ -f /etc/apt/sources.list.d/debian.sources ]; then \
             sed -i "s@deb.debian.org@$APT_MIRROR@g" /etc/apt/sources.list.d/debian.sources; \
@@ -40,40 +40,40 @@ RUN if [ -n "$APT_MIRROR" ]; then \
     fonts-noto-cjk \
     && rm -rf /var/lib/apt/lists/*
 
-# 从 uv 阶段复制二进制文件
+# From uv Phase Copy Binary File
 COPY --from=uv /uv /usr/local/bin/uv
 RUN chmod +x /usr/local/bin/uv
 
-# 复制项目配置文件
+# Copy Project Profile
 COPY pyproject.toml ./
 COPY uv.lock* ./
 
-# 配置 PyPI 镜像源（如果指定）
+# Configuration PyPI Mirror Source (if specified)）
 ENV UV_INDEX_URL=${PYPI_INDEX_URL}
 
-# 配置 uv 网络超时
+# Configuration uv Network timeout
 ENV UV_HTTP_TIMEOUT=300
 
-# 安装 Python 依赖
-# 如果有 uv.lock 文件则使用 --frozen，否则生成新的锁定文件
+# Install Python Dependency
+# If there is one... uv.lock The file is used --frozen，Otherwise generate a new lock file
 RUN if [ -f uv.lock ]; then \
         uv sync --frozen; \
     else \
         uv sync; \
     fi
 
-# 复制后端代码
+# Copy Backend
 COPY backend/ ./backend/
 
-# 复制测试资源
+# Copy Test Resource
 COPY assets/ ./assets/
 
-# 创建必要的目录
+# Create the necessary directory
 RUN mkdir -p /app/backend/instance /app/uploads
 
 ENV PYTHONPATH=/app
 ENV FLASK_APP=backend/app.py
-# 容器内固定监听 5000；宿主机端口由 docker-compose 的 BACKEND_PORT 控制
+# Fixed listening in the container 5000；Host port by docker-compose It’s... BACKEND_PORT Control
 ENV IN_DOCKER=1
 ENV APP_VERSION_TAG=${APP_VERSION_TAG}
 ENV APP_COMMIT_SHA=${APP_COMMIT_SHA}
@@ -81,12 +81,12 @@ ENV APP_COMMIT_SHORT_SHA=${APP_COMMIT_SHORT_SHA}
 ENV APP_BUILD_DATE=${APP_BUILD_DATE}
 ENV DOCKERHUB_REPOSITORY=banana-slides-backend
 
-# 暴露端口
+# Exposure Port
 EXPOSE 5000
 
-# 容器内部固定使用 5000 端口
+# Fixed internal use of containers 5000 Port
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD ["sh", "-c", "curl -f http://localhost:5000/health || exit 1"]
 
-# 启动应用。直接使用构建阶段同步好的虚拟环境，避免预构建镜像启动时再次联网解析依赖。
+# Start application. Directly use a synchronised virtual environment at the build stage to avoid re-connection resolution dependent on pre-build mirror startup。
 CMD ["sh", "-c", "cd /app/backend && /app/.venv/bin/alembic upgrade head && exec /app/.venv/bin/python app.py"]

@@ -23,7 +23,7 @@ function preprocessMarkdown(content: string): string {
   content = content.replace(/\\\[([\s\S]*?)\\\]/g, (_, math) => `$$${math}$$`);
   // Convert \(...\) inline math to $...$
   content = content.replace(/\\\(([\s\S]*?)\\\)/g, (_, math) => `$${math}$`);
-  // 表格前必须有空行才能被解析，自动补空行
+  // You have to have an open line before you can be deciphered and automatically fill out a line
   content = content.replace(/([^\n])\n(\|[^\n]+\|\s*\n\|[\s:|-]+\|\s*\n)/g, '$1\n\n$2');
   return content;
 }
@@ -48,7 +48,7 @@ export const Markdown: React.FC<MarkdownProps> = ({ children, className = '' }) 
         remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
         rehypePlugins={[rehypeKatex, rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
         components={{
-        // 自定义渲染规则
+        // Custom Rendering Rules
         p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
         ul: ({ children }) => <ul className="list-disc list-inside space-y-1">{children}</ul>,
         ol: ({ children }) => <ol className="list-decimal list-inside space-y-1">{children}</ol>,

@@ -3,22 +3,22 @@ import { ReferenceFileCard } from '@/components/shared';
 import { useT } from '@/hooks/useT';
 import { listProjectReferenceFiles, type ReferenceFile } from '@/api/endpoints';
 
-// ReferenceFileList 组件自包含翻译
+// ReferenceFileList Component contains translation
 const referenceFileListI18n = {
-  zh: { referenceFile: { uploadedFiles: "已上传的文件", messages: { loadFailed: "加载参考文件列表失败" } } },
+  zh: { referenceFile: { uploadedFiles: "Uploaded Files", messages: { loadFailed: "Failed to load reference file list" } } },
   en: { referenceFile: { uploadedFiles: "Uploaded Files", messages: { loadFailed: "Failed to load reference file list" } } }
 };
 
 interface ReferenceFileListProps {
-  // 两种模式：1. 从 API 加载（传入 projectId） 2. 直接显示（传入 files）
+  // Two models.：1. From API Load (input) projectId） 2. Show directly (input) files）
   projectId?: string | null;
-  files?: ReferenceFile[]; // 如果传入 files，则直接显示，不从 API 加载
+  files?: ReferenceFile[]; // If it comes in, files，Show directly, not from API Load
   onFileClick?: (fileId: string) => void;
   onFileStatusChange?: (file: ReferenceFile) => void;
-  onFileDelete?: (fileId: string) => void; // 如果传入，使用外部删除逻辑
+  onFileDelete?: (fileId: string) => void; // If in, use external delete logic
   deleteMode?: 'delete' | 'remove';
-  title?: string; // 自定义标题
-  className?: string; // 自定义样式
+  title?: string; // Custom Title
+  className?: string; // Custom Styles
   showToast?: (props: { message: string; type: 'success' | 'error' | 'info' | 'warning' }) => void;
 }
 
@@ -36,10 +36,10 @@ export const ReferenceFileList: React.FC<ReferenceFileListProps> = ({
   const t = useT(referenceFileListI18n);
   const [internalFiles, setInternalFiles] = useState<ReferenceFile[]>([]);
   const showRef = useRef(showToast);
-  
+
   const displayTitle = title ?? t('referenceFile.uploadedFiles');
 
-  // 如果传入了 files，使用外部文件列表；否则从 API 加载
+  // If it comes in, files，using the list of external files; otherwise from API Load
   const isExternalMode = externalFiles !== undefined;
   const files = isExternalMode ? externalFiles : internalFiles;
 
@@ -47,7 +47,7 @@ export const ReferenceFileList: React.FC<ReferenceFileListProps> = ({
     showRef.current = showToast;
   }, [showToast]);
 
-  // 只在非外部模式下从 API 加载
+  // From non-external mode only API Load
   useEffect(() => {
     if (isExternalMode || !projectId) {
       if (!isExternalMode) {
@@ -83,10 +83,10 @@ export const ReferenceFileList: React.FC<ReferenceFileListProps> = ({
 
   const handleFileDelete = (fileId: string) => {
     if (onFileDelete) {
-      // 使用外部删除逻辑
+      // Use external delete logic
       onFileDelete(fileId);
     } else if (!isExternalMode) {
-      // 内部删除逻辑
+      // Internal delete logic
       setInternalFiles(prev => prev.filter(f => f.id !== fileId));
     }
   };

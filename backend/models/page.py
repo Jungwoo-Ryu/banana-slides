@@ -13,7 +13,7 @@ class Page(db.Model):
     Page model - represents a single PPT page/slide
     """
     __tablename__ = 'pages'
-    
+
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     project_id = db.Column(db.String(36), db.ForeignKey('projects.id'), nullable=False)
     order_index = db.Column(db.Integer, nullable=False)
@@ -36,7 +36,7 @@ class Page(db.Model):
     status = db.Column(db.String(50), nullable=False, default='DRAFT')
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     # Relationships
     project = db.relationship('Project', back_populates='pages')
     template_asset = db.relationship(
@@ -47,7 +47,7 @@ class Page(db.Model):
     image_versions = db.relationship('PageImageVersion', back_populates='page',
                                      lazy='dynamic', cascade='all, delete-orphan',
                                      order_by='PageImageVersion.version_number.desc()')
-    
+
     def get_outline_content(self):
         """Parse outline_content from JSON string"""
         if self.outline_content:
@@ -56,30 +56,42 @@ class Page(db.Model):
             except json.JSONDecodeError:
                 return None
         return None
-    
+
     def set_outline_content(self, data):
         """Set outline_content as JSON string"""
         if data:
             self.outline_content = json.dumps(data, ensure_ascii=False)
         else:
             self.outline_content = None
-    
+
     def get_description_content(self):
         """Parse description_content from JSON string"""
         if self.description_content:
             try:
-                return json.loads(self.description_content)
+                data = json.loads(self.description_content)
+                if isinstance(data, dict) and isinstance(data.get('extra_fields'), dict):
+                    from .settings import Settings
+                    normalized = {}
+                    for name, value in data['extra_fields'].items():
+                        key = Settings.LEGACY_INPUT_FIELDS.get(name, name)
+                        if key in normalized and normalized[key] != value:
+                            # Preserve both values when old and current spellings coexist.
+                            normalized[key] = f"{normalized[key]}\n{value}"
+                        else:
+                            normalized[key] = value
+                    data['extra_fields'] = normalized
+                return data
             except json.JSONDecodeError:
                 return None
         return None
-    
+
     def set_description_content(self, data):
         """Set description_content as JSON string"""
         if data:
             self.description_content = json.dumps(data, ensure_ascii=False)
         else:
             self.description_content = None
-    
+
     def get_narration_text(self):
         """Get narration text for TTS"""
         return self.narration_text
@@ -119,7 +131,7 @@ class Page(db.Model):
             data['image_versions'] = [v.to_dict() for v in self.image_versions.all()]
 
         return data
-    
+
     def __repr__(self):
         return f'<Page {self.id}: {self.order_index} - {self.status}>'
 

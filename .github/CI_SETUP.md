@@ -1,400 +1,400 @@
-# CI/CD 配置说明
+# CI/CD Profile Description
 
-本项目使用GitHub Actions实现自动化CI/CD，包含**Light检查**和**Full测试**两个层级。
+Use of this project GitHub Actions Automation CI/CD，Organisation**Light Inspection**and**Full Test**Two levels。
 
-## 📋 CI架构概览
+## 📋 CI Overview of the structure
 
-### 🚀 Light检查 - PR快速反馈
-**触发时机**: 提交PR时自动运行  
-**耗时**: 2-5分钟  
-**工作流**: `.github/workflows/pr-quick-check.yml`
+### 🚀 Light Inspection - PR Quick Feedback
+**Trigger Time**: Submit PR Autorun when<br>
+**Time-consuming**: 2-5 min<br>
+**Workstream**: `.github/workflows/pr-quick-check.yml`
 
-包含：
-- ✅ 代码语法检查（flake8, ESLint）
-- ✅ 代码格式检查（black, prettier）
-- ✅ TypeScript构建检查
-- ✅ 后端冒烟测试（健康检查）
-- ✅ PR自动评论
+Organisation：
+- ✅ Code Syntax Check（flake8, ESLint）
+- ✅ Code Format Check（black, prettier）
+- ✅ TypeScript Build Check
+- ✅ Back-end smoke testing (health check-ups)）
+- ✅ PR Auto Comment
 
-### 🎯 Full测试 - 完整验证
-**触发时机**:
-1. **PR添加`ready-for-test`标签时** 👈 推荐方式
-2. 直接Push到`main`或`develop`分支（不通过PR）
+### 🎯 Full Test - Full Authentication
+**Trigger Time**:
+1. **PR Add`ready-for-test`When tabing** 👈 Recommended Method
+2. Direct Push Present.`main`or`develop`Branch (not passed) PR）
 
-**注意**：PR合并后**不会**再次运行完整测试，避免重复浪费资源
+**Attention.**：PR After Merge**I won’t.**Run complete testing again to avoid waste of resources
 
-**耗时**: 15-30分钟  
-**工作流**: `.github/workflows/ci-test.yml`
+**Time-consuming**: 15-30 min<br>
+**Workstream**: `.github/workflows/ci-test.yml`
 
-包含：
-- ✅ 后端单元测试（pytest + coverage）
-- ✅ 后端集成测试（使用 mock AI）
-- ✅ 前端测试（Vitest + coverage）
-- ✅ Docker 环境测试（容器构建、启动、健康检查）
-- ✅ **E2E 测试（从创建到导出 PPT）**
-  - 需要真实 Google Gemini API key
-  - 测试完整的 AI 生成流程
-  - 如果未配置 API key，会自动跳过并显示说明
-- ✅ 安全扫描（依赖漏洞检查）
+Organisation：
+- ✅ Backend Unit Test（pytest + coverage）
+- ✅ Backend integration test (use) mock AI）
+- ✅ Front-end Test（Vitest + coverage）
+- ✅ Docker Environmental test (container construction, start-up, health check)）
+- ✅ **E2E Test (from creation to export) PPT）**
+  - It needs to be real. Google Gemini API key
+  - Test complete. AI Generate Process
+  - If Unconfigured API key，Automatically skip and show instructions
+- ✅ Security scan (dependent on gap checking)）
 
 ---
 
-## 🔧 配置步骤
+## 🔧 Configure Steps
 
-### 1. 配置GitHub Secrets（必需）
+### 1. Configuration GitHub Secrets（Required）
 
-为了运行完整的E2E测试（包含真实AI生成），需要配置以下Secrets：
+To run the whole thing. E2E Test (includes real) AI Generate) , need to configure below Secrets：
 
-#### 步骤：
-1. 进入GitHub仓库页面
-2. 点击 `Settings` → `Secrets and variables` → `Actions`
-3. 点击 `New repository secret`
-4. 添加以下Secret：
+#### Steps：
+1. Enter GitHub Repository Page
+2. Click `Settings` → `Secrets and variables` → `Actions`
+3. Click `New repository secret`
+4. Add the following Secret：
 
-| Secret名称 | 必需 | 说明 | 获取方式 |
+| Secret Name | Required | Annotations | Access Mode |
 |-----------|------|------|---------|
-| `GOOGLE_API_KEY` | ✅ 必需 | Google Gemini API密钥（用于完整E2E测试） | [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey) |
-| `OPENAI_API_KEY` | ⚪ 可选 | OpenAI API密钥（用于集成测试验证兼容性） | [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
-| `SECRET_KEY` | ⚪ 可选 | Flask应用密钥（生产环境建议配置） | 随机生成，建议使用：`python -c "import secrets; print(secrets.token_hex(32))"` |
-| `MINERU_TOKEN` | ⚪ 可选 | MinerU服务Token（如果使用MinerU解析） | 从MinerU服务获取 |
+| `GOOGLE_API_KEY` | ✅ Required | Google Gemini API Key (for completeness) E2E Test） | [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey) |
+| `OPENAI_API_KEY` | ⚪ Optional | OpenAI API Key (for integration testing to verify compatibility)） | [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
+| `SECRET_KEY` | ⚪ Optional | Flask Applying key (Property Environment Recommended Configuration)） | Randomly generated, suggested for use：`python -c "import secrets; print(secrets.token_hex(32))"` |
+| `MINERU_TOKEN` | ⚪ Optional | MinerU Services Token（If used MinerU Parsing） | From MinerU Access to services |
 
-**关于 E2E 测试策略**：
-- 💡 **单一 E2E 测试**：使用 Gemini 格式测试完整流程（创建→大纲→描述→图片→导出）
-- 💰 **成本优化**：只运行一次完整 E2E，避免重复测试
-- ⚠️ **条件运行**：只在配置了真实 `GOOGLE_API_KEY` 时运行
+**About E2E Test Policy**：
+- 💡 **Single E2E Test**：Usage Gemini Format test complete process (create)→Outline→Description→Image→Export）
+- 💰 **Cost optimization**：Run the whole thing once only E2E，Duplication of testing
+- ⚠️ **Conditional Run**：It’s only real. `GOOGLE_API_KEY` Timerun
 
-**注意**：
-- ⚠️ **没有配置 `GOOGLE_API_KEY` 时，E2E 测试会被跳过**
-- ✅ 其他测试（单元、集成、Docker）仍会运行，覆盖大部分功能
-- 💰 真实 API 调用会消耗配额（约 $0.01-0.05/次），建议使用测试专用账号
-- 🔧 CI 会自动将 Secrets 替换到 `.env` 文件中对应的占位符
+**Attention.**：
+- ⚠️ **No Configuration `GOOGLE_API_KEY` Time，E2E The test will skip.**
+- ✅ Other tests (units, integration)、Docker）Still running, covering most functions
+- 💰 Real. API Quotas will be consumed by the call $0.01-0.05/(ii) It is recommended to use a test-specific account number
+- 🔧 CI It’ll automatically... Secrets Replace to `.env` Placeholder for the file
 
-**CI如何处理Secrets**：
+**CI How? Secrets**：
 
-CI配置会自动处理以下逻辑：
+CI The configuration will automatically handle the following logic：：
 
-1. **复制`.env.example`到`.env`**（保持所有默认配置）
-2. **自动检测并替换Secrets**：
-   - 如果GitHub Secrets中配置了某个Secret → 自动替换`.env`中对应的占位符
-   - 如果没有配置 → 保持`.env.example`中的默认值
+1. **Copy`.env.example`Present.`.env`**（Keep all default configurations）
+2. **Automatically detect and replace Secrets**：
+   - If... GitHub Secrets has a certain configuration in it Secret → Auto Replace`.env`The corresponding placeholder
+   - If No Configuration → Hold`.env.example`Default value in
 
-**支持的Secrets列表**：
+**Supported Secrets List**：
 
-CI配置会自动检测并替换以下Secrets（如果配置了的话）：
+CI The configuration will automatically detect and replace the following： Secrets（If it’s configured.）：
 
-- ✅ `GOOGLE_API_KEY` - 必需，如果没有配置则使用`mock-api-key`
-- ⚪ `OPENAI_API_KEY` - 可选，如果配置了则替换
-- ⚪ `SECRET_KEY` - 可选，生产环境建议配置
-- ⚪ `MINERU_TOKEN` - 可选，如果使用MinerU服务则配置
+- ✅ `GOOGLE_API_KEY` - Required, if not configured`mock-api-key`
+- ⚪ `OPENAI_API_KEY` - Optional, replace if configured
+- ⚪ `SECRET_KEY` - Optional, Production Environment Recommended Configuration
+- ⚪ `MINERU_TOKEN` - optional, if used MinerU Service Configuration
 
-**添加新的Secret支持**：
+**Add New Secret Support**：
 
-如果需要支持其他配置项的Secret替换，只需在`.github/workflows/ci-test.yml`中添加对应的检查逻辑：
+If you need to support other configurations Secret Replace, just in`.github/workflows/ci-test.yml`Adds the corresponding check logic：
 
 ```yaml
-# 在"设置环境变量"步骤中添加
+# Yes."Set Environmental Variables"Add in Step
 if [ -n "${{ secrets.YOUR_NEW_SECRET }}" ]; then
   sed -i '/^YOUR_ENV_VAR=/s/placeholder/${{ secrets.YOUR_NEW_SECRET }}/' .env
-  echo "✓ 已替换 YOUR_ENV_VAR"
+  echo "✓ Replaced YOUR_ENV_VAR"
 fi
 ```
 
-### 2. （可选）配置CodeCov
+### 2. （Optional) Configuration CodeCov
 
-如果需要代码覆盖率报告和徽章：
+If you need code coverage reports and badges,：
 
-1. 访问 [codecov.io](https://codecov.io)
-2. 关联GitHub账号并授权仓库
-3. 获取Upload Token（通常不需要，公开仓库自动识别）
-4. 如需手动配置，添加Secret：`CODECOV_TOKEN`
+1. Visits [codecov.io](https://codecov.io)
+2. Association GitHub Account number and authorization of warehouse
+3. Access Upload Token（It’s usually not necessary. It’s open to automatic identification.）
+4. Add if manual configuration is required Secret：`CODECOV_TOKEN`
 
 ---
 
-## 🏷️ 如何触发Full测试
+## 🏷️ How to trigger it? Full Test
 
-### 方法1：PR添加标签触发（✅ 推荐）
+### Methodology 1：PR Add Tab Trigger（✅ Recommendations）
 
-当你认为PR已经准备好进行完整测试时：
+♪ When you think PR I’m ready for a full test.：
 
 ```bash
-# 在PR页面右侧，点击 "Labels"
-# 添加 "ready-for-test" 标签
+# Yes. PR Page right, click "Labels"
+# Add "ready-for-test" Label
 ```
 
-这会立即触发完整测试套件，包括：
-- ✅ 所有单元和集成测试
-- ✅ Docker 环境测试
-- ✅ **E2E 测试（如果配置了真实 API key）**
+This triggers the complete test package immediately, including：
+- ✅ All units and integration tests
+- ✅ Docker Environmental testing
+- ✅ **E2E Test (if real is configured) API key）**
 
-**测试通过后，直接合并即可！合并后不会重复运行测试。**
+**Once the test is complete, it’s fine to merge directly! The test will not be repeated after merging.。**
 
-**E2E 测试说明**：
-- 如果配置了 `GOOGLE_API_KEY`：运行完整 E2E（额外 10-15 分钟）
-- 如果未配置：跳过 E2E，显示友好说明（其他测试已覆盖大部分功能）
+**E2E Test Note**：
+- If it’s configured, `GOOGLE_API_KEY`：Run Full E2E（Extra 10-15 min）
+- If not configured： Skip E2E，Show friendly statements (other tests have covered most functions)）
 
-### 方法2：手动触发（✅ 新增）
+### Methodology 2：Manual Trigger（✅ Add）
 
-在GitHub Actions页面手动运行Full Test：
+Yes. GitHub Actions Page Manual Run Full Test：
 
-1. 进入仓库页面
-2. 点击 **Actions** 标签
-3. 在左侧选择 **Full Test Suite**
-4. 点击右侧的 **Run workflow** 按钮
-5. 选择分支（通常是`main`或`develop`）
-6. 点击 **Run workflow**
+1. Enter repository page
+2. Click **Actions** Label
+3. Select on the left **Full Test Suite**
+4. Click on the right **Run workflow** button
+5. Select branch (usually)`main`or`develop`）
+6. Click **Run workflow**
 
-**适用场景**：
-- ✅ 想在任何时候验证代码
-- ✅ 调试CI问题
-- ✅ 验证main分支的当前状态
+**Apply scene**：
+- ✅ Trying to verify the code at any time.
+- ✅ Debug CI Problem
+- ✅ Authentication main Current status of branch
 
-### 方法3：直接Push到main
+### Methodology 3：Direct Push Present. main
 
-如果你直接push到`main`或`develop`分支（不通过PR），会自动运行完整测试。
+If you just... push Present.`main`or`develop`Branch (not passed) PR），You run the full test automatically.。
 
-**注意**：
-- ⚠️ **PR合并不会触发Full测试**（避免重复）
-- ✅ 请确保PR在合并前已通过`ready-for-test`测试
-- 🔒 建议在仓库设置中启用分支保护，要求`ready-for-test`状态通过才能合并
+**Attention.**：
+- ⚠️ **PR The merger won’t trigger. Full Test**（Avoidance of duplication）
+- ✅ Make sure. PR Passed Before Merge`ready-for-test`Test
+- 🔒 Suggest to enable branch protection in warehouse settings, request`ready-for-test`The status can only be merged.
 
 ---
 
-## 🔒 建议：启用分支保护规则
+## 🔒 Recommendation： Enable branch protection rules
 
-为了确保所有PR在合并前都经过完整测试，建议配置GitHub分支保护：
+To ensure all PR It’s been fully tested before the merger. It’s recommended. GitHub Branch protection：
 
-### 配置步骤
+### Configure Steps
 
-1. 进入仓库 → `Settings` → `Branches`
-2. 在 `Branch protection rules` 下点击 `Add rule`
-3. 配置如下：
+1. Into the warehouse. → `Settings` → `Branches`
+2. Yes. `Branch protection rules` Click Down `Add rule`
+3. The configuration is as follows：：
    - **Branch name pattern**: `main`
    - ✅ **Require status checks to pass before merging**
-     - 搜索并勾选 `Backend Unit Tests`（或其他关键测试）
+     - Search and Check `Backend Unit Tests`（or other critical tests）
    - ✅ **Require branches to be up to date before merging**
-   - 可选：**Require pull request reviews before merging**
+   - Optional：**Require pull request reviews before merging**
 
-### 效果
+### Effects
 
-配置后，PR只有在以下条件满足时才能合并：
-- ✅ Light检查通过（自动运行）
-- ✅ Full测试通过（通过`ready-for-test`标签触发）
-- ✅ 代码review通过（如果启用）
+Configured，PR Merge only if the following conditions are met：
+- ✅ Light Check pass (automated running)）
+- ✅ Full Test passed (passed)`ready-for-test`Tag Trigger）
+- ✅ Code review Passed (if enabled)）
 
-这样可以完全避免未测试代码进入`main`分支！
+This way we can completely avoid untested code entry.`main`Branch！
 
 ---
 
-## 🧪 测试文件说明
+## 🧪 Test file description
 
-### Light检查测试
-- **前端Lint**: `frontend/src/**/*.{ts,tsx}`
-- **后端语法**: `backend/**/*.py`
-- **冒烟测试**: 启动后端并检查`/health`端点
+### Light Check Test
+- **Frontend Lint**: `frontend/src/**/*.{ts,tsx}`
+- **Backend Syntax：**: `backend/**/*.py`
+- **Smoke test.**: Start backend and check`/health`Peer
 
-### Full测试文件
+### Full Test File
 ```
 backend/tests/
-├── unit/              # 后端单元测试
+├── unit/              # Backend Unit Test
 │   ├── test_ai_service.py
 │   ├── test_file_service.py
 │   └── ...
-├── integration/       # 后端集成测试
+├── integration/       # Backend Integration Test
 │   ├── test_api.py
 │   └── ...
 
 frontend/src/
-├── **/*.test.tsx     # 前端组件测试
-└── **/*.spec.tsx     # 前端功能测试
+├── **/*.test.tsx     # Front-end component testing
+└── **/*.spec.tsx     # Front-end functionality test
 
 e2e/
-├── home.spec.ts           # 首页UI测试
-├── create-ppt.spec.ts     # PPT创建基础测试
-└── full-flow.spec.ts      # 🎯 完整流程测试（创建→大纲→描述→图片→导出）
+├── home.spec.ts           # Home Page UI Test
+├── create-ppt.spec.ts     # PPT Create Basic Test
+└── full-flow.spec.ts      # 🎯 Full process test (creation)→Outline→Description→Image→Export）
 ```
 
 ---
 
-## 📊 测试结果查看
+## 📊 Test Results View
 
-### CI状态检查
-- PR页面底部会显示所有检查状态
-- 点击 `Details` 查看详细日志
-- Light检查会在PR评论中自动发布结果
+### CI Status check
+- PR At the bottom of the page all check status will be shown
+- Click `Details` View Detailed Log
+- Light The checkup will be... PR Automatically publish results in comments
 
-### 测试报告和覆盖率
-- **代码覆盖率**: 自动上传到CodeCov（如果配置）
-- **E2E测试报告**: 失败时会上传Playwright报告和截图
-  - 在Actions页面 → 对应的workflow run → `Artifacts` 下载
-  - `playwright-report`: HTML测试报告
-  - `playwright-screenshots`: 失败时的截图和视频
+### Test reports and coverage
+- **Code coverage**: Automatically upload to CodeCov（If Configure）
+- **E2E Test report**: If you fail, it’s passed. Playwright Reports and screenshots
+  - Yes. Actions Page → Corresponding workflow run → `Artifacts` Download
+  - `playwright-report`: HTML Test report
+  - `playwright-screenshots`: Screenshots and videos of failure
 
-### 查看日志
+### View Log
 ```bash
-# 本地查看Actions日志
+# Local View Actions Log
 gh run list
 gh run view <run-id> --log
 ```
 
 ---
 
-## 🚨 常见问题
+## 🚨 Common problems
 
-### Q1: E2E测试超时失败
-**原因**: AI生成需要较长时间  
-**解决**: 
-- 检查API key是否有效
-- 检查API配额是否用尽
-- 本地运行测试验证：`npx playwright test full-flow.spec.ts`
+### Q1: E2E Test timeout failed
+**Reason**: AI It takes longer to generate<br>
+**Solve**:
+- Inspection API key Validity
+- Inspection API Exhaustion of quotas
+- Local run test validation：`npx playwright test full-flow.spec.ts`
 
-### Q2: Docker测试失败
-**原因**: 容器启动超时或端口冲突  
-**解决**:
-- 检查`docker-compose.yml`配置
-- 查看容器日志（CI会在失败时自动显示）
-- 本地测试：`./scripts/test_docker_environment.sh`
+### Q2: Docker Test failed
+**Reason**: Container start timeout or port conflict<br>
+**Solve**:
+- Inspection`docker-compose.yml`Configuration
+- View container log（CI Displays automatically when a failure occurs）
+- Local Test：`./scripts/test_docker_environment.sh`
 
-### Q3: 前端构建失败
-**原因**: TypeScript类型错误或依赖问题  
-**解决**:
-- 本地运行：`cd frontend && npm run build:check`
-- 检查`frontend/package.json`依赖版本
-- 确保`package-lock.json`已提交
+### Q3: Front-end construction failed
+**Reason**: TypeScript Type error or dependency issue<br>
+**Solve**:
+- Run locally：`cd frontend && npm run build:check`
+- Inspection`frontend/package.json`dependency version
+- Ensure`package-lock.json`Submitted
 
-### Q4: "ready-for-test"标签不触发测试
-**原因**: Workflow权限或配置问题  
-**解决**:
-- 确认标签名称完全匹配（小写，带连字符）
-- 检查仓库Settings → Actions → General → Workflow permissions
-- 查看Actions页面确认workflow是否被触发
+### Q4: "ready-for-test"Label does not trigger test
+**Reason**: Workflow Permission or configuration issues<br>
+**Solve**:
+- Confirm that label names are fully matched (lowcases, hyphens)）
+- Check the warehouse. Settings → Actions → General → Workflow permissions
+- View Actions Page confirmation workflow Whether to be triggered
 
 ---
 
-## 📝 本地测试
+## 📝 Local Test
 
-### 🚀 快速开始
+### 🚀 Fast start.
 
 ```bash
-# Light检查（2-3分钟）- 提交前快速检查
+# Light Inspection（2-3 min）- Quick Check Before Submission
 ./scripts/run-local-ci.sh light
 
-# Full测试（10-20分钟）- PR合并前完整测试
+# Full Test（10-20 min）- PR Full Test Before Merge
 ./scripts/run-local-ci.sh full
 ```
 
-### 🔧 前置依赖
+### 🔧 Pre-dependent
 
 ```bash
-# Python环境 (>= 3.10)
+# Python Environment (>= 3.10)
 python3 --version
 
-# Node.js环境 (>= 18)
+# Node.js Environment (>= 18)
 node --version
 
-# UV包管理器
+# UV Package Manager
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Docker
 docker --version
 docker compose --version
 
-# 安装依赖
+# Installation Dependence
 uv sync --extra test
 cd frontend && npm ci
 npx playwright install --with-deps chromium
 ```
 
-### 🧪 运行特定测试
+### 🧪 Run Specific Tests
 
 ```bash
-# 后端单元测试
+# Backend Unit Test
 cd backend
 uv run pytest tests/unit -v --cov=. --cov-report=html
 
-# 前端测试
+# Front-end Test
 cd frontend
 npm test -- --coverage
 
-# E2E测试（需要真实API key）
-cp .env.example .env  # 编辑.env填入真实API密钥
+# E2E Testing (need to be real) API key）
+cp .env.example .env  # Edit.env Fill in Real API Key
 docker compose up -d
 npx playwright test full-flow.spec.ts
 
-# Docker环境测试
+# Docker Environmental testing
 ./scripts/test_docker_environment.sh
 ```
 
-### 🐛 调试失败的测试
+### 🐛 Debug failed test
 
 ```bash
-# E2E UI模式调试
+# E2E UI Mode debugging
 npx playwright test --ui
 
-# 后端调试模式
+# Backend Debug Mode
 cd backend
 uv run pytest tests/unit/test_xxx.py --pdb
 
-# 查看Docker日志
+# View Docker Log
 docker compose logs backend
 docker compose logs frontend
 ```
 
 ---
 
-## 🎯 最佳实践
+## 🎯 Best practices
 
-### 开发流程建议
+### Development process recommendations
 
-1. **开发阶段**：
-   - 频繁提交小改动
-   - 依赖Light检查快速反馈
-   - 修复lint和构建错误
+1. **Development phase**：
+   - Frequent submission of minor changes
+   - Dependency Light Check for quick feedback
+   - Rehabilitation lint And build error
 
-2. **功能完成后**：
-   - 自测主要功能
-   - 运行本地测试套件
-   - 提交PR
+2. **Once functionality is completed**：
+   - Autometric Main Functions
+   - Run local test packages
+   - Submit PR
 
-3. **准备合并前**：
-   - 添加`ready-for-test`标签 👈 **关键步骤**
-   - 等待Full测试通过
-   - Code review通过后合并
-   - 合并后**不会重复运行测试**，节省资源 ✅
+3. **Prepare to merge before**：
+   - Add`ready-for-test`Label 👈 **Key steps**
+   - Wait. Full Test passed.
+   - Code review Consolidated after adoption
+   - After Merge**Do not repeat the test**，Resource savings ✅
 
-4. **合并后**：
-   - 代码直接进入`main`分支
-   - 无需等待额外的CI运行
-   - 节省时间和成本
+4. **After Merge**：
+   - Code goes straight in.`main`Branch
+   - You don’t have to wait for the extra. CI Run
+   - Time and cost savings
 
-### CI优化建议
+### CI Recommendations for optimization
 
-- ✅ 保持测试快速（单元测试 < 5分钟）
-- ✅ E2E测试只验证关键流程
-- ✅ 使用缓存加速依赖安装
-- ✅ 并行运行独立测试
-- ✅ 失败快速反馈（fail-fast）
-
----
-
-## 📚 相关文档
-
-- [GitHub Actions文档](https://docs.github.com/en/actions)
-- [Playwright测试文档](https://playwright.dev)
-- [pytest文档](https://docs.pytest.org)
-- [Vitest文档](https://vitest.dev)
+- ✅ Keep testing fast (unit testing) < 5 min）
+- ✅ E2E Testing only validates critical processes
+- ✅ Use cache acceleration dependency installation
+- ✅ Run independent tests in parallel
+- ✅ Failed quick feedback（fail-fast）
 
 ---
 
-## 🆘 需要帮助？
+## 📚 Relevant Documents
 
-如果遇到CI问题：
-1. 查看Actions日志详细错误信息
-2. 参考本文档常见问题部分
-3. 在issue中提问并附上错误日志
-4. 联系维护者
+- [GitHub Actions Documentation](https://docs.github.com/en/actions)
+- [Playwright Test Document](https://playwright.dev)
+- [pytest Documentation](https://docs.pytest.org)
+- [Vitest Documentation](https://vitest.dev)
 
 ---
 
-**最后更新**: 2025-01-20  
-**维护者**: Banana Slides Team
+## 🆘 Need help.？
+
+If I do, CI Problem：
+1. View Actions Log Details Error
+2. Frequent question part of the reference document
+3. Yes. issue Question and attach error logs
+4. Contact maintainer
+
+---
+
+**Last Update**: 2025-01-20<br>
+**Maintainer**: Banana Slides Team
 

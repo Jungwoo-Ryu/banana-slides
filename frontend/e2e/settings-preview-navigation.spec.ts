@@ -51,7 +51,7 @@ test.describe('Settings navigation and preview multi-select', () => {
             data: {
               project_id: projectId,
               id: projectId,
-              idea_prompt: '多选固定条测试',
+              idea_prompt: 'Multiple-select fixed bar tests',
               status: 'COMPLETED',
               pages: Array.from({ length: 14 }, (_, index) => ({
                 id: `p${index + 1}`,
@@ -106,18 +106,18 @@ test.describe('Settings navigation and preview multi-select', () => {
     await page.goto(`/project/${projectId}/preview`)
     await page.waitForLoadState('networkidle')
 
-    await page.locator('button:has-text("导出")').first().click()
-    await page.locator('button:has-text("导出为讲解视频")').click()
-    await page.getByRole('button', { name: '高级配置' }).click()
-    await page.getByLabel('使用 ElevenLabs 语音合成').check()
-    await page.getByRole('button', { name: '前往设置' }).click()
+    await page.locator('button:has-text("Export")').first().click()
+    await page.locator('button:has-text("Export to Speech Video")').click()
+    await page.getByRole('button', { name: 'Advanced Configuration' }).click()
+    await page.getByLabel('Usage ElevenLabs Synth of Speech').check()
+    await page.getByRole('button', { name: 'Go to Settings' }).click()
 
     await expect(page).toHaveURL(/\/settings$/)
-    await page.getByRole('button', { name: '返回首页' }).click()
+    await page.getByRole('button', { name: 'Back to Home' }).click()
     await expect(page).toHaveURL(new RegExp(`/project/${projectId}/preview$`))
 
     const thumbScroller = page.locator('aside .overflow-y-auto').first()
-    const stickyBar = thumbScroller.locator('button:has-text("多选")').first()
+    const stickyBar = thumbScroller.locator('button:has-text("Multiple Selections")').first()
     const stickyBarRow = stickyBar.locator('..')
     const before = await stickyBar.boundingBox()
     expect(before).not.toBeNull()
@@ -143,18 +143,18 @@ test.describe('Settings navigation and preview multi-select', () => {
       await page.goto(`/project/${projectId}/preview`)
       await page.waitForLoadState('networkidle')
 
-      await page.locator('button:has-text("导出")').first().click()
-      await page.locator('button:has-text("导出为讲解视频")').click()
-      await page.getByRole('button', { name: '高级配置' }).click()
-      await page.getByLabel('使用 ElevenLabs 语音合成').check()
-      await page.getByRole('button', { name: '前往设置' }).click()
+      await page.locator('button:has-text("Export")').first().click()
+      await page.locator('button:has-text("Export to Speech Video")').click()
+      await page.getByRole('button', { name: 'Advanced Configuration' }).click()
+      await page.getByLabel('Usage ElevenLabs Synth of Speech').check()
+      await page.getByRole('button', { name: 'Go to Settings' }).click()
 
       await expect(page).toHaveURL(/\/settings$/)
-      await page.getByRole('button', { name: '返回首页' }).click()
+      await page.getByRole('button', { name: 'Back to Home' }).click()
       await expect(page).toHaveURL(new RegExp(`/project/${projectId}/preview$`))
 
       const thumbScroller = page.locator('aside .overflow-y-auto').first()
-      const multiSelectToggle = thumbScroller.locator('button:has-text("多选")').first()
+      const multiSelectToggle = thumbScroller.locator('button:has-text("Multiple Selections")').first()
       const stickyBarRow = multiSelectToggle.locator('..')
       const before = await multiSelectToggle.boundingBox()
       expect(before).not.toBeNull()

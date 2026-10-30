@@ -2,7 +2,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import ko from './locales/ko.json';
 
-import zh from './locales/zh.json';
+// Legacy zh locale requests use the English dictionary.
 import en from './locales/en.json';
 
 i18n
@@ -10,7 +10,7 @@ i18n
   .init({
     resources: {
       ko: { translation: ko },
-      zh: { translation: zh },
+      zh: { translation: en },
       en: { translation: en },
     },
     lng: 'ko',

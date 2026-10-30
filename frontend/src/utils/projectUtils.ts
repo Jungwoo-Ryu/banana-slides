@@ -7,22 +7,22 @@ import i18n from '@/i18n';
 const utilsI18n = {
   zh: {
     projectUtils: {
-      untitled: '未命名项目',
-      notStarted: '未开始',
-      completed: '已完成',
-      pendingImages: '待生成图片',
-      pendingDesc: '待生成描述',
-      pageNum: '第 {{num}} 页',
-      pageHeading: '## 第 {{num}} 页: {{title}}',
-      chapter: '章节',
-      outlinePoints: '**大纲要点：**',
-      noPoints: '*暂无要点*',
-      pageDesc: '**页面描述：**',
-      noDesc: '*暂无描述*',
-      generatedAt: '生成时间',
-      prefixDesc: '描述',
-      prefixOutline: '大纲',
-      prefixProject: '项目',
+      untitled: 'Untitled Project',
+      notStarted: 'Not Started',
+      completed: 'Completed',
+      pendingImages: 'Pending Images',
+      pendingDesc: 'Pending Descriptions',
+      pageNum: 'Page {{num}}',
+      pageHeading: '## Page {{num}}: {{title}}',
+      chapter: 'Chapter',
+      outlinePoints: '**Outline Points:**',
+      noPoints: '*No points yet*',
+      pageDesc: '**Page Description:**',
+      noDesc: '*No description yet*',
+      generatedAt: 'Generated at',
+      prefixDesc: 'Descriptions',
+      prefixOutline: 'Outline',
+      prefixProject: 'Project',
     }
   },
   en: {
@@ -49,14 +49,14 @@ const utilsI18n = {
 const t = getT(utilsI18n);
 
 /**
- * 获取项目标题
+ * Get the project title
  */
 export const getProjectTitle = (project: Project): string => {
   if (project.project_title?.trim()) {
     return project.project_title.trim();
   }
 
-  // 从第一个页面的大纲标题获取项目名称
+  // Use the title of the first outline page as the project name
   if (project.pages && project.pages.length > 0) {
     const sortedPages = [...project.pages].sort((a, b) =>
       (a.order_index || 0) - (b.order_index || 0)
@@ -80,14 +80,14 @@ export const getProjectTitle = (project: Project): string => {
 };
 
 /**
- * 获取第一页图片URL
+ * Get First Page Pictures URL
  */
 export const getFirstPageImage = (project: Project): string | null => {
   if (!project.pages || project.pages.length === 0) {
     return null;
   }
 
-  // 找到第一页有图片的页面，优先使用 generated_image_url（已包含缩略图逻辑）
+  // Find page with pictures on page one, first priority. generated_image_url（Includes thumbnail logic）
   const firstPageWithImage = project.pages.find(p => p.generated_image_url);
   if (firstPageWithImage?.generated_image_url) {
     return getImageUrl(firstPageWithImage.generated_image_url, firstPageWithImage.updated_at);
@@ -97,7 +97,7 @@ export const getFirstPageImage = (project: Project): string | null => {
 };
 
 /**
- * 格式化日期
+ * Formatting Date
  */
 export const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
@@ -121,7 +121,7 @@ const getStatusKey = (project: Project): StatusKey => {
 };
 
 /**
- * 获取项目状态文本
+ * Fetch Project Status Text
  */
 export const getStatusText = (project: Project): string => {
   return t(`projectUtils.${getStatusKey(project)}`);
@@ -135,19 +135,19 @@ const statusColorMap: Record<StatusKey, string> = {
 };
 
 /**
- * 获取项目状态颜色样式
+ * Retrieving project status colour styles
  */
 export const getStatusColor = (project: Project): string => {
   return statusColorMap[getStatusKey(project)];
 };
 
 /**
- * 获取项目路由路径
+ * Get the route to the project
  */
 export const getProjectRoute = (project: Project): string => {
   const projectId = project.id || project.project_id;
   if (!projectId) return '/';
-  
+
   if (project.pages && project.pages.length > 0) {
     const hasImages = project.pages.some(p => p.generated_image_path);
     if (hasImages) {
@@ -162,7 +162,7 @@ export const getProjectRoute = (project: Project): string => {
   return `/project/${projectId}/outline`;
 };
 
-// ========== Markdown 导出/导入 ==========
+// ========== Markdown Export/Import ==========
 
 export const getDescriptionText = (descContent: DescriptionContent | undefined | null): string => {
   if (!descContent) return '';
@@ -179,7 +179,7 @@ const getExtraFields = (descContent: DescriptionContent | undefined | null): Rec
   }
   // Backward compat
   if (descContent.layout_suggestion) {
-    return { '排版建议': descContent.layout_suggestion };
+    return { 'Layout suggestions': descContent.layout_suggestion };
   }
   return undefined;
 };
@@ -217,7 +217,7 @@ const pageToMarkdown = (page: Page, index: number, opts: ExportOptions = {}): st
     } else {
       md += `${t('projectUtils.noDesc')}\n`;
     }
-    // 额外字段
+    // Extra Fields
     if (extraFields) {
       md += '\n';
       for (const [name, value] of Object.entries(extraFields)) {
@@ -245,7 +245,7 @@ export const exportProjectToMarkdown = (project: Project, opts?: ExportOptions):
   downloadFile(blob, `${prefix}_${project.id?.slice(0, 8) || 'export'}.md`);
 };
 
-// --- 导入 ---
+// --- Import ---
 
 export interface ParsedPage {
   title: string;
@@ -258,13 +258,13 @@ export interface ParsedPage {
 const sanitize = (s: string) => s.replace(/<[^>]*>/g, '');
 
 const splitMarkdownPages = (markdown: string): string[] => {
-  // Support both Chinese "## 第 N 页:" and English "## Page N:" formats
-  return markdown.split(/^## (?:第 \d+ 页|Page \d+):/m).slice(1);
+  // Support both Chinese "## Page N Page:" and English "## Page N:" formats
+  return markdown.split(/^## (?:\u7b2c \d+ \u9875|Page \d+):/m).slice(1);
 };
 
-// 额外字段行模式：短名称 + 中/英冒号 + 内容
+// Additional field line mode： short name + Medium/The British colon. + Contents
 const EXTRA_FIELD_RE = /^([^\s：:]{1,20})[：:](.+)/;
-const TRAILING_MARKERS = new Set(['---', '', '*暂无要点*', '*暂无描述*', '*No points yet*', '*No description yet*']);
+const TRAILING_MARKERS = new Set(['---', '', '*No point at this point.*', '*No description for now.*', '*No points yet*', '*No description yet*']);
 const BULLET_RE = /^[-*+]\s+(.+)$/;
 
 const stripBullet = (line: string): string | null => {
@@ -273,7 +273,7 @@ const stripBullet = (line: string): string | null => {
 };
 
 const splitDescAndExtraFields = (descLines: string[]): { text: string; extra_fields?: Record<string, string> } => {
-  // 从末尾向前扫描连续的额外字段行
+  // Scan an extra field line running forward from the end
   const fields: Record<string, string> = {};
   let i = descLines.length - 1;
   while (i >= 0) {
@@ -282,7 +282,7 @@ const splitDescAndExtraFields = (descLines: string[]): { text: string; extra_fie
       fields[m[1]] = m[2].trim();
       i--;
     } else if (descLines[i].trim() === '') {
-      i--; // 跳过空行
+      i--; // Skip empty lines
     } else {
       break;
     }
@@ -312,12 +312,12 @@ export const parseMarkdownPages = (markdown: string): ParsedPage[] => {
     const title = sanitize(lines[0].trim());
 
     // Extract metadata (support both Chinese and English)
-    const partLine = lines.find(l => l.startsWith('> 章节: ') || l.startsWith('> Chapter: '));
-    const part = partLine ? sanitize(partLine.replace(/^> (?:章节|Chapter): /, '').trim()) : undefined;
+    const partLine = lines.find(l => l.startsWith('> Section: ') || l.startsWith('> Chapter: '));
+    const part = partLine ? sanitize(partLine.replace(/^> (?:\u7ae0\u8282|Chapter): /, '').trim()) : undefined;
 
     // Find section markers (support both Chinese and English)
-    const outlineIdx = lines.findIndex(l => l.trim() === '**大纲要点：**' || l.trim() === '**Outline Points:**');
-    const descIdx = lines.findIndex(l => l.trim() === '**页面描述：**' || l.trim() === '**Page Description:**');
+    const outlineIdx = lines.findIndex(l => l.trim() === '**Outline points：**' || l.trim() === '**Outline Points:**');
+    const descIdx = lines.findIndex(l => l.trim() === '**Page description：**' || l.trim() === '**Page Description:**');
 
     let points: string[] = [];
     let text = '';

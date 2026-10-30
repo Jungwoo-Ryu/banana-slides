@@ -3,34 +3,34 @@
   "languages": [
     {
       "code": "zh-CN",
-      "name": "简体中文",
+      "name": "CREDIT Chinese",
       "english_name": "Simplified Chinese",
       "file": "README.md",
       "asset": "zh",
       "width": 86,
       "buttons": {
         "demo": [
-          "在线 Demo",
+          "Online Demo",
           122
         ],
         "docs": [
-          "文档",
+          "Documentation",
           94
         ],
         "desktop": [
-          "桌面版 RC7",
+          "Desktop RC7",
           132
         ],
         "deploy": [
-          "部署方法",
+          "Method of deployment",
           116
         ]
       },
       "hero": {
-        "support": "如果这个项目对你有用，欢迎",
-        "paragraph": "基于图像生成模型的原生 AI PPT 应用，\n几分钟内将想法变成演示文稿，\n无需繁琐排版，用自然语言修改，迈向真正的「Vibe PPT」。"
+        "support": "If this project works for you, welcome.",
+        "paragraph": "Numerical based on image generation models AI PPT Apply，\n Turning ideas into presentations in a few minutes.，\n It doesn’t have to be complicated. It’s in natural languages. It’s moving towards real.「Vibe PPT」。"
       },
-      "text_fallback": "文字版",
+      "text_fallback": "Text Version",
       "community": {
         "x": [
           "anion_ex",
@@ -38,7 +38,7 @@
           "https://x.com/anion_ex"
         ],
         "wechat": [
-          "微信群",
+          "Wisdom",
           110,
           "#user-content-community"
         ]
@@ -132,7 +132,7 @@
     },
     {
       "code": "ja",
-      "name": "日本語",
+      "name": "Japanese",
       "english_name": "Japanese",
       "file": "README_JA.md",
       "asset": "ja",
@@ -156,10 +156,10 @@
         ]
       },
       "hero": {
-        "support": "このプロジェクトが役に立ったら、ぜひ",
-        "paragraph": "画像生成モデルを活用した AI ネイティブな PPT アプリで、アイデアをわずか数分でプレゼン資料に。\n面倒なレイアウトは不要。自然な言葉で修正し、本当の「Vibe PPT」を体験しましょう。"
+        "support": "このプロジェクトがArmamentにDraw!ったら、ぜひ",
+        "paragraph": "Image GenerationモデルをLive.した AI ネイティブな PPT アプリで、アイデアをわずかScoreでプレゼンDataに。\n Noodles.なレイアウトはDon’t. Naturally.なLeaves.でAmendmentsし、Ben.の「Vibe PPT」をPsychicしましょう。"
       },
-      "text_fallback": "テキスト版",
+      "text_fallback": "テキストVersion",
       "community": {
         "x": [
           "anion_ex",

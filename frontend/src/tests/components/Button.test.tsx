@@ -1,5 +1,5 @@
 /**
- * Button 组件测试
+ * Button Component Test
  */
 
 import { describe, it, expect, vi } from 'vitest'
@@ -15,7 +15,7 @@ describe('Button Component', () => {
   it('calls onClick handler when clicked', () => {
     const handleClick = vi.fn()
     render(<Button onClick={handleClick}>Click</Button>)
-    
+
     fireEvent.click(screen.getByText('Click'))
     expect(handleClick).toHaveBeenCalledTimes(1)
   })
@@ -28,14 +28,14 @@ describe('Button Component', () => {
   it('applies gradient styles for primary variant', () => {
     render(<Button>Primary</Button>)
     const button = screen.getByText('Primary')
-    // 实际使用gradient样式
+    // Actual use gradient Styles
     expect(button).toHaveClass('bg-gradient-to-r')
   })
 
   it('applies border styles for secondary variant', () => {
     render(<Button variant="secondary">Secondary</Button>)
     const button = screen.getByText('Secondary')
-    // secondary使用border样式
+    // secondary Usage border Styles
     expect(button).toHaveClass('border-banana-500')
   })
 
@@ -43,7 +43,7 @@ describe('Button Component', () => {
     render(<Button loading>Loading</Button>)
     const button = screen.getByRole('button')
     expect(button).toBeDisabled()
-    // 应该有loading spinner
+    // I think so. loading spinner
     expect(button.querySelector('svg')).toBeInTheDocument()
   })
 

@@ -20,7 +20,7 @@ function sqlEscape(value: string) {
 
 test('associating a parsed reference file imports document images into project materials', async ({ request }) => {
   const projectResp = await request.post('/api/projects', {
-    data: { creation_type: 'idea', idea_prompt: '文档图片自动入库 E2E' },
+    data: { creation_type: 'idea', idea_prompt: 'Document pictures automatically enter the library E2E' },
   })
   expect(projectResp.ok()).toBeTruthy()
   const projectId = (await projectResp.json()).data.project_id as string
@@ -31,7 +31,7 @@ test('associating a parsed reference file imports document images into project m
   fs.copyFileSync(FIXTURE_IMAGE, path.join(imageDir, 'doc-chart-original-name.jpg'))
 
   const referenceFileId = crypto.randomUUID()
-  const markdown = `文档内容\n![文档图表](/files/mineru/${extractId}/images/doc-chart-original-name.jpg)\n`
+  const markdown = `Document Contents\n![Document charts](/files/mineru/${extractId}/images/doc-chart-original-name.jpg)\n`
   sql(`
     INSERT INTO reference_files (
       id, project_id, filename, file_path, file_size, file_type, parse_status,
@@ -51,7 +51,7 @@ test('associating a parsed reference file imports document images into project m
   expect(materialsResp.ok()).toBeTruthy()
   const materials = (await materialsResp.json()).data.materials
   expect(materials).toHaveLength(1)
-  expect(materials[0].caption).toBe('文档图表')
+  expect(materials[0].caption).toBe('Document charts')
   expect(materials[0].original_filename).toBe('doc-chart-original-name.jpg')
   expect(materials[0].url).toContain(`/files/${projectId}/materials/parsed_`)
 

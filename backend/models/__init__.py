@@ -1,18 +1,18 @@
 """Database models package"""
 from flask_sqlalchemy import SQLAlchemy
 
-# 创建 SQLAlchemy 实例，配置 SQLite 连接选项
+# Create SQLAlchemy Example, Configure SQLite Connection Options
 db = SQLAlchemy(
     engine_options={
         'connect_args': {
-            'check_same_thread': False,  # 允许跨线程使用（仅SQLite）
-            'timeout': 30,  # 数据库锁定超时（秒）- SQLite特定
+            'check_same_thread': False,  # Allow cross-line (only) SQLite）
+            'timeout': 30,  # Database lockout timeout (sec)）- SQLite Specific
         },
-        'pool_pre_ping': True,  # 连接前检查，确保连接有效
-        'pool_recycle': 3600,  # 1小时回收连接，释放文件句柄
+        'pool_pre_ping': True,  # Check before connecting to make sure the connection works
+        'pool_recycle': 3600,  # 1 Hourly recovery connection, release file handles
         'pool_size': 10,
         'max_overflow': 50,
-        'pool_timeout': 30,  # 获取连接的超时时间（秒）
+        'pool_timeout': 30,  # Timeout to retrieve connection (seconds)）
     }
 )
 

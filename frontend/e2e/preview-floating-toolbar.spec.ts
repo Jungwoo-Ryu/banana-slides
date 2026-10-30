@@ -22,7 +22,7 @@ function mockProject() {
   return {
     id: MOCK_PROJECT_ID,
     project_id: MOCK_PROJECT_ID,
-    project_title: '悬浮工具栏测试项目',
+    project_title: 'Suspended Toolbar Test Item',
     status: 'DRAFT',
     template_mode: 'single',
     image_aspect_ratio: '16:9',
@@ -34,7 +34,7 @@ function mockProject() {
         page_id: 'page-1',
         order_index: 0,
         status: 'COMPLETED',
-        outline_content: { title: '第一页标题', points: [] },
+        outline_content: { title: 'Title of first page', points: [] },
         created_at: '2026-07-01T10:00:00.000Z',
         updated_at: '2026-07-01T10:00:00.000Z',
       },
@@ -43,7 +43,7 @@ function mockProject() {
         page_id: 'page-2',
         order_index: 1,
         status: 'DRAFT',
-        outline_content: { title: '第二页标题', points: [] },
+        outline_content: { title: 'Title of the second page', points: [] },
         created_at: '2026-07-01T10:00:00.000Z',
         updated_at: '2026-07-01T10:00:00.000Z',
       },
@@ -123,7 +123,7 @@ async function mockPreview(
 const floatingToolbar = (page: Page) => page.getByTestId('preview-floating-toolbar')
 const dockedToolbar = (page: Page) => page.getByTestId('preview-docked-toolbar')
 const sidebarQcSwitch = (page: Page) =>
-  page.locator('aside').getByRole('switch', { name: /质量控制|Quality Control/ })
+  page.locator('aside').getByRole('switch', { name: /\u8d28\u91cf\u63a7\u5236|Quality Control/ })
 
 test.describe('Floating toolbar - desktop (mock)', () => {
   test('shows the floating toolbar and hides the docked bar', async ({ page }) => {
@@ -143,8 +143,8 @@ test.describe('Floating toolbar - desktop (mock)', () => {
     await page.goto(`/project/${MOCK_PROJECT_ID}/preview`)
 
     const pill = floatingToolbar(page)
-    const prev = pill.getByRole('button', { name: /上一页|Previous/ })
-    const next = pill.getByRole('button', { name: /下一页|Next/ })
+    const prev = pill.getByRole('button', { name: /\u4e0a\u4e00\u9875|Previous/ })
+    const next = pill.getByRole('button', { name: /\u4e0b\u4e00\u9875|Next/ })
 
     await expect(pill).toContainText('1 / 2')
     await expect(prev).toBeDisabled()
@@ -162,7 +162,7 @@ test.describe('Floating toolbar - desktop (mock)', () => {
     await mockPreview(page)
     await page.goto(`/project/${MOCK_PROJECT_ID}/preview`)
 
-    await floatingToolbar(page).getByRole('button', { name: /^编辑$|^Edit$/ }).click()
+    await floatingToolbar(page).getByRole('button', { name: /^\u7f16\u8f91$|^Edit$/ }).click()
     // Desktop edits in place now; see preview-inline-edit.spec.ts for the rest.
     await expect(page.getByTestId('inline-edit-panel')).toBeVisible()
     await expect(page.getByRole('dialog')).toHaveCount(0)
@@ -173,16 +173,16 @@ test.describe('Floating toolbar - desktop (mock)', () => {
     await page.goto(`/project/${MOCK_PROJECT_ID}/preview`)
 
     const pill = floatingToolbar(page)
-    const historyButton = pill.getByRole('button', { name: /历史版本|History/ })
+    const historyButton = pill.getByRole('button', { name: /\u5386\u53f2\u7248\u672c|History/ })
     await expect(historyButton).toBeVisible()
     await expect(historyButton).toContainText('2')
 
     await historyButton.click()
     // The menu pops upward out of the pill, so both entries must be on screen.
-    const currentEntry = page.getByRole('button', { name: /版本 2|Version 2/ })
+    const currentEntry = page.getByRole('button', { name: /\u7248\u672c 2|Version 2/ })
     await expect(currentEntry).toBeInViewport()
-    await expect(currentEntry).toContainText(/当前|Current/)
-    await expect(page.getByRole('button', { name: /版本 1|Version 1/ })).toBeInViewport()
+    await expect(currentEntry).toContainText(/\u5f53\u524d|Current/)
+    await expect(page.getByRole('button', { name: /\u7248\u672c 1|Version 1/ })).toBeInViewport()
 
     // Anchored to its trigger (centered on it), not right-aligned — otherwise a
     // w-64 menu on a mid-pill button spills leftward off the pill.
@@ -225,11 +225,11 @@ test.describe('Floating toolbar - narrow screens (mock)', () => {
 
     // Docked navigation still works
     await expect(dockedToolbar(page)).toContainText('1 / 2')
-    await dockedToolbar(page).getByRole('button', { name: /下一页|Next/ }).click()
+    await dockedToolbar(page).getByRole('button', { name: /\u4e0b\u4e00\u9875|Next/ }).click()
     await expect(dockedToolbar(page)).toContainText('2 / 2')
 
     // Docked quality-control switch still saves the setting
-    const qcSwitch = dockedToolbar(page).getByRole('switch', { name: /质量控制|Quality Control/ })
+    const qcSwitch = dockedToolbar(page).getByRole('switch', { name: /\u8d28\u91cf\u63a7\u5236|Quality Control/ })
     await qcSwitch.click()
     await expect.poll(() => payloads.at(-1)?.enable_image_quality_control).toBe(true)
   })
@@ -245,7 +245,7 @@ test.describe('Floating toolbar - integration', () => {
     await expect(pill).toContainText('1 / 2')
     await expect(page.locator('main img[alt="Slide 1"]')).toBeVisible()
 
-    await pill.getByRole('button', { name: /下一页|Next/ }).click()
+    await pill.getByRole('button', { name: /\u4e0b\u4e00\u9875|Next/ }).click()
     await expect(pill).toContainText('2 / 2')
     await expect(page.locator('main img[alt="Slide 2"]')).toBeVisible()
   })

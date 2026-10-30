@@ -1,10 +1,10 @@
-"""RMBG-2.0 ONNX 本地推理主体抠图 provider。
+"""RMBG-2.0 ONNX Local Jurisprudence Curve provider。
 
-模型：AI-ModelScope/RMBG-2.0 (FP16 ONNX mirror)，CPU 推理。
-首次使用懒下载到 ~/.cache/banana-slides/models/rmbg-2.0/model_fp16.onnx，
-可通过 RMBG_MODEL_PATH 环境变量指定本地模型路径绕过下载。
+Model：AI-ModelScope/RMBG-2.0 (FP16 ONNX mirror)，CPU Arguments。
+Use lazy download for the first time ~/.cache/banana-slides/models/rmbg-2.0/model_fp16.onnx，
+It’s possible. RMBG_MODEL_PATH Environment variable specifies the local model path to go around download。
 
-注意：模型为 non-commercial license，仅用于本地推理。
+Note： Models are non-commercial license，Only for local reasoning。
 """
 import logging
 import os
@@ -25,7 +25,7 @@ _STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
 
 
 def _resolve_model_path() -> Path:
-    """优先用 RMBG_MODEL_PATH，否则用默认缓存路径。"""
+    """Priority RMBG_MODEL_PATH，Otherwise use the default cache path。"""
     env_path = os.environ.get("RMBG_MODEL_PATH")
     if env_path:
         return Path(env_path).expanduser()
@@ -46,12 +46,12 @@ def _decontaminate_foreground(
     bg_alpha_threshold: float = 0.05,
     fg_alpha_floor: float = 0.1,
 ) -> np.ndarray:
-    """从软 alpha 边缘像素里去掉原背景色的贡献，返回近似的真前景 RGB。
+    """From Soft alpha The edge pixels remove the original background color and return to the near future. RGB。
 
-    - 用 alpha < bg_alpha_threshold 的像素均值估计原背景色 B
-    - 对其他像素套 F = (C - (1-α)·B) / α，alpha 太小（< fg_alpha_floor）时
-      限制分母避免噪声放大
-    - 估不出背景（这种像素太少）时直接原样返回
+    - Use it. alpha < bg_alpha_threshold pixel average estimated original background colour B
+    - Other Pixels F = (C - (1-α)·B) / α，alpha It’s too small.（< fg_alpha_floor）Time
+      Limit denominator to avoid noise magnification
+    - You can’t estimate the background (this pixel is too small) and return as it is.
     """
     bg_mask = alpha < bg_alpha_threshold
     if bg_mask.sum() < 100:
@@ -65,7 +65,7 @@ def _decontaminate_foreground(
 
 
 class RmbgSegmentationProvider:
-    """RMBG-2.0 ONNX FP16 本地推理 provider。"""
+    """RMBG-2.0 ONNX FP16 Local reasoning provider。"""
 
     def __init__(self, model_path: Optional[Path] = None):
         self._model_path = model_path or _resolve_model_path()
@@ -84,14 +84,14 @@ class RmbgSegmentationProvider:
 
             import onnxruntime as ort
 
-            logger.info(f"🧠 加载 RMBG-2.0 ONNX 模型: {self._model_path}")
+            logger.info(f"🧠 Load RMBG-2.0 ONNX Model: {self._model_path}")
             self._session = ort.InferenceSession(
                 str(self._model_path), providers=["CPUExecutionProvider"]
             )
             self._input_name = self._session.get_inputs()[0].name
 
     def extract_subject(self, image: Image.Image) -> Optional[Image.Image]:
-        """对输入 PIL Image 抠出主体，返回 RGBA；失败返回 None。"""
+        """Right Input PIL Image Pull out the subject, return RGBA；Failed to return None。"""
         try:
             self._ensure_session()
             rgb = image.convert("RGB")
@@ -108,11 +108,11 @@ class RmbgSegmentationProvider:
             mask = np.asarray(mask, dtype=np.float32)
             mask = np.squeeze(mask)
             if mask.ndim != 2:
-                logger.warning(f"RMBG 输出 shape 异常: {mask.shape}，跳过")
+                logger.warning(f"RMBG Output shape Unusual: {mask.shape}，Skip")
                 return None
 
-            # RMBG-2.0 输出已应用 sigmoid，落在 [0,1]，但数值噪声可能略微越界。
-            # 仅在显著超出 [0,1] 时（明显是 raw logits）才补 sigmoid，否则裁剪即可。
+            # RMBG-2.0 Output applied sigmoid，It’s coming down. [0,1]，But the numerical noise may have crossed a little bit.。
+            # Only significantly more than that. [0,1] Time (clearly) raw logits）I’ll take care of it. sigmoid，Or shear it.。
             if mask.min() < -0.5 or mask.max() > 1.5:
                 mask = _sigmoid(mask)
 
@@ -121,18 +121,18 @@ class RmbgSegmentationProvider:
             mask_pil = Image.fromarray(mask_uint8, mode="L").resize(orig_size, Image.BILINEAR)
             alpha_full = np.asarray(mask_pil, dtype=np.float32) / 255.0
 
-            # 边缘去污染：模型给的软 alpha 边缘 RGB 仍然混着原背景色，
-            # 合成到新底色时会漏出旧背景。用 F=(C-(1-α)B)/α 反解真前景色。
+            # Edge de-polluting： the softness of the model alpha Edge RGB Still mixed with the original background.，
+            # The old background is leaked when synthesized to the new background. F=(C-(1-α)B)/α Introspective foreground.。
             rgb_decont = _decontaminate_foreground(np.asarray(rgb, dtype=np.float32), alpha_full)
 
-            # 极薄 alpha（<0.05）一律拍零，防止 1/α 放大噪声造成色斑。
+            # Very thin. alpha（<0.05）Zero, zero, no. 1/α Magnify the noise and make it colored.。
             alpha_full = np.where(alpha_full < 0.05, 0.0, alpha_full)
             alpha_uint8 = np.clip(alpha_full * 255.0, 0, 255).astype(np.uint8)
 
             rgba = np.dstack([rgb_decont.astype(np.uint8), alpha_uint8])
             return Image.fromarray(rgba, mode="RGBA")
         except Exception as e:
-            logger.warning(f"RMBG 抠图失败: {e}")
+            logger.warning(f"RMBG Shape Failed: {e}")
             return None
 
 
@@ -141,7 +141,7 @@ _singleton: Optional[RmbgSegmentationProvider] = None
 
 
 def create_rmbg_segmentation_provider() -> RmbgSegmentationProvider:
-    """单例工厂。"""
+    """Single factory。"""
     global _singleton
     if _singleton is not None:
         return _singleton

@@ -21,7 +21,7 @@ test.describe('Attachment Sorting and Filtering', () => {
     });
 
     await page.goto(`${BASE_URL}`);
-    await page.click('button:has-text("上传文件")');
+    await page.click('button:has-text("Upload File")');
 
     const fileItems = page.locator('.divide-y > div');
     await expect(fileItems.nth(0)).toContainText('new.pdf');
@@ -46,7 +46,7 @@ test.describe('Attachment Sorting and Filtering', () => {
     });
 
     await page.goto(`${BASE_URL}`);
-    await page.click('button:has-text("上传文件")');
+    await page.click('button:has-text("Upload File")');
     await page.selectOption('select >> nth=1', 'oldest');
 
     const fileItems = page.locator('.divide-y > div');
@@ -72,7 +72,7 @@ test.describe('Attachment Sorting and Filtering', () => {
     });
 
     await page.goto(`${BASE_URL}`);
-    await page.click('button:has-text("上传文件")');
+    await page.click('button:has-text("Upload File")');
     await page.selectOption('select >> nth=1', 'name-asc');
 
     const fileItems = page.locator('.divide-y > div');
@@ -98,7 +98,7 @@ test.describe('Attachment Sorting and Filtering', () => {
     });
 
     await page.goto(`${BASE_URL}`);
-    await page.click('button:has-text("上传文件")');
+    await page.click('button:has-text("Upload File")');
     await page.selectOption('select >> nth=1', 'name-desc');
 
     const fileItems = page.locator('.divide-y > div');
@@ -133,7 +133,7 @@ test.describe('Attachment Sorting and Filtering', () => {
     });
 
     await page.goto(`${BASE_URL}`);
-    await page.click('button:has-text("上传文件")');
+    await page.click('button:has-text("Upload File")');
 
     const filterSelect = page.locator('select').first();
     await expect(filterSelect.locator('option')).toHaveCount(5);
@@ -180,7 +180,7 @@ test.describe('Attachment Sorting and Filtering', () => {
     });
 
     await page.goto(`${BASE_URL}`);
-    await page.click('button:has-text("上传文件")');
+    await page.click('button:has-text("Upload File")');
 
     const filterSelect = page.locator('select').first();
     await filterSelect.selectOption('proj2');

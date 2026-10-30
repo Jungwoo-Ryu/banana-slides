@@ -56,9 +56,9 @@ def _resolve_exports_root(project_id):
 @export_bp.route('/<project_id>/exports', methods=['GET'])
 def list_exports(project_id):
     """
-    GET /api/projects/{project_id}/exports - 列出项目已导出的文件
+    GET /api/projects/{project_id}/exports - List the exported files of the item
 
-    返回 exports 目录下的文件列表（名称、大小、修改时间、下载链接）。
+    Back exports List of documents under directory (name, size, change time, download links)）。
     """
     try:
         project = db.session.get(Project, project_id)
@@ -77,7 +77,7 @@ def list_exports(project_id):
             name = filepath.name
             if not filepath.is_file():
                 continue
-            # 跳过临时目录和隐藏文件
+            # Skip temporary directories and hide files
             if name.startswith('.') or name.startswith('_'):
                 continue
 
@@ -96,7 +96,7 @@ def list_exports(project_id):
                 "download_url": f"/files/{project_id}/exports/{name}",
             })
 
-        # 按修改时间倒序
+        # Rewind the change time
         files.sort(key=lambda f: f['modified_at'], reverse=True)
 
         return success_response(data={"files": files})
@@ -108,7 +108,7 @@ def list_exports(project_id):
 @export_bp.route('/<project_id>/exports/<filename>', methods=['DELETE'])
 def delete_export(project_id, filename):
     """
-    DELETE /api/projects/{project_id}/exports/{filename} - 删除项目已导出的文件
+    DELETE /api/projects/{project_id}/exports/{filename} - Remove Exported File of the Item
     """
     try:
         project = db.session.get(Project, project_id)
@@ -143,11 +143,11 @@ def delete_export(project_id, filename):
 def export_pptx(project_id):
     """
     GET /api/projects/{project_id}/export/pptx?filename=...&page_ids=id1,id2,id3 - Export PPTX
-    
+
     Query params:
         - filename: optional custom filename
         - page_ids: optional comma-separated page IDs to export (if not provided, exports all pages)
-    
+
     Returns:
         JSON with download URL, e.g.
         {
@@ -160,32 +160,32 @@ def export_pptx(project_id):
     """
     try:
         project = Project.query.get(project_id)
-        
+
         if not project:
             return not_found('Project')
-        
+
         # Get page_ids from query params and fetch filtered pages
         selected_page_ids = parse_page_ids_from_query(request)
         logger.debug(f"[export_pptx] selected_page_ids: {selected_page_ids}")
-        
+
         pages = get_filtered_pages(project_id, selected_page_ids if selected_page_ids else None)
         logger.debug(f"[export_pptx] Exporting {len(pages)} pages")
-        
+
         if not pages:
             return bad_request("No pages found for project")
-        
+
         # Get image paths
         file_service = FileService(current_app.config['UPLOAD_FOLDER'])
-        
+
         image_paths = []
         for page in pages:
             if page.generated_image_path:
                 abs_path = file_service.get_absolute_path(page.generated_image_path)
                 image_paths.append(abs_path)
-        
+
         if not image_paths:
             return bad_request("No generated images found for project")
-        
+
         # Determine export directory and filename
         exports_dir = file_service._get_exports_dir(project_id)
 
@@ -220,7 +220,7 @@ def export_pptx(project_id):
             },
             message="Export PPTX task created"
         )
-    
+
     except Exception as e:
         return error_response('SERVER_ERROR', str(e), 500)
 
@@ -229,11 +229,11 @@ def export_pptx(project_id):
 def export_pdf(project_id):
     """
     GET /api/projects/{project_id}/export/pdf?filename=...&page_ids=id1,id2,id3 - Export PDF
-    
+
     Query params:
         - filename: optional custom filename
         - page_ids: optional comma-separated page IDs to export (if not provided, exports all pages)
-    
+
     Returns:
         JSON with download URL, e.g.
         {
@@ -246,29 +246,29 @@ def export_pdf(project_id):
     """
     try:
         project = Project.query.get(project_id)
-        
+
         if not project:
             return not_found('Project')
-        
+
         # Get page_ids from query params and fetch filtered pages
         selected_page_ids = parse_page_ids_from_query(request)
         pages = get_filtered_pages(project_id, selected_page_ids if selected_page_ids else None)
-        
+
         if not pages:
             return bad_request("No pages found for project")
-        
+
         # Get image paths
         file_service = FileService(current_app.config['UPLOAD_FOLDER'])
-        
+
         image_paths = []
         for page in pages:
             if page.generated_image_path:
                 abs_path = file_service.get_absolute_path(page.generated_image_path)
                 image_paths.append(abs_path)
-        
+
         if not image_paths:
             return bad_request("No generated images found for project")
-        
+
         # Determine export directory and filename
         exports_dir = file_service._get_exports_dir(project_id)
 
@@ -294,7 +294,7 @@ def export_pdf(project_id):
             },
             message="Export PDF task created"
         )
-    
+
     except Exception as e:
         return error_response('SERVER_ERROR', str(e), 500)
 
@@ -370,26 +370,26 @@ def export_images(project_id):
 @export_bp.route('/<project_id>/export/editable-pptx', methods=['POST'])
 def export_editable_pptx(project_id):
     """
-    POST /api/projects/{project_id}/export/editable-pptx - 导出可编辑PPTX（异步）
-    
-    使用递归分析方法（支持任意尺寸、递归子图分析）
-    
-    这个端点创建一个异步任务来执行以下操作：
-    1. 递归分析图片（支持任意尺寸和分辨率）
-    2. 转换为PDF并上传MinerU识别
-    3. 提取元素bbox和生成clean background（inpainting）
-    4. 递归处理图片/图表中的子元素
-    5. 创建可编辑PPTX
-    
+    POST /api/projects/{project_id}/export/editable-pptx - Export Editable PPTX（A walk.）
+
+    Use recursive analysis (support for any size, regression sub-graphic analysis)）
+
+    This peer creates a different task to perform the following：：
+    1. Recursively analyze pictures (supports any size and resolution)）
+    2. Convert to PDF & Upload MinerU Identification
+    3. Extract Element bbox And generate clean background（inpainting）
+    4. Recursive processing of pictures/Sub-elements in Charts
+    5. Create Editable PPTX
+
     Request body (JSON):
         {
             "filename": "optional_custom_name.pptx",
-            "page_ids": ["id1", "id2"],  // 可选，要导出的页面ID列表（不提供则导出所有）
-            "client_task_id": "uuid",     // 可选，用于安全重试创建请求
-            "max_depth": 1,      // 可选，递归深度（默认1=不递归，2=递归一层）
-            "max_workers": 4     // 可选，并发数（默认4）
+            "page_ids": ["id1", "id2"],  // Optional, Exportable Pages ID List (without supply, export all)）
+            "client_task_id": "uuid",     // Optional, for safe retest creation request
+            "max_depth": 1,      // Optional, Recursive Depth (default) 1=Not Recursive，2=Recursively）
+            "max_workers": 4     // Optional, simultaneous (default) 4）
         }
-    
+
     Returns:
         JSON with task_id, e.g.
         {
@@ -402,15 +402,15 @@ def export_editable_pptx(project_id):
             },
             "message": "Export task created"
         }
-    
-    轮询 /api/projects/{project_id}/tasks/{task_id} 获取进度和下载链接
+
+    Rotation /api/projects/{project_id}/tasks/{task_id} Get progress and download links
     """
     try:
         project = Project.query.get(project_id)
-        
+
         if not project:
             return not_found('Project')
-        
+
         # Get parameters from request body
         data = request.get_json() or {}
 
@@ -440,38 +440,38 @@ def export_editable_pptx(project_id):
                     },
                     message="Existing export task returned",
                 )
-        
+
         # Get page_ids from request body and fetch filtered pages
         selected_page_ids = parse_page_ids_from_body(data)
         pages = get_filtered_pages(project_id, selected_page_ids if selected_page_ids else None)
-        
+
         if not pages:
             return bad_request("No pages found for project")
-        
+
         # Check if pages have generated images
         has_images = any(page.generated_image_path for page in pages)
         if not has_images:
             return bad_request("No generated images found for project")
-        
+
         # Get parameters from request body
         data = request.get_json() or {}
         filename = data.get('filename', f'presentation_editable_{project_id}.pptx')
         if not filename.endswith('.pptx'):
             filename += '.pptx'
-        
-        # 递归分析参数
-        # max_depth 语义：1=只处理表层不递归，2=递归一层（处理图片/图表中的子元素）
-        max_depth = data.get('max_depth', 1)  # 默认不递归，与测试脚本一致
+
+        # Recursive parsing parameters
+        # max_depth Semantic：1=Only handle surface non-regression，2=Recursive (processing pictures)/Sub-elements in Charts）
+        max_depth = data.get('max_depth', 1)  # Default not recursive, consistent with test script
         max_workers = data.get('max_workers', 4)
-        
+
         # Validate parameters
-        # max_depth >= 1: 至少处理表层元素
+        # max_depth >= 1: At least process surface elements
         if not isinstance(max_depth, int) or max_depth < 1 or max_depth > 5:
             return bad_request("max_depth must be an integer between 1 and 5")
-        
+
         if not isinstance(max_workers, int) or max_workers < 1 or max_workers > 16:
             return bad_request("max_workers must be an integer between 1 and 16")
-        
+
         # Create task record
         task_kwargs = {
             'project_id': project_id,
@@ -483,9 +483,9 @@ def export_editable_pptx(project_id):
         task = Task(**task_kwargs)
         db.session.add(task)
         db.session.commit()
-        
+
         logger.info(f"Created export task {task.id} for project {project_id} (recursive analysis: depth={max_depth}, workers={max_workers})")
-        
+
         try:
             # Get services
             from services.file_service import FileService
@@ -496,7 +496,7 @@ def export_editable_pptx(project_id):
             # Get Flask app instance for background task
             app = current_app._get_current_object()
 
-            # 读取项目的导出设置
+            # Export Settings for Read Items
             export_extractor_method = project.export_extractor_method or 'hybrid'
             export_inpaint_method = project.export_inpaint_method or 'hybrid'
             enable_icon_subject_extraction = (
@@ -509,7 +509,7 @@ def export_editable_pptx(project_id):
                 f"icon_subject_extraction={enable_icon_subject_extraction}"
             )
 
-            # 使用递归分析任务（不需要 ai_service，使用 ImageEditabilityService）
+            # Use recursive parsing tasks (not required) ai_service，Usage ImageEditabilityService）
             task_manager.submit_task(
                 task.id,
                 export_editable_pptx_with_recursive_analysis_task,
@@ -526,7 +526,7 @@ def export_editable_pptx(project_id):
             )
         except Exception as submission_error:
             logger.exception("Failed to submit editable export task %s", task.id)
-            failure_message = "可编辑导出任务未能进入后台队列"
+            failure_message = "Editable Export Task failed to enter backstage queue"
             task.status = 'FAILED'
             task.error_message = failure_message
             task.completed_at = datetime.utcnow()
@@ -534,7 +534,7 @@ def export_editable_pptx(project_id):
                 'total': 100,
                 'completed': 0,
                 'failed': 1,
-                'current_step': '任务提交失败',
+                'current_step': 'Job submission failed',
                 'percent': 0,
                 'backend_status': 'FAILED',
                 'error_code': 'EXPORT_TASK_SUBMISSION_FAILED',
@@ -545,13 +545,13 @@ def export_editable_pptx(project_id):
                     'retryable': True,
                     'technical_message': ExportService._safe_technical_message(submission_error),
                 },
-                'help_text': '后台任务队列暂时不可用，请稍后重新导出。',
+                'help_text': 'Backstage Queue is not available for now. Please re-export later.。',
             })
             db.session.commit()
             return error_response('EXPORT_TASK_SUBMISSION_FAILED', failure_message, 503)
-        
+
         logger.info(f"Submitted recursive export task {task.id} to task manager")
-        
+
         return success_response(
             data={
                 "task_id": task.id,
@@ -561,7 +561,7 @@ def export_editable_pptx(project_id):
             },
             message="Export task created (using recursive analysis)"
         )
-    
+
     except Exception as e:
         logger.exception("Error creating export task")
         return error_response('SERVER_ERROR', str(e), 500)
@@ -570,18 +570,18 @@ def export_editable_pptx(project_id):
 @export_bp.route('/<project_id>/export/video', methods=['POST'])
 def export_video(project_id):
     """
-    POST /api/projects/{project_id}/export/video - 导出讲解视频（异步）
+    POST /api/projects/{project_id}/export/video - Export speaking video (shows)）
 
-    将幻灯片图片 + TTS 旁白合成为 MP4 视频，含 Ken Burns 动效。
+    Put Slide Pictures + TTS Synthesize narration as MP4 Video, including Ken Burns Activate。
 
     Request body (JSON):
         {
             "filename": "optional_custom_name.mp4",
-            "page_ids": ["id1", "id2"],          // 可选
-            "voice": "zh-CN-XiaoxiaoNeural",     // 可选 TTS 语音
-            "rate": "+0%",                        // 可选语速
-            "generate_narration": true,            // 是否自动生成缺失旁白（默认 true）
-            "language": "zh"                       // 可选输出语言
+            "page_ids": ["id1", "id2"],          // Optional
+            "voice": "zh-CN-XiaoxiaoNeural",     // Optional TTS Voice
+            "rate": "+0%",                        // Optional Speed
+            "generate_narration": true,            // Automatically generate missing narration (default true）
+            "language": "zh"                       // Optional Output Language
         }
 
     Returns:
@@ -598,7 +598,7 @@ def export_video(project_id):
 
         data = request.get_json() or {}
 
-        # 参数 — 使用 secure_filename 防止路径遍历
+        # Parameters — Usage secure_filename Prevent Path Walking
         raw_filename = data.get('filename', f'narration_{project_id}.mp4')
         filename = secure_filename(raw_filename)
         if not filename:
@@ -623,7 +623,7 @@ def export_video(project_id):
             fallback_topic=presentation_topic,
         )
 
-        # 获取页面
+        # Get Page
         selected_page_ids = parse_page_ids_from_body(data)
 
         pages = get_filtered_pages(project_id, selected_page_ids if selected_page_ids else None)
@@ -635,12 +635,12 @@ def export_video(project_id):
         if not has_images and not include_no_image_pages:
             return bad_request("No generated images found for project. Enable 'include pages without images' to export all pages.")
 
-        # 根据语言自动选择默认语音
+        # Automatically select the default voice according to the language
         if 'voice' not in data:
             from services.tts_video_service import get_default_voice
             voice = get_default_voice(language, dict(current_app.config))
 
-        # 创建任务
+        # Create Task
         task = Task(
             project_id=project_id,
             task_type='EXPORT_VIDEO',
@@ -651,7 +651,7 @@ def export_video(project_id):
 
         logger.info(f"Created video export task {task.id} for project {project_id}")
 
-        # 提交后台任务
+        # Commit Backstage Tasks
         from services.file_service import FileService
         from services.task_manager import task_manager, export_video_task
 

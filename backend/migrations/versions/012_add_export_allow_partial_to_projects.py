@@ -28,7 +28,7 @@ def upgrade():
     # Add export_allow_partial column to projects table
     if not _column_exists('projects', 'export_allow_partial'):
         op.add_column('projects', sa.Column('export_allow_partial', sa.Boolean(), nullable=True, server_default='0'))
-    # 为现有行设置默认值 false，避免 NULL 状态
+    # Set Default for Existing Lines false，Avoid NULL Status
     op.execute("UPDATE projects SET export_allow_partial = false WHERE export_allow_partial IS NULL")
 
 

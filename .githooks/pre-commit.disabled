@@ -1,60 +1,60 @@
 #!/bin/bash
-# Pre-commit hook: 自动翻译README.md到README_EN.md
-# 只有在README.md被修改时才会触发
+# Pre-commit hook: Autotranslation README.md Present. README_EN.md
+# Only README.md Only when modified
 
 set -e
 
-# 检查README.md是否在本次提交中被修改
+# Inspection README.md Modified in the current submission
 if git diff --cached --name-only | grep -q "^README\.md$"; then
-    echo "检测到README.md变更，正在自动翻译到README_EN.md..."
-    
-    # 检查是否在项目根目录
+    echo "Detected README.md Change, autotranslating to README_EN.md..."
+
+    # Check if it’s in the root directory
     if [ ! -f "README.md" ]; then
-        echo "错误: 未找到README.md"
+        echo "Error: Not found README.md"
         exit 1
     fi
-    
-    # 检查.env文件
+
+    # Inspection.env Documentation
     if [ ! -f ".env" ]; then
-        echo "警告: 未找到.env文件，跳过翻译"
-        echo "如需自动翻译，请确保.env文件包含必要的API密钥配置"
+        echo "Warning: Not found.env File, Skip Translation"
+        echo "If you need to translate automatically, make sure.env File contains necessary API Key Configuration"
         exit 0
     fi
-    
-    # 加载环境变量
+
+    # Loading Environment Variables
     set -a
     source .env 2>/dev/null || true
     set +a
-    
-    # 检查必要的环境变量
+
+    # Check the necessary environment variables
     if [ -z "$GOOGLE_API_KEY" ]; then
-        echo "警告: GOOGLE_API_KEY未设置，跳过翻译"
-        echo "如需自动翻译，请在.env文件中设置GOOGLE_API_KEY"
+        echo "Warning: GOOGLE_API_KEY Unset, Skip Translation"
+        echo "For automatic translation, please be in.env File Settings GOOGLE_API_KEY"
         exit 0
     fi
-    
-    # 检查uv是否可用
+
+    # Inspection uv Available
     if ! command -v uv &> /dev/null; then
-        echo "警告: uv未安装，跳过翻译"
+        echo "Warning: uv Not installed, Skip translation"
         exit 0
     fi
-    
-    # 运行翻译脚本
-    echo "开始翻译..."
+
+    # Run translation scripts
+    echo "Start translation...."
     if uv run python scripts/translate_readme.py; then
-        echo "✅ 翻译成功！"
-        
-        # 将翻译后的README_EN.md添加到本次提交
+        echo "✅ Translation success！"
+
+        # After translation README_EN.md Add to Current Submission
         git add README_EN.md
-        echo "README_EN.md已自动添加到本次提交"
+        echo "README_EN.md Automatically added to current submission"
     else
-        echo "❌ 翻译失败，但不阻止提交"
-        echo "你可以稍后手动运行: ./scripts/test_translation.sh"
-        # 不阻止提交，允许继续
+        echo "❌ Translation failed, but does not prevent submission"
+        echo "You can run manually later.: ./scripts/test_translation.sh"
+        # Do not prevent submission, and allow continuation.
         exit 0
     fi
 else
-    # README.md未修改，无需翻译
+    # README.md No change, no translation required
     exit 0
 fi
 

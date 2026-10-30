@@ -9,7 +9,7 @@ test.describe('Access Code Guard (mocked)', () => {
     );
     await page.goto('/');
     // Verify app loaded (no access code prompt)
-    await expect(page.getByText('请输入访问口令')).not.toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Please enter your access password.')).not.toBeVisible({ timeout: 5000 });
   });
 
   test('shows access code prompt when enabled and no saved code', async ({ page }) => {
@@ -17,7 +17,7 @@ test.describe('Access Code Guard (mocked)', () => {
       route.fulfill({ json: { data: { enabled: true } } })
     );
     await page.goto('/');
-    await expect(page.getByText('请输入访问口令')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Please enter your access password.')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('input[type="password"]')).toBeVisible();
   });
 
@@ -30,8 +30,8 @@ test.describe('Access Code Guard (mocked)', () => {
     );
     await page.goto('/');
     await page.locator('input[type="password"]').fill('test123');
-    await page.getByRole('button', { name: '确认' }).click();
-    await expect(page.getByText('请输入访问口令')).not.toBeVisible({ timeout: 10000 });
+    await page.getByRole('button', { name: 'Confirm.' }).click();
+    await expect(page.getByText('Please enter your access password.')).not.toBeVisible({ timeout: 10000 });
   });
 
   test('shows error on wrong code', async ({ page }) => {
@@ -43,8 +43,8 @@ test.describe('Access Code Guard (mocked)', () => {
     );
     await page.goto('/');
     await page.locator('input[type="password"]').fill('wrong');
-    await page.getByRole('button', { name: '确认' }).click();
-    await expect(page.getByText('口令错误')).toBeVisible({ timeout: 5000 });
+    await page.getByRole('button', { name: 'Confirm.' }).click();
+    await expect(page.getByText('Password error')).toBeVisible({ timeout: 5000 });
   });
 
   test('shows connection error with retry when backend is unreachable', async ({ page }) => {
@@ -52,9 +52,9 @@ test.describe('Access Code Guard (mocked)', () => {
       route.abort('connectionrefused')
     );
     await page.goto('/');
-    await expect(page.getByText('无法连接到后端服务')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText('请检查后端服务是否正常运行')).toBeVisible();
-    await expect(page.getByRole('button', { name: '重试' })).toBeVisible();
+    await expect(page.getByText('Could not connect to backend service')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Please check that backend service is functioning.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     // No access code input should be shown
     await expect(page.locator('input[type="password"]')).not.toBeVisible();
   });
@@ -66,10 +66,10 @@ test.describe('Access Code Guard (mocked)', () => {
       return route.fulfill({ json: { data: { enabled: false } } });
     });
     await page.goto('/');
-    await expect(page.getByText('无法连接到后端服务')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Could not connect to backend service')).toBeVisible({ timeout: 10000 });
     shouldSucceed = true;
-    await page.getByRole('button', { name: '重试' }).click();
-    await expect(page.getByText('无法连接到后端服务')).not.toBeVisible({ timeout: 10000 });
+    await page.getByRole('button', { name: 'Try again' }).click();
+    await expect(page.getByText('Could not connect to backend service')).not.toBeVisible({ timeout: 10000 });
   });
 
   test('auto-verifies saved code from localStorage', async ({ page }) => {
@@ -85,7 +85,7 @@ test.describe('Access Code Guard (mocked)', () => {
     await page.goto('/');
     await page.evaluate(() => localStorage.setItem('banana-access-code', 'saved-code'));
     await page.reload();
-    await expect(page.getByText('请输入访问口令')).not.toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Please enter your access password.')).not.toBeVisible({ timeout: 10000 });
     expect(verified).toBe(true);
   });
 });

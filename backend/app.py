@@ -62,7 +62,7 @@ def set_sqlite_pragma(dbapi_conn, connection_record):
 def create_app():
     """Application factory"""
     app = Flask(__name__)
-    
+
     # Load configuration from Config class
     app.config.from_object(Config)
 
@@ -86,7 +86,7 @@ def create_app():
     upload_folder = os.path.join(project_root, 'uploads')
     os.makedirs(upload_folder, exist_ok=True)
     app.config['UPLOAD_FOLDER'] = upload_folder
-    
+
     # Desktop environment overrides (set by Electron python-manager)
     upload_folder_env = os.environ.get('UPLOAD_FOLDER')
     export_folder_env = os.environ.get('EXPORT_FOLDER')
@@ -108,7 +108,7 @@ def create_app():
     else:
         cors_origins = [o.strip() for o in raw_cors.split(',') if o.strip()]
     app.config['CORS_ORIGINS'] = cors_origins
-    
+
     # Initialize logging (log to stdout so Docker can capture it)
     log_level = getattr(logging, app.config['LOG_LEVEL'], logging.INFO)
     logging.basicConfig(
@@ -116,8 +116,8 @@ def create_app():
         format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
         handlers=[logging.StreamHandler(sys.stdout)],
     )
-    
-    # 设置第三方库的日志级别，避免过多的DEBUG日志
+
+    # Set a third-party library log level to avoid too many DEBUG Log
     logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
     logging.getLogger('httpcore').setLevel(logging.WARNING)
     logging.getLogger('httpx').setLevel(logging.WARNING)
@@ -142,7 +142,7 @@ def create_app():
     CORS(app, origins=cors_origins)
     # Database migrations (Alembic via Flask-Migrate)
     Migrate(app, db)
-    
+
     # Register blueprints
     app.register_blueprint(project_bp)
     app.register_blueprint(page_bp)
@@ -185,8 +185,8 @@ def create_app():
     @app.route('/api/output-language', methods=['GET'])
     def get_output_language():
         """
-        获取用户的输出语言偏好（从数据库 Settings 读取）
-        返回: zh, ja, en, auto
+        Fetch user preference for output language (from database) Settings Read）
+        Back: zh, ja, en, auto
         """
         from models import Settings
         try:
@@ -194,7 +194,7 @@ def create_app():
             return {'data': {'language': settings.output_language or Config.OUTPUT_LANGUAGE}}
         except SQLAlchemyError as db_error:
             logging.warning(f"Failed to load output language from settings: {db_error}")
-            return {'data': {'language': Config.OUTPUT_LANGUAGE}}  # 默认中文
+            return {'data': {'language': Config.OUTPUT_LANGUAGE}}  # Default Chinese
 
     # Root endpoint
     @app.route('/')
@@ -209,7 +209,7 @@ def create_app():
                 'projects': '/api/projects'
             }
         }
-    
+
     return app
 
 
@@ -232,16 +232,16 @@ def _compute_worktree_port(base_port: int) -> int:
 
 
 def _reconcile_orphaned_tasks_on_startup(target_app=None) -> None:
-    """清理上一个进程遗留的后台任务。
+    """Cleans up backstage tasks from the previous process。
 
-    后台任务只存在于进程内，重启后数据库里的 PENDING/PROCESSING 记录
-    永远不会再推进，前端却会一直显示"进行中"。这里在服务真正启动前
-    统一标记为中断（只在启动入口调用，不在 create_app/import 时调用，
-    避免测试、脚本或第二个实例误判其它进程正在跑的任务）。
+    Back-office tasks only exist in the process, in the restart database PENDING/PROCESSING Records
+    It’ll never advance again, but the front end will always show."Ongoing"。It’s here before the service actually starts.
+    Uniform mark as interrupted (call only at startup entry, not in create_app/import Time Call，
+    Avoid testing, scripting or second instance miscalculation of other running processes）。
     """
     try:
         from services.task_watchdog import reconcile_orphaned_tasks
-        # 需要应用上下文才能查询数据库
+        # You need to apply context to query the database
         target_app = target_app or globals().get('app')
         with target_app.app_context():
             reconciled = reconcile_orphaned_tasks()
@@ -256,12 +256,12 @@ def _reconcile_orphaned_tasks_on_startup(target_app=None) -> None:
 
 
 def _port_available(port: int) -> bool:
-    """检查端口是否可绑定。
+    """Check port binding。
 
-    如果端口已被占用（例如另一个实例正在跑），启动会在 app.run 处失败；
-    此时不应该执行任务对账，否则会把那个实例正在跑的任务误判为中断。
-    探测选项与 werkzeug 服务器保持一致（SO_REUSEADDR），
-    否则 TIME_WAIT 会被误判为"端口被占用"，导致刚重启时跳过对账。
+    If the port is already occupied (e.g. another instance is running), startup will app.run Failed at all；
+    We shouldn’t be doing the reconciliation at this time, or we’ll misjudge the run-off as an interruption.。
+    Detection options and werkzeug Servers are consistent.（SO_REUSEADDR），
+    Otherwise... TIME_WAIT They’ll be miscalculated."Port occupied"，Caused to skip reconciliations just after restarting。
     """
     import socket
 
@@ -280,10 +280,10 @@ _instance_lock_handle = None
 
 
 def _acquire_instance_lock(target_app=None) -> bool:
-    """独占当前数据根，防止第二个实例把第一个实例的任务判为中断。
+    """Take the root of the current data and prevent the second example from suspending the task of the first example。
 
-    返回 True 表示本进程拿到了锁（可以执行启动对账）。锁文件随进程存活，
-    无法创建/加锁时返回 True（退回原来的行为，不影响启动）。
+    Back True This means that the process is locked (which allows start-up reconciliations to be executed).，
+    Unable to create/Back when locking True（Returning to the original act does not affect commencement.）。
     """
     global _instance_lock_handle
     if _instance_lock_handle is not None:
@@ -319,10 +319,10 @@ def _acquire_instance_lock(target_app=None) -> bool:
         handle.truncate()
         handle.write(f"{os.getpid()}\n")
         handle.flush()
-    except OSError:  # pragma: no cover - 写 pid 失败不影响锁
+    except OSError:  # pragma: no cover - Write pid Failure doesn’t affect the lock.
         pass
 
-    _instance_lock_handle = handle  # 保持打开：锁随进程存在
+    _instance_lock_handle = handle  # Keep Open： Lock Following Process exists
     return True
 
 
@@ -330,7 +330,7 @@ if __name__ == '__main__':
     app = create_app()
     # Run development server
     if os.getenv("IN_DOCKER", "0") == "1":
-        port = 5000  # Docker 容器内部固定使用 5000 端口
+        port = 5000  # Docker Fixed internal use of containers 5000 Port
     elif os.getenv('BACKEND_PORT'):
         port = int(os.getenv('BACKEND_PORT'))
     else:
@@ -372,7 +372,7 @@ if __name__ == '__main__':
         finally:
             server.server_close()
         raise SystemExit(0)
-    
+
     logging.info(
         "\n"
         "╔══════════════════════════════════════╗\n"

@@ -1,7 +1,7 @@
 /**
  * E2E tests for the in-place edit mode on the Slide Preview page.
  *
- * Desktop (lg+): "编辑" no longer opens a modal. The slide stays in place at full
+ * Desktop (lg+): "Edit" no longer opens a modal. The slide stays in place at full
  * size, the floating toolbar crossfades into a command bar in the same slot, and
  * the user boxes a region directly on the canvas image. The properties drawer is
  * left however the user had it. Narrow screens (< lg) keep the old modal — there
@@ -24,7 +24,7 @@ function mockProject(overrides: Record<string, unknown> = {}) {
   return {
     id: MOCK_PROJECT_ID,
     project_id: MOCK_PROJECT_ID,
-    project_title: '就地编辑测试项目',
+    project_title: 'On-site editing test items',
     status: 'IMAGES_GENERATED',
     template_mode: 'single',
     image_aspect_ratio: '16:9',
@@ -36,8 +36,8 @@ function mockProject(overrides: Record<string, unknown> = {}) {
         page_id: 'page-1',
         order_index: 0,
         status: 'COMPLETED',
-        outline_content: { title: '第一页标题', points: ['要点一'] },
-        description_content: { text: '第一页描述' },
+        outline_content: { title: 'Title of first page', points: ['Point one.'] },
+        description_content: { text: 'First Page Description' },
         generated_image_path: 'inline/page-1.jpg',
         created_at: '2026-07-01T10:00:00.000Z',
         updated_at: '2026-07-01T10:00:00.000Z',
@@ -47,8 +47,8 @@ function mockProject(overrides: Record<string, unknown> = {}) {
         page_id: 'page-2',
         order_index: 1,
         status: 'COMPLETED',
-        outline_content: { title: '第二页标题', points: [] },
-        description_content: { text: '第二页描述' },
+        outline_content: { title: 'Title of the second page', points: [] },
+        description_content: { text: 'Page 2 Description' },
         generated_image_path: 'inline/page-2.jpg',
         created_at: '2026-07-01T10:00:00.000Z',
         updated_at: '2026-07-01T10:00:00.000Z',
@@ -146,14 +146,14 @@ test.describe('In-place edit - desktop (mock)', () => {
     await page.goto(`/project/${MOCK_PROJECT_ID}/preview`)
 
     await expect(pill(page)).toBeVisible()
-    await pill(page).getByRole('button', { name: /^编辑$/ }).click()
+    await pill(page).getByRole('button', { name: /^\u7f16\u8f91$/ }).click()
 
     await expect(panel(page)).toBeVisible()
     await expect(pill(page)).toBeHidden()
     // no modal, and no outline/description fields — those stay in the drawer
     await expect(page.getByRole('dialog')).toHaveCount(0)
-    await expect(panel(page).getByText('页面大纲（可编辑）')).toHaveCount(0)
-    await expect(panel(page).getByText('仅保存大纲/描述')).toHaveCount(0)
+    await expect(panel(page).getByText('Page Outline (Editable)）')).toHaveCount(0)
+    await expect(panel(page).getByText('Save outline only/Description')).toHaveCount(0)
   })
 
   test('keeps the slide in place at full size when the command bar opens', async ({ page }) => {
@@ -161,7 +161,7 @@ test.describe('In-place edit - desktop (mock)', () => {
     await page.goto(`/project/${MOCK_PROJECT_ID}/preview`)
 
     const before = (await canvasImage(page).boundingBox())!
-    await pill(page).getByRole('button', { name: /^编辑$/ }).click()
+    await pill(page).getByRole('button', { name: /^\u7f16\u8f91$/ }).click()
     await expect(panel(page)).toBeVisible()
     // let the command bar's slide-in animation settle before measuring
     await page.waitForTimeout(400)
@@ -188,14 +188,14 @@ test.describe('In-place edit - desktop (mock)', () => {
     // Entering edit mode used to force the drawer shut. The drawer is the
     // user's own choice, so edit mode must not touch it — and its fields stay
     // readable while writing the instruction.
-    await pill(page).getByRole('button', { name: /^编辑$/ }).click()
+    await pill(page).getByRole('button', { name: /^\u7f16\u8f91$/ }).click()
     await expect(panel(page)).toBeVisible()
     await expect(page.getByTestId('drawer-title-input')).toBeVisible()
     // give the old collapse animation a window to run before asserting
     await page.waitForTimeout(500)
     expect(await drawerWidth()).toBe(widthBefore)
 
-    await panel(page).getByRole('button', { name: /^取消$/ }).click()
+    await panel(page).getByRole('button', { name: /^\u53d6\u6d88$/ }).click()
     await expect(panel(page)).toBeHidden()
     expect(await drawerWidth()).toBe(widthBefore)
   })
@@ -208,7 +208,7 @@ test.describe('In-place edit - desktop (mock)', () => {
     await page.goto(`/project/${MOCK_PROJECT_ID}/preview`)
     await expect(page.getByTestId('drawer-title-input')).toHaveCount(0)
 
-    await pill(page).getByRole('button', { name: /^编辑$/ }).click()
+    await pill(page).getByRole('button', { name: /^\u7f16\u8f91$/ }).click()
     await expect(panel(page)).toBeVisible()
     await expect(page.getByTestId('drawer-title-input')).toHaveCount(0)
   })
@@ -216,7 +216,7 @@ test.describe('In-place edit - desktop (mock)', () => {
   test('Escape leaves edit mode', async ({ page }) => {
     await mockPreview(page)
     await page.goto(`/project/${MOCK_PROJECT_ID}/preview`)
-    await pill(page).getByRole('button', { name: /^编辑$/ }).click()
+    await pill(page).getByRole('button', { name: /^\u7f16\u8f91$/ }).click()
     await expect(panel(page)).toBeVisible()
 
     await page.keyboard.press('Escape')
@@ -227,16 +227,16 @@ test.describe('In-place edit - desktop (mock)', () => {
   test('defaults to region selection and attaches a crop without an extra click', async ({ page }) => {
     await mockPreview(page)
     await page.goto(`/project/${MOCK_PROJECT_ID}/preview`)
-    await pill(page).getByRole('button', { name: /^编辑$/ }).click()
+    await pill(page).getByRole('button', { name: /^\u7f16\u8f91$/ }).click()
 
-    await expect(page.getByRole('button', { name: /结束区域选图/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: /\u7ed3\u675f\u533a\u57df\u9009\u56fe/ })).toBeVisible()
 
     const imageBox = await dragRegion(page)
 
     // The command bar never shows raw i18n keys, and capturing a region toasts
     // real copy (a mistyped namespace would surface "slidePreview.regionCrop…").
     await expect(panel(page)).not.toContainText(/preview\.|slidePreview\./)
-    await expect(page.getByText(/添加为参考图|added as a reference/i)).toBeVisible()
+    await expect(page.getByText(/\u6dfb\u52a0\u4e3a\u53c2\u8003\u56fe|added as a reference/i)).toBeVisible()
 
     const selection = page.getByTestId('inline-edit-selection')
     await expect(selection).toBeVisible()
@@ -253,23 +253,23 @@ test.describe('In-place edit - desktop (mock)', () => {
   test('keeps generate disabled until an instruction is typed', async ({ page }) => {
     await mockPreview(page)
     await page.goto(`/project/${MOCK_PROJECT_ID}/preview`)
-    await pill(page).getByRole('button', { name: /^编辑$/ }).click()
+    await pill(page).getByRole('button', { name: /^\u7f16\u8f91$/ }).click()
 
-    const generate = panel(page).getByRole('button', { name: /生成图片/ })
+    const generate = panel(page).getByRole('button', { name: /\u751f\u6210\u56fe\u7247/ })
     await expect(generate).toBeDisabled()
-    await promptBox(page).fill('把标题改成蓝色')
+    await promptBox(page).fill('Change the title to blue.')
     await expect(generate).toBeEnabled()
   })
 
   test('shows a real thumbnail for each uploaded reference image', async ({ page }) => {
     await mockPreview(page)
     await page.goto(`/project/${MOCK_PROJECT_ID}/preview`)
-    await pill(page).getByRole('button', { name: /^编辑$/ }).click()
+    await pill(page).getByRole('button', { name: /^\u7f16\u8f91$/ }).click()
     await expect(page.getByTestId('inline-edit-attachments')).toHaveCount(0)
 
     const fixtures = path.join(FRONTEND_DIR, 'e2e', 'fixtures')
     // The upload input lives in the "+" attach menu, so open it first.
-    await panel(page).getByRole('button', { name: /添加参考图|Add reference/ }).click()
+    await panel(page).getByRole('button', { name: /\u6dfb\u52a0\u53c2\u8003\u56fe|Add reference/ }).click()
     await panel(page)
       .locator('input[type="file"]')
       .setInputFiles([path.join(fixtures, 'slide_1.jpg'), path.join(fixtures, 'slide_2.jpg')])
@@ -286,7 +286,7 @@ test.describe('In-place edit - desktop (mock)', () => {
 
     // Removing one drops its thumbnail and leaves the other decoded.
     await thumbs.first().hover()
-    await page.getByRole('button', { name: /删除|Delete/ }).first().click()
+    await page.getByRole('button', { name: /\u5220\u9664|Delete/ }).first().click()
     await expect(thumbs).toHaveCount(1)
     await expect
       .poll(() => thumbs.first().evaluate((el: HTMLImageElement) => el.naturalWidth))
@@ -296,10 +296,10 @@ test.describe('In-place edit - desktop (mock)', () => {
   test('clicking the input while the attach menu is open focuses it and closes the menu', async ({ page }) => {
     await mockPreview(page)
     await page.goto(`/project/${MOCK_PROJECT_ID}/preview`)
-    await pill(page).getByRole('button', { name: /^编辑$/ }).click()
+    await pill(page).getByRole('button', { name: /^\u7f16\u8f91$/ }).click()
 
-    await panel(page).getByRole('button', { name: /添加参考图|Add reference/ }).click()
-    const menuItem = page.getByText(/从素材库选择|Select from Materials/)
+    await panel(page).getByRole('button', { name: /\u6dfb\u52a0\u53c2\u8003\u56fe|Add reference/ }).click()
+    const menuItem = page.getByText(/\u4ece\u7d20\u6750\u5e93\u9009\u62e9|Select from Materials/)
     await expect(menuItem).toBeVisible()
 
     // The menu used to be dismissed by a full-screen backdrop that swallowed
@@ -319,10 +319,10 @@ test.describe('In-place edit - desktop (mock)', () => {
     // Attach a reference, then cancel. The command bar stays mounted (crossfade),
     // so its attachments row must not keep reserving grid-track height once we
     // leave edit — otherwise the still-visible pill gets shoved down.
-    await pill(page).getByRole('button', { name: /^编辑$/ }).click()
+    await pill(page).getByRole('button', { name: /^\u7f16\u8f91$/ }).click()
     await dragRegion(page)
     await expect(page.getByTestId('inline-edit-attachment-thumb')).toHaveCount(1)
-    await panel(page).getByRole('button', { name: /^取消$/ }).click()
+    await panel(page).getByRole('button', { name: /^\u53d6\u6d88$/ }).click()
 
     await expect(pill(page)).toBeVisible()
     await page.waitForTimeout(500) // let the crossfade settle before measuring
@@ -335,27 +335,27 @@ test.describe('In-place edit - desktop (mock)', () => {
   test('leaves edit mode when the page changes, keeping the draft per page', async ({ page }) => {
     await mockPreview(page)
     await page.goto(`/project/${MOCK_PROJECT_ID}/preview`)
-    await pill(page).getByRole('button', { name: /^编辑$/ }).click()
-    await promptBox(page).fill('把标题改成蓝色')
+    await pill(page).getByRole('button', { name: /^\u7f16\u8f91$/ }).click()
+    await promptBox(page).fill('Change the title to blue.')
     await dragRegion(page)
     await expect(page.getByTestId('inline-edit-attachment-thumb')).toHaveCount(1)
 
     // switching slides would otherwise carry page 1's crop and prompt onto page 2
-    await page.locator('aside').getByText('第二页标题').click()
+    await page.locator('aside').getByText('Title of the second page').click()
     await expect(panel(page)).toBeHidden()
     await expect(pill(page)).toBeVisible()
     await expect(page.getByTestId('inline-edit-selection')).toHaveCount(0)
 
     // page 2 starts clean
-    await pill(page).getByRole('button', { name: /^编辑$/ }).click()
+    await pill(page).getByRole('button', { name: /^\u7f16\u8f91$/ }).click()
     await expect(promptBox(page)).toHaveValue('')
     await expect(page.getByTestId('inline-edit-attachment-thumb')).toHaveCount(0)
 
     // and page 1's draft is still there when we come back
     await page.keyboard.press('Escape')
-    await page.locator('aside').getByText('第一页标题').click()
-    await pill(page).getByRole('button', { name: /^编辑$/ }).click()
-    await expect(promptBox(page)).toHaveValue('把标题改成蓝色')
+    await page.locator('aside').getByText('Title of first page').click()
+    await pill(page).getByRole('button', { name: /^\u7f16\u8f91$/ }).click()
+    await expect(promptBox(page)).toHaveValue('Change the title to blue.')
     await expect(page.getByTestId('inline-edit-attachment-thumb')).toHaveCount(1)
   })
 
@@ -381,12 +381,12 @@ test.describe('In-place edit - desktop (mock)', () => {
     )
 
     await page.goto(`/project/${MOCK_PROJECT_ID}/preview`)
-    await pill(page).getByRole('button', { name: /^编辑$/ }).click()
-    await promptBox(page).fill('把标题改成蓝色')
+    await pill(page).getByRole('button', { name: /^\u7f16\u8f91$/ }).click()
+    await promptBox(page).fill('Change the title to blue.')
     await dragRegion(page)
     await expect(page.getByTestId('inline-edit-attachment-thumb')).toHaveCount(1)
 
-    await panel(page).getByRole('button', { name: /生成图片/ }).click()
+    await panel(page).getByRole('button', { name: /\u751f\u6210\u56fe\u7247/ }).click()
 
     // multipart because the crop rides along as a file
     await expect.poll(() => contentType, { timeout: 8000 }).toContain('multipart/form-data')
@@ -410,10 +410,10 @@ test.describe('In-place edit - narrow screens (mock)', () => {
     await mockPreview(page)
     await page.goto(`/project/${MOCK_PROJECT_ID}/preview`)
 
-    await page.getByTestId('preview-docked-toolbar').getByRole('button', { name: /^编辑$/ }).click()
+    await page.getByTestId('preview-docked-toolbar').getByRole('button', { name: /^\u7f16\u8f91$/ }).click()
 
-    await expect(page.getByRole('heading', { name: /编辑页面/ })).toBeVisible()
-    await expect(page.getByRole('button', { name: /结束区域选图/ })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /\u7f16\u8f91\u9875\u9762/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: /\u7ed3\u675f\u533a\u57df\u9009\u56fe/ })).toBeVisible()
     await expect(panel(page)).toBeHidden()
 
     const image = page.getByRole('img', { name: 'Current slide' })
@@ -445,7 +445,7 @@ test.describe('In-place edit - narrow screens (mock)', () => {
 
     await expect(page.getByRole('img', { name: 'Uploaded 1' })).toBeVisible()
     await page.keyboard.press('Escape')
-    await expect(page.getByRole('heading', { name: /编辑页面/ })).toBeHidden()
+    await expect(page.getByRole('heading', { name: /\u7f16\u8f91\u9875\u9762/ })).toBeHidden()
     await expect(canvasImage(page).locator('..')).not.toHaveClass(/cursor-crosshair/)
   })
 })
@@ -454,7 +454,7 @@ test.describe('In-place edit - breakpoint changes (mock)', () => {
   test('drops out of edit mode when the window narrows past lg', async ({ page }) => {
     await mockPreview(page)
     await page.goto(`/project/${MOCK_PROJECT_ID}/preview`)
-    await pill(page).getByRole('button', { name: /^编辑$/ }).click()
+    await pill(page).getByRole('button', { name: /^\u7f16\u8f91$/ }).click()
     await expect(panel(page)).toBeVisible()
 
     // the split layout has no room below lg, so it should not survive the resize
@@ -469,7 +469,7 @@ test.describe('In-place edit - integration', () => {
     const { projectId } = await seedProjectWithImages(baseURL!, 2)
     await page.goto(`/project/${projectId}/preview`)
 
-    await pill(page).getByRole('button', { name: /^编辑$/ }).click()
+    await pill(page).getByRole('button', { name: /^\u7f16\u8f91$/ }).click()
     await expect(panel(page)).toBeVisible()
     await dragRegion(page)
 

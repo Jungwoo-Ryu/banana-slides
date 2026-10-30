@@ -1,5 +1,5 @@
 """
-工厂类 - 负责创建和配置具体的提取器和Inpaint提供者
+Plant type - Responsible for the creation and configuration of specific extractors and Inpaint Provider
 """
 import logging
 from typing import List, Optional, Any
@@ -7,9 +7,9 @@ from pathlib import Path
 
 from .extractors import ExtractorRegistry
 from .inpaint_providers import (
-    InpaintProvider, 
-    DefaultInpaintProvider, 
-    GenerativeEditInpaintProvider, 
+    InpaintProvider,
+    DefaultInpaintProvider,
+    GenerativeEditInpaintProvider,
     InpaintProviderRegistry
 )
 from .text_attribute_extractors import (
@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 
 
 class ServiceConfig:
-    """服务配置类 - 纯配置，不持有具体服务引用"""
-    
+    """Service Configuration Category - Pure configuration without specific service references"""
+
     def __init__(
         self,
         upload_folder: Path,
@@ -37,17 +37,17 @@ class ServiceConfig:
         enable_icon_subject_extraction: bool = False,
     ):
         """
-        初始化服务配置
+        Initialisation Service Configuration
 
         Args:
-            upload_folder: 上传文件夹路径
-            extractor_registry: 元素类型到提取器的注册表
-            inpaint_registry: 元素类型到重绘方法的注册表
-            max_depth: 最大递归深度（默认1）
-            min_image_size: 最小图片尺寸
-            min_image_area: 最小图片面积
-            segmentation_provider: 百度智能抠图 Provider（可选），用于图标主体提取
-            enable_icon_subject_extraction: 是否启用图标主体提取（默认 False，需配合 provider）
+            upload_folder: Upload Folder Path
+            extractor_registry: Registration table for element type to extractor
+            inpaint_registry: Registration Table for Element Type to Redraw Method
+            max_depth: Maximum Recursive Depth (default) 1）
+            min_image_size: Minimum Image Dimensions
+            min_image_area: Minimum picture area
+            segmentation_provider: 100-degree smart map Provider（optional) for the main extract of icons
+            enable_icon_subject_extraction: Whether or not to enable icon main extract (default) False，Need to cooperate. provider）
         """
         self.upload_folder = upload_folder
         self.extractor_registry = extractor_registry
@@ -57,7 +57,7 @@ class ServiceConfig:
         self.min_image_area = min_image_area
         self.segmentation_provider = segmentation_provider
         self.enable_icon_subject_extraction = enable_icon_subject_extraction
-    
+
     @classmethod
     def from_defaults(
         cls,
@@ -67,53 +67,53 @@ class ServiceConfig:
         ai_service: Optional[Any] = None,
         use_hybrid_extractor: bool = True,
         use_hybrid_inpaint: bool = True,
-        extractor_method: Optional[str] = None,  # 'mineru' 或 'hybrid'，优先于 use_hybrid_extractor
-        inpaint_method: Optional[str] = None,    # 'generative', 'baidu', 'hybrid'，优先于 use_hybrid_inpaint
+        extractor_method: Optional[str] = None,  # 'mineru' or 'hybrid'，Priority use_hybrid_extractor
+        inpaint_method: Optional[str] = None,    # 'generative', 'baidu', 'hybrid'，Priority use_hybrid_inpaint
         **kwargs
     ) -> 'ServiceConfig':
         """
-        从默认参数创建配置
-        
-        默认配置（推荐用于导出PPTX）：
-        - 元素提取：混合提取器（MinerU版面分析 + 百度高精度OCR）
-        - 背景生成：混合Inpaint（百度图像修复 + 生成式画质提升）
-        - 递归深度：1
-        
-        混合提取器合并策略：
-        1. 图片类型bbox里包含的百度OCR bbox → 删除
-        2. 表格类型bbox里包含的百度OCR bbox → 保留百度OCR结果，删除MinerU表格bbox
-        3. 其他类型与百度OCR bbox有交集 → 使用百度OCR结果
-        
-        混合Inpaint策略：
-        1. 先用百度图像修复精确去除指定区域的文字
-        2. 再用生成式模型提升整体画质
-        
-        支持动态注册新的元素类型到不同的提取器/重绘方法。
-        
-        如果不提供参数，会自动从 Flask app.config 获取配置。
-        
+        Create Configuration From Default Parameters
+
+        Default Configuration (Recommended for Export PPTX）：
+        - Element extraction： Mixed extractor（MinerU Board Analysis + 100 degrees high accuracy OCR）
+        - Background generation： mixing Inpaint（100 Degree Image Restoration + Generating Paint Upgrade）
+        - Recursive Depth：1
+
+        Mixed Ripper Merger Policy：
+        1. Picture Type bbox 100 degrees contained in it OCR bbox → Delete
+        2. Table Type bbox 100 degrees contained in it OCR bbox → Keep 100 Degrees OCR Result, Delete MinerU Table bbox
+        3. Other types and 100 degrees OCR bbox There’s an intersection. → Use 100 Degrees OCR Result
+
+        Mixed Inpaint Policy：
+        1. First fixes the exact removal of the text from the given area with 100 degrees of image
+        2. Use a generating model to enhance the whole picture
+
+        Support dynamic registration of new element types to different extractors/Redraw Method。
+
+        If the parameters are not provided, they automatically start Flask app.config Fetch Configuration。
+
         Args:
-            mineru_token: MinerU API token（可选，默认从 Flask config 获取）
-            mineru_api_base: MinerU API base URL（可选，默认从 Flask config 获取）
-            upload_folder: 上传文件夹路径（可选，默认从 Flask config 获取）
-            ai_service: AI服务实例（可选，用于生成式重绘）
-            use_hybrid_extractor: 是否使用混合提取器（默认True，会被 extractor_method 覆盖）
-            use_hybrid_inpaint: 是否使用混合Inpaint（默认True，会被 inpaint_method 覆盖）
-            extractor_method: 组件提取方法，'mineru' 或 'hybrid'（优先于 use_hybrid_extractor）
-            inpaint_method: 背景修复方法，'generative', 'baidu', 'hybrid'（优先于 use_hybrid_inpaint）
-            **kwargs: 其他配置参数
-                - max_depth: 最大递归深度（默认1）
-                - min_image_size: 最小图片尺寸（默认200）
-                - min_image_area: 最小图片面积（默认40000）
-                - contain_threshold: 混合提取器包含判断阈值（默认0.8）
-                - intersection_threshold: 混合提取器交集判断阈值（默认0.3）
-                - enhance_quality: 混合Inpaint是否启用画质提升（默认True）
-        
+            mineru_token: MinerU API token（Optional, Default From Flask config Access）
+            mineru_api_base: MinerU API base URL（Optional, Default From Flask config Access）
+            upload_folder: Upload folder path (optional, default from Flask config Access）
+            ai_service: AI Examples of services (optional, used for generating redrawing)）
+            use_hybrid_extractor: Whether or not to use a hybrid extractor (default) True，overridden by extractor_method）
+            use_hybrid_inpaint: Whether to use mixing Inpaint（Default True，overridden by inpaint_method）
+            extractor_method: Component extraction method，'mineru' or 'hybrid'（Priority use_hybrid_extractor）
+            inpaint_method: Background repair method，'generative', 'baidu', 'hybrid'（Priority use_hybrid_inpaint）
+            **kwargs: Other configuration parameters
+                - max_depth: Maximum Recursive Depth (default) 1）
+                - min_image_size: Minimum image size (default) 200）
+                - min_image_area: Minimum picture area (default) 40000）
+                - contain_threshold: Mixed extractor contains a judgement threshold (default) 0.8）
+                - intersection_threshold: Mixed extractor cross-judgment threshold (default) 0.3）
+                - enhance_quality: Mixed Inpaint Whether to enable painting upgrades (default) True）
+
         Returns:
-            ServiceConfig实例
-        
+            ServiceConfig Examples
+
         Raises:
-            ValueError: 如果 mineru_token 未配置
+            ValueError: If... mineru_token Unconfigured
         """
         from services.runtime_config import setting
         from .local_adapters import ConfiguredOCRExtractor, LocalInpaintProvider
@@ -139,28 +139,28 @@ class ServiceConfig:
 
 
 class TextAttributeExtractorFactory:
-    """文字属性提取器工厂"""
-    
+    """Text Properties Ripper Plant"""
+
     @staticmethod
     def create_caption_model_extractor(
         ai_service: Optional[Any] = None,
         prompt_template: Optional[str] = None
     ) -> TextAttributeExtractor:
         """
-        创建基于Caption Model的文字属性提取器
-        
-        使用视觉语言模型（如Gemini）分析文字区域图像，
-        通过生成JSON的方式获取字体颜色、是否粗体、是否斜体等属性。
-        
+        Create Based Caption Model Text Properties Ripper
+
+        Use visual language models (e.g. Gemini）Analyse text area images，
+        By Generating JSON to get the font colour, boldness, italics, etc.。
+
         Args:
-            ai_service: AIService实例（可选，如果不提供则自动获取）
-            prompt_template: 自定义的prompt模板（可选），必须使用 {content_hint} 作为占位符
-        
+            ai_service: AIService Example (optional, automatic access if not available)）
+            prompt_template: Custom prompt Template (optional), must be used {content_hint} As Placeholder
+
         Returns:
-            CaptionModelTextAttributeExtractor实例
-        
+            CaptionModelTextAttributeExtractor Examples
+
         Raises:
-            如果AI服务初始化失败，会抛出异常
+            If... AI The service has failed to initialize. It’s going to throw out an anomaly.
         """
         from services.runtime_config import setting
         if setting('TEXT_STYLE_PROVIDER', 'local') == 'local':
@@ -169,49 +169,49 @@ class TextAttributeExtractorFactory:
         if ai_service is None:
             from services.ai_service_manager import get_ai_service
             ai_service = get_ai_service()
-        
-        logger.info("创建CaptionModelTextAttributeExtractor")
+
+        logger.info("Create CaptionModelTextAttributeExtractor")
         return CaptionModelTextAttributeExtractor(ai_service, prompt_template)
-    
+
     @staticmethod
     def create_text_attribute_registry(
         caption_extractor: Optional[TextAttributeExtractor] = None,
         ai_service: Optional[Any] = None
     ) -> TextAttributeExtractorRegistry:
         """
-        创建文字属性提取器注册表
-        
-        支持动态注册新元素类型，不限于预定义类型。
-        
+        Creates a text property extractor registration form
+
+        Support dynamic registration of new element types, not limited to predefined types。
+
         Args:
-            caption_extractor: Caption Model提取器（可选，自动创建）
-            ai_service: AIService实例（可选，用于自动创建提取器）
-        
+            caption_extractor: Caption Model Ripper (optional, automatically created)）
+            ai_service: AIService Example (optional, for automatic creation of extractor）
+
         Returns:
-            配置好的TextAttributeExtractorRegistry实例
-        
+            It’s configured. TextAttributeExtractorRegistry Examples
+
         Raises:
-            如果提取器创建失败，会抛出异常
+            If the extractor fails to create, the anomaly is thrown out.
         """
-        # 自动创建提取器
+        # Automatically create extractor
         if caption_extractor is None:
             caption_extractor = TextAttributeExtractorFactory.create_caption_model_extractor(
                 ai_service=ai_service
             )
-        
-        # 创建注册表
+
+        # Create registration form
         registry = TextAttributeExtractorRegistry()
-        
-        # 设置默认提取器
+
+        # Set Default Ripper
         registry.register_default(caption_extractor)
-        
-        # 注册文本类型
+
+        # Type of registered text
         registry.register_types(
             ['text', 'title', 'paragraph', 'heading', 'table_cell'],
             caption_extractor
         )
-        
-        logger.info("创建TextAttributeExtractorRegistry")
-        
+
+        logger.info("Create TextAttributeExtractorRegistry")
+
         return registry
 

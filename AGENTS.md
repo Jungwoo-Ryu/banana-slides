@@ -1,19 +1,14 @@
 # Project notes
 
-- 安装 Playwright 浏览器依赖的 CI job 须固定到锁定版本支持的 OS；升级 runner 前核对兼容性，避免 `ubuntu-latest` 漂移导致浏览器安装失败。
-
-- Docker E2E 在环境测试重建容器后，须让宿主 runner 可写 `uploads`、`backend/instance` 及 SQLite 文件，并验证实际写事务；PPTX 下载须在点击前监听 Page 的 `download`，保存文件验收，不能用接口 200 代替。
-- nightly 的官方 PyPI 配置须在测试和发布两个 job 中通过 `scripts/prepare_nightly_lock.py` 同步锁文件 URL；`uv sync --frozen` 不会用索引环境变量覆盖锁定的下载地址，不能通过重新解析或升级依赖规避镜像 403。
-
-- README 翻译以 `docs/i18n/readme-state.json` 的成功同步快照为基线；保留 `i18n` 章节 ID，译文与状态一起提交。不可用干净 CI 工作区的 `git diff HEAD` 判断增量，也不可用中英文标题文字匹配章节。维护说明见 `docs/readme-i18n.md`。
-
-- 同一项目的素材工具箱会从多个入口同时挂载；任务列表和轮询必须按项目共享，验收跨入口提交、关闭其中一个入口及重新挂载，避免覆盖任务或重复轮询。
-
-- `main` 只承载通用开源功能。`bananaslides.online` 专属的 Landing、内测预约、站内反馈、公开 Demo、访客隔离、管理员入口及其配置/迁移只能进入 `production/bananaslides-online`；默认关闭的开关不等于分支隔离。官网任务创建分支和 PR 前必须核对基线与目标分支，未经用户明确要求不得“同步主线”。
-
-- `bananaslides.online` 的正式源码基线为 `origin/production/bananaslides-online`（2026-09-27 建立，包含当时线上首页与后端补丁）；官网改动从该分支出发，发布前重新核对线上镜像及差异，不把旧 `feat/sponsor` 或独立 `feat/public-site-landing` 当作完整线上代码。
-- `bananaslides.online` 经 Cloudflare 访问时，服务器内 Python `urllib` 可能被返回 403，即使源站和浏览器正常。发布验收分别核对源站构建哈希与公网 `curl`/真实浏览器结果；不要仅因 `urllib` 的边缘拦截判定部署失败。
-- 官网发布含数据库迁移时，先用真实 SQLite 库的在线备份预演，再核对该备份的 `alembic_version`、新表和原有数据行数；镜像中的 `alembic.ini` 不得指向占位数据库。
-- 官网前端使用 `npm run build:online`（启用 `VITE_PUBLIC_LANDING=true`）；验收实际发布产物和公网根路径的 landing 标题及 Demo 跳转，不能只检查 HTTP 200。
-
-- 下架赞助商须移除所有品牌入口、提供商预设、注册链接和获取密钥引导，并按新访客及已有配置验收；不能只删除广告卡片。保留底层兼容不得变成继续展示或引流。
+- Pin Playwright browser-dependency CI jobs to an OS supported by the locked version. Check compatibility before upgrading runners; do not let `ubuntu-latest` drift break browser installation.
+- After Docker E2E rebuilds test containers, ensure the host runner can write `uploads`, `backend/instance`, and SQLite files. Verify a real write transaction. Register the browser `download` listener before clicking, save the PPTX, and validate the saved file; HTTP 200 alone is insufficient.
+- Nightly jobs using official PyPI must synchronize lockfile URLs through `scripts/prepare_nightly_lock.py` in both test and release jobs. Index environment variables do not override URLs in `uv sync --frozen`; do not resolve or upgrade dependencies to work around mirror 403 errors.
+- Incremental README translations use the last successful snapshot in `docs/i18n/readme-state.json`. Preserve `i18n` section IDs and commit translations with the state. Do not infer changes from `git diff HEAD` in a clean CI checkout or match sections by translated heading text. See `docs/readme-i18n.md`.
+- The material toolbox can mount from several entry points for the same project. Share task state and polling by project. Test submitting from different entry points, closing one instance, and remounting to prevent overwritten tasks or duplicate polling.
+- `main` contains general open-source features only. Landing pages, beta registration, feedback, public demos, visitor isolation, administration, and related configuration/migrations specific to `bananaslides.online` belong only in `production/bananaslides-online`. Disabled feature flags do not provide branch isolation. Verify the baseline and target branch before creating website branches or PRs; do not synchronize main without an explicit request.
+- The official website baseline is `origin/production/bananaslides-online`, established on 2026-09-27 with the then-current homepage and backend patches. Start website changes there and compare the deployed image and diff before release. Do not use `feat/sponsor` or a standalone `feat/public-site-landing` branch as the full website baseline.
+- Cloudflare may return 403 to server-side Python `urllib` while the origin and browsers work normally. Verify the origin build hash and the public endpoint with `curl` or a real browser separately; a single edge rejection does not establish deployment failure.
+- Before website releases with database migrations, rehearse against an online SQLite backup. Check its `alembic_version`, new tables, and existing row counts. The image's `alembic.ini` must not point to a placeholder database.
+- The website frontend uses `npm run build:online` with `VITE_PUBLIC_LANDING=true`. Verify the actual published assets, root landing title, and demo navigation, not just HTTP 200.
+- Removing a sponsor requires removing brand entry points, provider presets, registration links, and key-acquisition guidance. Test both new visitors and existing settings; deleting an advertisement alone is insufficient. Retaining protocol compatibility must not preserve promotion or referral flows.
+- Write internal comments, docstrings, prompts, logs, examples, and documentation in English or Korean. Keep Korean as the local UI default. Legacy Unicode escapes are reserved for input compatibility and character-class tests, not for hiding untranslated prose. Run `python scripts/check_source_language.py` before submitting language changes.

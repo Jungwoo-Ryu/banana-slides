@@ -8,13 +8,13 @@ export default {
   theme: {
     extend: {
       colors: {
-        // 品牌色 - 使用 CSS 变量
+        // Brand - Usage CSS Variables
         'banana': {
           DEFAULT: 'var(--banana-yellow)',
           light: 'var(--banana-yellow-light)',
           dark: 'var(--banana-yellow-dark)',
           pale: 'var(--banana-yellow-pale)',
-          // 保留静态色用于渐变等特殊场景
+          // Keep static color for special scenarios like gradients
           50: '#FFF9E6',
           100: '#FFE44D',
           200: '#FFD93D',
@@ -23,7 +23,7 @@ export default {
           500: '#FFD700',
           600: '#FFC700',
         },
-        // 背景色 - 语义化 token
+        // Background Colour - Semantic token
         'background': {
           primary: 'var(--bg-primary)',
           secondary: 'var(--bg-secondary)',
@@ -31,21 +31,21 @@ export default {
           elevated: 'var(--bg-elevated)',
           hover: 'var(--bg-hover)',
         },
-        // 文字色 - 语义化 token
+        // Text Colour - Semantic token
         'foreground': {
           DEFAULT: 'var(--text-primary)',
           primary: 'var(--text-primary)',
           secondary: 'var(--text-secondary)',
           tertiary: 'var(--text-tertiary)',
         },
-        // 边框色 - 语义化 token
+        // Border Colour - Semantic token
         'border': {
           DEFAULT: 'var(--border-primary)',
           primary: 'var(--border-primary)',
           secondary: 'var(--border-secondary)',
           hover: 'var(--border-hover)',
         },
-        // 功能色
+        // Function Colour
         'success': 'var(--success)',
         'warning': 'var(--warning)',
         'error': 'var(--error)',

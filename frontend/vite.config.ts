@@ -23,20 +23,20 @@ function gitValue(command: string): string {
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  // 从项目根目录读取 .env 文件（相对于 frontend 目录的上一级）
+  // Read from the root directory .env Documents (relative to frontend The top level of the directory）
   const envDir = path.resolve(__dirname, '..')
 
-  // 使用 loadEnv 加载环境变量（第三个参数为空字符串表示加载所有变量，不仅仅是 VITE_ 前缀的）
+  // Usage loadEnv Loading environment variables (the third parameter is an empty string indicating that all variables are loaded, not just VITE_ Prefixed.）
   const env = loadEnv(mode, envDir, '')
 
-  // 端口：优先读 env，否则按 worktree 目录名自动计算
+  // Port： Read first env，Or I’ll press. worktree Autocalculation of directory names
   const backendPort = env.BACKEND_PORT || '5011'
   const frontendPort = Number(env.FRONTEND_PORT) || 3011
   const backendUrl = `http://127.0.0.1:${backendPort}`
   const gitTag = env.VITE_APP_VERSION_TAG || gitValue('git describe --tags --exact-match HEAD')
   const gitSha = env.VITE_APP_COMMIT_SHA || gitValue('git rev-parse HEAD')
   const gitShortSha = env.VITE_APP_COMMIT_SHORT_SHA || gitSha.slice(0, 7)
-  
+
   return {
     base: './',
     envDir,
@@ -54,32 +54,32 @@ export default defineConfig(({ mode }) => {
     server: {
       port: frontendPort,
       host: '127.0.0.1',
-      strictPort: true, // 监听所有地址
+      strictPort: true, // Listen to all addresses.
       watch: {
-        usePolling: true, // WSL 环境下需要启用轮询
+        usePolling: true, // WSL Query needs to be enabled in an environment
       },
       hmr: {
-        overlay: true, // 显示错误覆盖层
+        overlay: true, // Show Error Overwrite
       },
       proxy: {
-        // API 请求代理到后端（端口从环境变量 BACKEND_PORT 读取）
+        // API Requesting proxy to backend (port from environment variable) BACKEND_PORT Read）
         '/api': {
           target: backendUrl,
           changeOrigin: true,
         },
-        // 文件服务代理到后端
+        // File Services Agent to Backend
         '/files': {
           target: backendUrl,
           changeOrigin: true,
         },
-        // 健康检查代理到后端
+        // Health check agent to backend
         '/health': {
           target: backendUrl,
           changeOrigin: true,
         },
       },
     },
-    // Vitest 测试配置
+    // Vitest Test Configuration
     test: {
       globals: true,
       environment: 'jsdom',

@@ -2,13 +2,13 @@ import React, { useState, memo } from 'react';
 import { Sparkles, History, ChevronDown, ChevronUp, Send } from 'lucide-react';
 import { useT } from '@/hooks/useT';
 
-// AiRefineInput 组件自包含翻译
+// AiRefineInput Component contains translation
 const aiRefineI18n = {
   zh: {
     aiRefine: {
-      ctrlEnterSubmit: "（Ctrl+Enter 提交）", history: "历史",
-      viewHistory: "查看 {{count}} 条历史修改", previousRequirements: "之前的修改要求：",
-      submitTooltip: "提交 (Ctrl+Enter)"
+      ctrlEnterSubmit: "(Ctrl+Enter to submit)", history: "History",
+      viewHistory: "View {{count}} previous edits", previousRequirements: "Previous edit requests:",
+      submitTooltip: "Submit (Ctrl+Enter)"
     }
   },
   en: {
@@ -21,17 +21,17 @@ const aiRefineI18n = {
 };
 
 export interface AiRefineInputProps {
-  /** 标题文字 */
+  /** Title Text */
   title: string;
-  /** 输入框占位文字 */
+  /** Enter box position text */
   placeholder: string;
-  /** 提交回调函数，接收当前要求和历史要求，返回 Promise */
+  /** Submit a callback function, receive current and historical requests, return Promise */
   onSubmit: (requirement: string, previousRequirements: string[]) => Promise<void>;
-  /** 是否禁用（例如没有内容可修改时） */
+  /** Disable (e.g. when there is no content to modify)） */
   disabled?: boolean;
-  /** 自定义类名 */
+  /** Custom class name */
   className?: string;
-  /** 状态变化回调，通知父组件当前是否正在提交 */
+  /** State change echo to inform parent whether or not the component is currently being submitted */
   onStatusChange?: (isSubmitting: boolean) => void;
 }
 
@@ -54,20 +54,20 @@ const AiRefineInputComponent: React.FC<AiRefineInputProps> = ({
 
     const currentRequirement = requirement.trim();
     setIsSubmitting(true);
-    onStatusChange?.(true); // 通知父组件开始提交
+    onStatusChange?.(true); // Notify parent component to start submitting
     try {
       await onSubmit(currentRequirement, history);
-      // 成功后将当前要求添加到历史
+      // Add current request to history after success
       setHistory(prev => [...prev, currentRequirement]);
-      // 清空输入框
+      // Empty Input Box
       setRequirement('');
     } finally {
       setIsSubmitting(false);
-      onStatusChange?.(false); // 通知父组件提交结束
+      onStatusChange?.(false); // Notify parent component to end submission
     }
   };
 
-  // 处理 Ctrl+Enter 快捷键
+  // Processing Ctrl+Enter Shortcuts
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
@@ -79,12 +79,12 @@ const AiRefineInputComponent: React.FC<AiRefineInputProps> = ({
     return null;
   }
 
-  // 判断是否为紧凑模式（没有标题时）
+  // Judge whether it is a compact mode (when no title is available)）
   const isCompactMode = !title;
 
   return (
     <div className={isCompactMode ? `group ${className}` : `group bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-3 md:p-4 border border-purple-200 ${className}`}>
-      {/* 标题和历史按钮 - 仅非紧凑模式显示 */}
+      {/* Title and History Button - Show only compact mode */}
       {!isCompactMode && (
         <div className="flex items-center justify-between mb-2 md:mb-3">
           <div className="flex items-center gap-2">
@@ -105,8 +105,8 @@ const AiRefineInputComponent: React.FC<AiRefineInputProps> = ({
           )}
         </div>
       )}
-      
-      {/* 历史记录展示 */}
+
+      {/* Presentation of historical records */}
       {showHistory && history.length > 0 && (
         <div className={`${isCompactMode ? 'mb-2' : 'mb-3'} p-2 bg-white dark:bg-background-secondary rounded border ${isCompactMode ? 'border-gray-200 dark:border-border-primary shadow-sm dark:shadow-background-primary/30' : 'bg-white/60 border-purple-100'} max-h-32 overflow-y-auto`}>
           <div className="text-xs text-gray-500 dark:text-foreground-tertiary mb-1">{t('aiRefine.previousRequirements')}</div>
@@ -120,9 +120,9 @@ const AiRefineInputComponent: React.FC<AiRefineInputProps> = ({
           </ul>
         </div>
       )}
-      
+
       <div className="flex gap-2 items-center relative">
-        {/* 紧凑模式下显示图标和历史按钮 */}
+        {/* Show icons and history buttons in compact mode */}
         {isCompactMode && (
           <>
             <Sparkles size={16} className={`flex-shrink-0 transition-colors ${isSubmitting ? 'text-purple-500' : 'text-purple-600'}`} />
@@ -138,7 +138,7 @@ const AiRefineInputComponent: React.FC<AiRefineInputProps> = ({
             )}
           </>
         )}
-        
+
         <div className="flex-1 relative">
           <input
             type="text"
@@ -153,13 +153,13 @@ const AiRefineInputComponent: React.FC<AiRefineInputProps> = ({
           />
           {isSubmitting && (
             <div className="absolute inset-0 rounded-lg overflow-hidden pointer-events-none">
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-300/30 to-transparent animate-shimmer" 
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-300/30 to-transparent animate-shimmer"
                    style={{ backgroundSize: '200% 100%' }} />
             </div>
           )}
         </div>
-        
-        {/* 提交按钮 - 移动端始终显示，桌面端鼠标悬停时显示 */}
+
+        {/* Submit button - Always show the moving end, when the desktop-end mouse hovers */}
         <button
           onClick={handleSubmit}
           disabled={!requirement.trim() || isSubmitting}
@@ -177,7 +177,7 @@ const AiRefineInputComponent: React.FC<AiRefineInputProps> = ({
   );
 };
 
-// 使用 memo 包装组件，避免父组件频繁重渲染时影响输入框
-// 只有当 props 真正变化时才重新渲染
+// Usage memo Pack components to avoid influencing input boxes when parent components are frequently retrofitted
+// Only if... props Rendering when it really changes.
 export const AiRefineInput = memo(AiRefineInputComponent);
 

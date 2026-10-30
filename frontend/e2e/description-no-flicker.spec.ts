@@ -124,11 +124,11 @@ test.describe('Description cards stability during generation', () => {
     await page.goto(`${baseUrl}/project/${PROJECT_ID}/detail`)
 
     // Wait for page cards to appear (no descriptions yet)
-    await expect(page.locator('text=第 1 页')).toBeVisible({ timeout: 10000 })
-    await expect(page.locator('text=第 3 页')).toBeVisible()
+    await expect(page.locator('text=Page 1 Page')).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('text=Page 3 Page')).toBeVisible()
 
     // Click batch generate
-    await page.locator('button:has-text("批量生成描述")').click()
+    await page.locator('button:has-text("Batch Generation Description")').click()
 
     // Wait for page 1 description to appear
     await expect(page.locator('text=This is page one content')).toBeVisible({ timeout: 15000 })

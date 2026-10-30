@@ -109,13 +109,13 @@ test.describe('Settings: Per-model provider configuration', () => {
     await page.goto('/settings')
 
     await expect(page.getByTestId('per-model-provider-override-alert')).toHaveCount(0)
-    await expect(page.getByText('独立模型提供商会覆盖上方默认 API')).toHaveCount(0)
-    await expect(page.getByRole('button', { name: '全部跟随默认配置' })).toHaveCount(0)
+    await expect(page.getByText('Independent model provides the Chamber of Commerce overwhelm default API')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Follow Default Configuration All' })).toHaveCount(0)
     await expect(getModelGroup(page, 0).locator('select')).toHaveValue('openai')
     await expect(getModelGroup(page, 1).locator('select')).toHaveValue('gemini')
     await expect(getModelGroup(page, 2).locator('select')).toHaveValue('doubao')
     await expect(
-      page.getByText('为此模型选择独立的提供商，不选则使用上方默认配置')
+      page.getByText('Select an independent provider for this model, or use the above default configuration')
         .or(page.getByText('Select an independent provider for this model, leave empty to use default config'))
     ).toHaveCount(3)
   })
@@ -179,10 +179,10 @@ test.describe('Settings: Per-model provider configuration', () => {
     await textGroup.locator('input[type="password"]').fill('sk-test-key-123')
 
     // Save
-    await page.getByRole('button', { name: /保存/ }).click()
+    await page.getByRole('button', { name: /\u4fdd\u5b58/ }).click()
 
     // Verify success toast
-    await expect(page.locator('text=保存成功').or(page.locator('text=saved'))).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('text=Save successfully').or(page.locator('text=saved'))).toBeVisible({ timeout: 5000 })
   })
 
   test('reload persists saved per-model config', async ({ page }) => {
@@ -223,9 +223,9 @@ test.describe('Settings: Per-model provider configuration', () => {
     await expect(getModelGroup(page, 0).locator('select')).toHaveValue('openai')
 
     // Click reset
-    await page.getByRole('button', { name: /重置/ }).click()
+    await page.getByRole('button', { name: /\u91cd\u7f6e/ }).click()
     // Confirm dialog
-    await page.getByRole('button', { name: /确定重置/ }).click()
+    await page.getByRole('button', { name: /\u786e\u5b9a\u91cd\u7f6e/ }).click()
 
     // After reset: sources revert to env defaults, no API base URL fields
     await expect(getModelGroup(page, 0).locator('select')).toHaveValue('deepseek')

@@ -1,17 +1,17 @@
 import { useT } from '@/hooks/useT';
 import type { Page, PageStatus } from '@/types';
 
-// usePageStatus hook 自包含翻译
+// usePageStatus hook Include translation
 const pageStatusI18n = {
   zh: {
     status: {
-      draft: "草稿", generatingDescription: "描述生成中", descriptionGenerated: "描述已生成", queued: "排队中", generating: "生成中",
-      completed: "已完成", failed: "失败", unknown: "未知",
-      notGeneratedDesc: "未生成描述", noDescription: "还没有生成描述",
-      descGenerated: "描述已生成", notGeneratedImage: "未生成图片",
-      waitingForImage: "等待生成图片", queuedImage: "排队等待生成", generatingImage: "正在生成图片",
-      imageFailed: "图片生成失败", imageCompleted: "图片已生成",
-      statusUnknown: "状态未知", draftStage: "草稿阶段", allCompleted: "全部完成"
+      draft: "Draft", generatingDescription: "Generating Description", descriptionGenerated: "Description Generated", queued: "Queued", generating: "Generating",
+      completed: "Completed", failed: "Failed", unknown: "Unknown",
+      notGeneratedDesc: "No Description", noDescription: "No description generated yet",
+      descGenerated: "Description Generated", notGeneratedImage: "No Image",
+      waitingForImage: "Waiting for image generation", queuedImage: "Queued for generation", generatingImage: "Generating image",
+      imageFailed: "Image generation failed", imageCompleted: "Image generated",
+      statusUnknown: "Status unknown", draftStage: "Draft stage", allCompleted: "All completed"
     }
   },
   en: {

@@ -1,57 +1,57 @@
 """
-图片可编辑化服务模块
+Photo Editable Service Module
 
-核心设计：
-- 无状态服务 - 线程安全，可并行调用
-- 依赖注入 - 通过配置对象注入所有依赖
-- 单一职责 - 只负责单张图片的可编辑化，批量处理由调用者控制
+Core design：
+- No status service - Threads are secure. We can call in parallel.
+- Reliance on injection - Injecting all dependencies by Configure Object
+- Single responsibilities - Only editable single picture, batch processing controlled by caller
 
-组件：
-- 数据模型（BBox, EditableElement, EditableImage）
-- 元素提取器（ElementExtractor及其实现）
-- Inpaint提供者（InpaintProvider及其实现）
-- 工厂和配置（ServiceConfig）
-- 主服务类（ImageEditabilityService）
+Component：
+- Data Model（BBox, EditableElement, EditableImage）
+- Element Ripper（ElementExtractor and its realization）
+- Inpaint Provider（InpaintProvider and its realization）
+- Plant and configuration（ServiceConfig）
+- Main service category（ImageEditabilityService）
 
 Example:
     >>> from services.image_editability import ServiceConfig, ImageEditabilityService
-    >>> 
-    >>> # 创建配置
+    >>>
+    >>> # Create Configuration
     >>> config = ServiceConfig.from_defaults(mineru_token="your_token")
-    >>> 
-    >>> # 创建服务
+    >>>
+    >>> # Create Service
     >>> service = ImageEditabilityService(config)
-    >>> 
-    >>> # 串行处理
+    >>>
+    >>> # Serial processing
     >>> result = service.make_image_editable("image.png")
-    >>> 
-    >>> # 并行处理（推荐）
+    >>>
+    >>> # Parallel processing (recommended)）
     >>> from concurrent.futures import ThreadPoolExecutor, as_completed
-    >>> 
+    >>>
     >>> images = ["img1.png", "img2.png", "img3.png"]
     >>> with ThreadPoolExecutor(max_workers=4) as executor:
-    ...     futures = {executor.submit(service.make_image_editable, img): img 
+    ...     futures = {executor.submit(service.make_image_editable, img): img
     ...                for img in images}
-    ...     results = {images[i]: future.result() 
+    ...     results = {images[i]: future.result()
     ...                for i, future in enumerate(as_completed(futures))}
 """
 
-# 数据模型
+# Data Model
 from .data_models import BBox, EditableElement, EditableImage
 
-# 坐标映射
+# Coordinate Map
 from .coordinate_mapper import CoordinateMapper
 
-# 元素提取器
+# Element Ripper
 from .extractors import (
     ElementExtractor,
     MinerUElementExtractor,
     ExtractorRegistry
 )
 
-# 混合提取器
+# Mixed Ripper
 
-# Inpaint提供者
+# Inpaint Provider
 from .inpaint_providers import (
     InpaintProvider,
     DefaultInpaintProvider,
@@ -59,7 +59,7 @@ from .inpaint_providers import (
     InpaintProviderRegistry
 )
 
-# 文字属性提取器
+# Text Properties Ripper
 from .text_attribute_extractors import (
     TextStyleResult,
     TextAttributeExtractor,
@@ -67,41 +67,41 @@ from .text_attribute_extractors import (
     TextAttributeExtractorRegistry
 )
 
-# 工厂和配置
+# Plant and configuration
 from .factories import (
     TextAttributeExtractorFactory,
     ServiceConfig
 )
 
-# 主服务
+# Main Services
 from .service import ImageEditabilityService
 
 __all__ = [
-    # 数据模型
+    # Data Model
     'BBox',
     'EditableElement',
     'EditableImage',
-    # 坐标映射
+    # Coordinate Map
     'CoordinateMapper',
-    # 元素提取器
+    # Element Ripper
     'ElementExtractor',
     'MinerUElementExtractor',
     'ExtractorRegistry',
-    # 混合提取器
-    # Inpaint提供者
+    # Mixed Ripper
+    # Inpaint Provider
     'InpaintProvider',
     'DefaultInpaintProvider',
     'GenerativeEditInpaintProvider',
     'InpaintProviderRegistry',
-    # 文字属性提取器
+    # Text Properties Ripper
     'TextStyleResult',
     'TextAttributeExtractor',
     'CaptionModelTextAttributeExtractor',
     'TextAttributeExtractorRegistry',
-    # 工厂和配置
+    # Plant and configuration
     'TextAttributeExtractorFactory',
     'ServiceConfig',
-    # 主服务
+    # Main Services
     'ImageEditabilityService',
 ]
 

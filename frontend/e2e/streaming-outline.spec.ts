@@ -132,7 +132,7 @@ test.describe('Streaming Outline - Mock Tests', () => {
     await expect(page.getByText('Page 1')).toBeVisible();
 
     // Assert button re-enables with "Regenerate" text
-    await expect(page.getByRole('button', { name: /重新生成|Regenerate/i })).toBeEnabled();
+    await expect(page.getByRole('button', { name: /\u91cd\u65b0\u751f\u6210|Regenerate/i })).toBeEnabled();
   });
 
   test('disables the generate button while streaming and re-enables on completion', async ({ page }) => {
@@ -157,13 +157,13 @@ test.describe('Streaming Outline - Mock Tests', () => {
     await expect.poll(() => streamRequested, { timeout: 15000 }).toBe(true);
 
     // Assert button shows disabled "Generating..." state while the stream is pending.
-    await expect(page.getByRole('button', { name: /生成中|Generating/i })).toBeDisabled();
+    await expect(page.getByRole('button', { name: /\u751f\u6210\u4e2d|Generating/i })).toBeDisabled();
 
     releaseStream();
 
     // Wait for the page to render, then assert the button re-enables with "Regenerate".
     await expect(page.getByText('Page 1')).toBeVisible();
-    await expect(page.getByRole('button', { name: /重新生成|Regenerate/i })).toBeEnabled();
+    await expect(page.getByRole('button', { name: /\u91cd\u65b0\u751f\u6210|Regenerate/i })).toBeEnabled();
   });
 
   test('keeps a delayed stream out of a project opened after generation starts', async ({ page }) => {
@@ -260,9 +260,9 @@ test.describe('Streaming Outline - Mock Tests', () => {
     // the source project would auto-dismiss after 5s, so a plain not.toBeVisible()
     // later could miss it. Assert immediately and once more after settling.
     await expect.poll(() => streamAborted, { timeout: 15000 }).toBe(true);
-    await expect(page.getByText(/Failed to fetch|生成大纲失败|网络错误|大纲生成可能不完整/i)).not.toBeVisible({ timeout: 2000 });
+    await expect(page.getByText(/Failed to fetch|\u751f\u6210\u5927\u7eb2\u5931\u8d25|\u7f51\u7edc\u9519\u8bef|\u5927\u7eb2\u751f\u6210\u53ef\u80fd\u4e0d\u5b8c\u6574/i)).not.toBeVisible({ timeout: 2000 });
     await page.waitForTimeout(1500);
-    await expect(page.getByText(/Failed to fetch|生成大纲失败|网络错误|大纲生成可能不完整/i)).not.toBeVisible({ timeout: 0 });
+    await expect(page.getByText(/Failed to fetch|\u751f\u6210\u5927\u7eb2\u5931\u8d25|\u7f51\u7edc\u9519\u8bef|\u5927\u7eb2\u751f\u6210\u53ef\u80fd\u4e0d\u5b8c\u6574/i)).not.toBeVisible({ timeout: 0 });
 
     // Target project must still be intact and empty.
     const persistedTarget = await page.request.get(`${BASE_URL}/api/projects/${targetId}`);
@@ -353,7 +353,7 @@ test.describe('Streaming Outline - Mock Tests', () => {
     await expect.poll(() => streamRequested, { timeout: 15000 }).toBe(true);
 
     // Both the global error toast and the editor toast may carry the message.
-    await expect(page.getByText(/Failed to fetch|生成大纲失败|网络错误/i).first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/Failed to fetch|\u751f\u6210\u5927\u7eb2\u5931\u8d25|\u7f51\u7edc\u9519\u8bef/i).first()).toBeVisible({ timeout: 10000 });
   });
 });
 
@@ -368,7 +368,7 @@ test.describe('Streaming Outline - Integration Tests', () => {
     const projectId = await createProjectAndNavigate(page, 'A 3-page presentation about cats');
 
     // Click generate
-    const generateBtn = page.getByRole('button', { name: /自动生成|Auto Generate/i });
+    const generateBtn = page.getByRole('button', { name: /\u81ea\u52a8\u751f\u6210|Auto Generate/i });
     await generateBtn.click();
 
     // Wait for at least one card to appear (streaming in progress)
@@ -376,7 +376,7 @@ test.describe('Streaming Outline - Integration Tests', () => {
     await expect(page.locator('h4').first()).toBeVisible({ timeout: 30000 });
 
     // Wait for streaming to complete - "Regenerate" button appears when done
-    await expect(page.getByRole('button', { name: /重新生成|Regenerate/i })).toBeVisible({ timeout: 60000 });
+    await expect(page.getByRole('button', { name: /\u91cd\u65b0\u751f\u6210|Regenerate/i })).toBeVisible({ timeout: 60000 });
 
     // Verify multiple cards were generated
     const cardTitles = page.locator('h4');

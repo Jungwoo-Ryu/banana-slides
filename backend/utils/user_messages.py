@@ -47,14 +47,14 @@ def status_message(value):
     text = str(value or '')
     if re.search('[가-힣]', text): return text
     categories = (
-        (('失败','错误','failed','error'), '처리 중 오류가 발생했습니다. 설정과 입력 내용을 확인하세요.'),
-        (('完成','成功','complete','success','created','saved','updated','deleted'), '완료했습니다.'),
-        (('背景','background'), '배경을 복원하는 중입니다.'),
-        (('保存','saving'), '파일을 저장하는 중입니다.'),
-        (('样式','style'), '스타일을 분석하는 중입니다.'),
-        (('分析','解析','extract','analy','parsing'), '내용을 분석하는 중입니다.'),
-        (('生成','generat'), '생성하는 중입니다.'),
-        (('准备','开始','配置','prepar','start'), '작업을 준비하는 중입니다.'),
+        (('Failed','Error','failed','error'), '처리 중 오류가 발생했습니다. 설정과 입력 내용을 확인하세요.'),
+        (('Completed','Success','complete','success','created','saved','updated','deleted'), '완료했습니다.'),
+        (('Background','background'), '배경을 복원하는 중입니다.'),
+        (('Save','saving'), '파일을 저장하는 중입니다.'),
+        (('Styles','style'), '스타일을 분석하는 중입니다.'),
+        (('Analysis','Parsing','extract','analy','parsing'), '내용을 분석하는 중입니다.'),
+        (('Generate','generat'), '생성하는 중입니다.'),
+        (('Ready.','Here we go.','Configuration','prepar','start'), '작업을 준비하는 중입니다.'),
     )
     for terms, message in categories:
         if any(term in text.lower() for term in terms): return message

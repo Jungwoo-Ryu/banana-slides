@@ -130,9 +130,9 @@ test.describe('Single-page regenerate', () => {
     })
 
     await page.goto(`/project/${PROJECT_ID}/preview`)
-    await expect(page.getByRole('button', { name: /重新生成|Regenerate/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /\u91cd\u65b0\u751f\u6210|Regenerate/i })).toBeVisible()
 
-    await page.getByRole('button', { name: /重新生成|Regenerate/i }).click()
+    await page.getByRole('button', { name: /\u91cd\u65b0\u751f\u6210|Regenerate/i }).click()
 
     await expect
       .poll(() => ({ batchGenerateCalled, singleGenerateCalled }))

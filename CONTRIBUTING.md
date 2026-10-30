@@ -52,47 +52,47 @@ When you open a Pull Request, the PR template includes a CLA checkbox. Simply ch
 
 ## Development Setup
 
-### 环境要求 / Requirements
+### Environmental requirements / Requirements
 
 - Python 3.10+
-- [uv](https://github.com/astral-sh/uv) - Python 包管理器
-- Node.js 16+ 和 npm
-- 有效的 API 密钥（详见 `.env.example`）
+- [uv](https://github.com/astral-sh/uv) - Python Package Manager
+- Node.js 16+ and npm
+- It’s working. API Keys (details) `.env.example`）
 
-### 安装步骤 / Installation
+### Installation Steps / Installation
 
 ```bash
-# 克隆代码仓库
+# Cloning code repository
 git clone https://github.com/Anionex/banana-slides.git
 cd banana-slides
 
-# 安装 uv（如果尚未安装）
+# Install uv（If not installed）
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# 安装后端依赖（在项目根目录运行）
+# Install backend dependency (run in project root directory)）
 uv sync
 
-# 配置环境变量
+# Configure Environment Variables
 cp .env.example .env
-# 编辑 .env 文件，配置你的 API 密钥
+# Edit .env File, configure your API Key
 
-# 安装前端依赖
+# Install Frontend Dependence
 cd frontend
 npm install
 ```
 
-### 启动开发服务器 / Start Development Server
+### Start development server / Start Development Server
 
 ```bash
-# 启动后端（在项目根目录）
+# Start Backend (in project root directory)）
 cd backend
 uv run alembic upgrade head && uv run python app.py
-# 后端运行在 http://localhost:5011
+# Run Backend In http://localhost:5011
 
-# 启动前端（新开一个终端）
+# Start frontend (new terminal)）
 cd frontend
 npm run dev
-# 前端运行在 http://localhost:3011
+# Run in frontend http://localhost:3011
 ```
 
 ## Code Style

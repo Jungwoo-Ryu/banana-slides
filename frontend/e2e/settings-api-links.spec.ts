@@ -7,15 +7,15 @@ test.describe('Settings page API key labels and links', () => {
   });
 
   test('Baidu section title should not contain OCR', async ({ page }) => {
-    const baiduSection = page.locator('h2').filter({ hasText: /百度配置|Baidu Configuration/ });
+    const baiduSection = page.locator('h2').filter({ hasText: /\u767e\u5ea6\u914d\u7f6e|Baidu Configuration/ });
     await expect(baiduSection).toBeVisible();
-    await expect(page.locator('h2').filter({ hasText: /百度 OCR 配置|Baidu OCR Configuration/ })).not.toBeVisible();
+    await expect(page.locator('h2').filter({ hasText: /\u767e\u5ea6 OCR \u914d\u7f6e|Baidu OCR Configuration/ })).not.toBeVisible();
   });
 
   test('Baidu API Key label should not contain OCR', async ({ page }) => {
-    const baiduLabel = page.locator('label').filter({ hasText: /百度 API Key|Baidu API Key/ });
+    const baiduLabel = page.locator('label').filter({ hasText: /\u767e\u5ea6 API Key|Baidu API Key/ });
     await expect(baiduLabel).toBeVisible();
-    await expect(page.locator('label:has-text("百度 OCR API Key")')).not.toBeVisible();
+    await expect(page.locator('label:has-text("100 degrees OCR API Key")')).not.toBeVisible();
   });
 
   test('MinerU Token field has application link', async ({ page }) => {
@@ -47,7 +47,7 @@ test.describe('Settings page API key labels and links', () => {
 
   test('AIHubMix API key guide uses current Console flow', async ({ page }) => {
     await expect(page.locator('li').filter({ hasText: /Console.*Top Up|Console.*Account.*Top Up/ })).toBeVisible();
-    await expect(page.locator('li').filter({ hasText: /充值后.*Develop.*API Keys|After topping up.*Develop.*API Keys/ })).toBeVisible();
+    await expect(page.locator('li').filter({ hasText: /\u5145\u503c\u540e.*Develop.*API Keys|After topping up.*Develop.*API Keys/ })).toBeVisible();
     await expect(page.locator('li').filter({ hasText: /Add key/ })).toBeVisible();
   });
 });

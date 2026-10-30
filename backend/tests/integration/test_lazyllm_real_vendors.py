@@ -35,7 +35,7 @@ class TestLazyLLMRealVendors:
         from services.ai_providers.text.lazyllm_provider import LazyLLMTextProvider
 
         provider = LazyLLMTextProvider(source='deepseek', model='deepseek-chat')
-        out = provider.generate_text('只回复两个字：你好')
+        out = provider.generate_text('Just two words： hello.')
         assert out and out.strip(), 'DeepSeek returned an empty response'
 
     @pytest.mark.integration
@@ -47,7 +47,7 @@ class TestLazyLLMRealVendors:
         from services.ai_providers.text.lazyllm_provider import LazyLLMTextProvider
 
         provider = LazyLLMTextProvider(source='glm', model='glm-4-plus')
-        out = provider.generate_text('只回复两个字：你好')
+        out = provider.generate_text('Just two words： hello.')
         assert out and out.strip(), 'GLM returned an empty response'
 
     @pytest.mark.integration
@@ -67,7 +67,7 @@ class TestLazyLLMRealVendors:
         img.save(path)
         try:
             provider = LazyLLMTextProvider(source='qwen', model='qwen3-vl-flash')
-            out = provider.generate_with_image('用一句话描述这张图片', path)
+            out = provider.generate_with_image('I want you to describe this picture in one sentence.', path)
             assert out and out.strip(), 'Qwen VLM returned an empty response'
         finally:
             os.remove(path)

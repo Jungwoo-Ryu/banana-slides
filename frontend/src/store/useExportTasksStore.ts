@@ -8,30 +8,30 @@ import { normalizeErrorMessage } from '@/utils';
 const exportI18n = {
   zh: {
     exportStore: {
-      exportFailed: '导出失败',
-      pollFailed: '轮询失败',
-      pollRetrying: '暂时无法查询导出状态，后台任务未被判定失败，正在自动重连',
-      pollPaused: '无法继续自动查询导出状态，后台任务状态未知，请手动重新查询',
-      staleTask: '任务状态响应异常，后台任务状态未知，请手动重新查询',
-      pollGatewayTimeout: '状态查询经过网关时超时',
-      pollRequestTimeout: '本次状态查询超过请求时限',
-      pollRateLimited: '状态查询请求过于频繁',
-      pollServiceUnavailable: '导出状态服务暂时不可用',
-      pollNetworkError: '状态查询网络连接中断',
-      createConfirmationPending: '创建响应中断后暂未查到任务，可能仍在经过网关或写入队列',
-      taskInterrupted: '导出被中断：后台服务已重启或进程已退出，该任务不会继续执行（最后进度更新于 {{duration}}前）。',
-      taskInterruptedNoDuration: '导出被中断：后台服务已重启或进程已退出，该任务不会继续执行。',
-      taskStalled: '导出疑似卡住：已 {{duration}}没有进度更新（最后一步：{{step}}）。',
-      taskStalledNoStep: '导出疑似卡住：已 {{duration}}没有进度更新。',
-      durationHours: '{{value}} 小时',
-      durationMinutes: '{{value}} 分钟',
-      durationSeconds: '{{value}} 秒',
-      stepStarting: '开始执行',
-      stepPreparing: '准备',
-      stepLayoutAnalysis: '版面分析',
-      stepStyleExtraction: '样式提取',
-      stepBuildingPptx: '构建 PPTX',
-      stepSaving: '保存文件',
+      exportFailed: 'Export failed',
+      pollFailed: 'Polling failed',
+      pollRetrying: 'Export status is temporarily unavailable. The backend task is not marked failed; reconnecting automatically',
+      pollPaused: 'Automatic status checks stopped. The backend task status is unknown; check again manually',
+      staleTask: 'The task status response is invalid. The backend task status is unknown; check again manually',
+      pollGatewayTimeout: 'The status request timed out at the gateway',
+      pollRequestTimeout: 'This status request exceeded its request timeout',
+      pollRateLimited: 'Status checks are being rate limited',
+      pollServiceUnavailable: 'The export status service is temporarily unavailable',
+      pollNetworkError: 'The status-check connection was interrupted',
+      createConfirmationPending: 'The task is not visible yet after the create response was interrupted; it may still be passing through the gateway or queue',
+      taskInterrupted: 'Export interrupted: the backend restarted, so this task will not continue (last progress {{duration}} ago).',
+      taskInterruptedNoDuration: 'Export interrupted: the backend restarted, so this task will not continue.',
+      taskStalled: 'Export looks stuck: no progress for {{duration}} (last step: {{step}}).',
+      taskStalledNoStep: 'Export looks stuck: no progress for {{duration}}.',
+      durationHours: '{{value}} hours',
+      durationMinutes: '{{value}} minutes',
+      durationSeconds: '{{value}} seconds',
+      stepStarting: 'starting',
+      stepPreparing: 'preparing',
+      stepLayoutAnalysis: 'layout analysis',
+      stepStyleExtraction: 'style extraction',
+      stepBuildingPptx: 'building the PPTX',
+      stepSaving: 'saving the file',
     },
   },
   en: {
@@ -67,22 +67,22 @@ const t = getT(exportI18n);
 const EXPORT_POLL_INTERVAL_MS = 2000;
 const MAX_POLL_RETRY_DELAY_MS = 30000;
 const MAX_CREATE_CONFIRMATION_RETRIES = 6;
-// 后端看门狗写入的 error_code（见 backend/services/task_watchdog.py）。
-// 这类失败的文案完全由前端本地化 + 后端结构化细节拼装，
-// 不依赖后端的中文句子（避免中英混排与文案漂移导致的重复）。
+// It’s written by the back door dog. error_code（See backend/services/task_watchdog.py）。
+// These failed files are completely localized at the front end. + Backend Structured Details Collapse，
+// Without relying on the back-end Chinese sentence (avoiding repetitions due to mixed Chinese-British lines and file drifts)）。
 const TASK_INTERRUPTED_CODE = 'TASK_INTERRUPTED';
 const TASK_STALLED_CODE = 'TASK_STALLED';
 
-// 后端心跳里的阶段名（中文），映射成本地化文案；未知阶段不插入句子
+// Stage name (Chinese) in back-end heartbeat, map cost geochemical; unknown phase does not insert sentence
 const STEP_LABEL_KEYS: Record<string, string> = {
-  '开始执行': 'exportStore.stepStarting',
-  '准备': 'exportStore.stepPreparing',
-  '配置': 'exportStore.stepPreparing',
-  '版面分析': 'exportStore.stepLayoutAnalysis',
-  '样式提取': 'exportStore.stepStyleExtraction',
-  '构建PPTX': 'exportStore.stepBuildingPptx',
-  '保存文件': 'exportStore.stepSaving',
-  '完成': 'exportStore.stepSaving',
+  'Commencement': 'exportStore.stepStarting',
+  'Ready.': 'exportStore.stepPreparing',
+  'Configuration': 'exportStore.stepPreparing',
+  'Board Analysis': 'exportStore.stepLayoutAnalysis',
+  'Style Ripping': 'exportStore.stepStyleExtraction',
+  'Build PPTX': 'exportStore.stepBuildingPptx',
+  'Save File': 'exportStore.stepSaving',
+  'Completed': 'exportStore.stepSaving',
 };
 
 const localizeStep = (step: string | undefined): string | undefined => {
@@ -208,7 +208,7 @@ export interface ExportTask {
   projectId: string;
   type: ExportTaskType;
   status: ExportTaskStatus;
-  pageIds?: string[]; // 选中的页面ID列表，undefined表示全部
+  pageIds?: string[]; // Selected Pages ID List，undefined For All
   progress?: {
     total: number;
     completed: number;
@@ -232,8 +232,8 @@ export interface ExportTask {
       [key: string]: unknown;
     };
     messages?: string[];
-    warnings?: string[];  // 导出警告信息
-    warning_details?: {   // 警告详细信息
+    warnings?: string[];  // Export Warning Information
+    warning_details?: {   // Warning Details
       style_extraction_failed?: Array<{ element_id: string; reason: string }>;
       text_render_failed?: Array<{ text: string; reason: string }>;
       image_add_failed?: Array<{ path: string; reason: string }>;
@@ -260,14 +260,14 @@ export interface ExportTask {
 
 interface ExportTasksState {
   tasks: ExportTask[];
-  
+
   // Actions
   addTask: (task: Omit<ExportTask, 'createdAt'>) => void;
   updateTask: (id: string, updates: Partial<ExportTask>) => void;
   removeTask: (id: string) => void;
   clearCompleted: (projectId?: string | null) => void;
   pollTask: (id: string, projectId: string, taskId: string) => Promise<void>;
-  restoreActiveTasks: () => void; // 恢复正在进行的任务并重新开始轮询
+  restoreActiveTasks: () => void; // Resume ongoing missions and recommence rounds of inquiry
 }
 
 export const useExportTasksStore = create<ExportTasksState>()(
@@ -279,7 +279,7 @@ export const useExportTasksStore = create<ExportTasksState>()(
         set((state) => {
           // Check if task with this id already exists
           const existingIndex = state.tasks.findIndex(t => t.id === task.id);
-          
+
           if (existingIndex >= 0) {
             // Update existing task
             const updatedTasks = [...state.tasks];
@@ -416,9 +416,9 @@ export const useExportTasksStore = create<ExportTasksState>()(
                   console.warn('[ExportTasksStore] Failed to parse progress:', e);
                 }
               }
-              
+
               updates.progress = progressData;
-              
+
               // Extract download URL if available
               if (progressData.download_url) {
                 updates.downloadUrl = progressData.download_url;
@@ -513,18 +513,18 @@ export const useExportTasksStore = create<ExportTasksState>()(
       },
 
       restoreActiveTasks: () => {
-        // 恢复所有正在进行的任务并重新开始轮询
+        // Restoring all ongoing missions and recommenced the rounds
         const state = get();
         const activeTasks = state.tasks.filter(
           task => task.status === 'PENDING' || task.status === 'PROCESSING' || task.status === 'RUNNING'
         );
-        
+
         if (activeTasks.length > 0) {
-          devLog(`[ExportTasksStore] 恢复 ${activeTasks.length} 个正在进行的任务`);
+          devLog(`[ExportTasksStore] Restore ${activeTasks.length} Ongoing tasks`);
           activeTasks.forEach(task => {
-            // 重新开始轮询
+            // Recommence Rotation
             state.pollTask(task.id, task.projectId, task.taskId).catch(err => {
-              console.error(`[ExportTasksStore] 恢复任务 ${task.id} 失败:`, err);
+              console.error(`[ExportTasksStore] Resume Tasks ${task.id} Failed:`, err);
             });
           });
         }

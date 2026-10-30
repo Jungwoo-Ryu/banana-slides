@@ -1,5 +1,5 @@
 """
-数据模型 - 图片可编辑化服务的核心数据结构
+Data Model - Photo-editing service core data structure
 """
 from typing import Dict, Any, List, Optional, Tuple
 from dataclasses import dataclass, field
@@ -7,48 +7,48 @@ from dataclasses import dataclass, field
 
 @dataclass
 class BBox:
-    """边界框坐标"""
+    """Border Border Coordinates"""
     x0: float
     y0: float
     x1: float
     y1: float
-    
+
     @property
     def width(self) -> float:
         return self.x1 - self.x0
-    
+
     @property
     def height(self) -> float:
         return self.y1 - self.y0
-    
+
     @property
     def area(self) -> float:
         return self.width * self.height
-    
+
     def to_tuple(self) -> Tuple[float, float, float, float]:
-        """转换为元组格式 (x0, y0, x1, y1)"""
+        """Convert to meta-format (x0, y0, x1, y1)"""
         return (self.x0, self.y0, self.x1, self.y1)
-    
+
     def to_dict(self) -> Dict[str, float]:
-        """转换为字典格式"""
+        """Convert to Dictionary Format"""
         return {
             'x0': self.x0,
             'y0': self.y0,
             'x1': self.x1,
             'y1': self.y1
         }
-    
+
     def scale(self, scale_x: float, scale_y: float) -> 'BBox':
-        """缩放bbox"""
+        """Scale bbox"""
         return BBox(
             x0=self.x0 * scale_x,
             y0=self.y0 * scale_y,
             x1=self.x1 * scale_x,
             y1=self.y1 * scale_y
         )
-    
+
     def translate(self, offset_x: float, offset_y: float) -> 'BBox':
-        """平移bbox"""
+        """Diverse bbox"""
         return BBox(
             x0=self.x0 + offset_x,
             y0=self.y0 + offset_y,
@@ -57,7 +57,7 @@ class BBox:
         )
 
     def expand(self, px: float, max_w: float, max_h: float) -> 'BBox':
-        """向四周扩张 px 像素，clamp 到 [0, max_w] × [0, max_h]。"""
+        """Spread around. px Pixels，clamp Present. [0, max_w] × [0, max_h]。"""
         return BBox(
             x0=max(0.0, self.x0 - px),
             y0=max(0.0, self.y0 - px),
@@ -68,29 +68,29 @@ class BBox:
 
 @dataclass
 class EditableElement:
-    """可编辑元素"""
-    element_id: str  # 唯一标识
-    element_type: str  # text, image, table, figure, equation等
-    bbox: BBox  # 在父容器（EditableImage）坐标系中的位置
-    bbox_global: BBox  # 在根图片（最顶层EditableImage）坐标系中的位置（预计算存储，避免前端/后续使用时重新遍历计算）
-    content: Optional[str] = None  # 文字内容、HTML表格等
-    image_path: Optional[str] = None  # 图片路径（MinerU提取的）
+    """Editable Elements"""
+    element_id: str  # Unique ID
+    element_type: str  # text, image, table, figure, equation Wait.
+    bbox: BBox  # In the parent container（EditableImage）Position in the Coordinate System
+    bbox_global: BBox  # In root picture (top floor) EditableImage）Location in the coordinates system (expected storage, avoid frontend)/Re-calculate after-use）
+    content: Optional[str] = None  # Text content、HTML Tables etc.
+    image_path: Optional[str] = None  # Picture Path（MinerU Extracted）
 
-    # 是否被分类器判定为图标（True=icon / False=photo / None=未判定或非图片元素）
-    # 仅 image 类型元素会跑分类；icon 在版面源头会做轻微 BBox 扩张以避免边缘漏裁
+    # Whether to be determined as an icon by the Catalog（True=icon / False=photo / None=Undecided or non-pictural elements）
+    # Only image Type elements run into categories；icon It’ll be light at the page source. BBox Spread out to avoid the edges.
     is_icon: Optional[bool] = None
-    
-    # 递归子元素（如果是图片或图表，可能有子元素）
+
+    # Recursive sub-elements (if a picture or chart is present, there may be sub-elements)）
     children: List['EditableElement'] = field(default_factory=list)
-    
-    # 子图的inpaint背景（如果此元素是递归分析的图片/图表）
+
+    # It’s a subgraph. inpaint Background (if this element is a recalcitrant image)/Chart）
     inpainted_background_path: Optional[str] = None
-    
-    # 元数据
+
+    # Metadata
     metadata: Dict[str, Any] = field(default_factory=dict)
-    
+
     def to_dict(self) -> Dict[str, Any]:
-        """转换为字典（可序列化）"""
+        """Convert to Dictionary (Sequencable)）"""
         result = {
             'element_id': self.element_id,
             'element_type': self.element_type,
@@ -108,29 +108,29 @@ class EditableElement:
 
 @dataclass
 class EditableImage:
-    """可编辑化的图片结构"""
-    image_id: str  # 唯一标识
-    image_path: str  # 原始图片路径
-    width: int  # 图片宽度
-    height: int  # 图片高度
-    
-    # 所有提取的元素
+    """Editable Photo Structure"""
+    image_id: str  # Unique ID
+    image_path: str  # Original Image Path
+    width: int  # Image width
+    height: int  # Image Height
+
+    # All extracted elements
     elements: List[EditableElement] = field(default_factory=list)
-    
-    # Inpaint后的背景图（消除所有元素）
+
+    # Inpaint Background chart after (elimination of all elements)）
     clean_background: Optional[str] = None
-    
-    # 递归层级
+
+    # Recursive Level
     depth: int = 0
-    
-    # 父图片ID（如果是子图）
+
+    # Parent Picture ID（If it’s a subgraph,）
     parent_id: Optional[str] = None
-    
-    # 元数据
+
+    # Metadata
     metadata: Dict[str, Any] = field(default_factory=dict)
-    
+
     def to_dict(self) -> Dict[str, Any]:
-        """转换为字典（可序列化）"""
+        """Convert to Dictionary (Sequencable)）"""
         return {
             'image_id': self.image_id,
             'image_path': self.image_path,

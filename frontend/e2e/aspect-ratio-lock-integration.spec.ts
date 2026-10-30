@@ -23,11 +23,11 @@ test.describe('Aspect ratio lock (integration)', () => {
     await page.waitForLoadState('networkidle')
 
     // Open project settings
-    const settingsBtn = page.locator('button').filter({ hasText: /设置|Settings/ }).first()
+    const settingsBtn = page.locator('button').filter({ hasText: /\u8bbe\u7f6e|Settings/ }).first()
     await settingsBtn.click()
 
     // Verify locked state
-    await expect(page.getByText(/已生成图片的项目无法调整|Cannot change aspect ratio/)).toBeVisible()
+    await expect(page.getByText(/\u5df2\u751f\u6210\u56fe\u7247\u7684\u9879\u76ee\u65e0\u6cd5\u8c03\u6574|Cannot change aspect ratio/)).toBeVisible()
 
     // All ratio buttons should be disabled
     for (const ratio of ['16:9', '4:3', '1:1', '9:16', '3:2']) {

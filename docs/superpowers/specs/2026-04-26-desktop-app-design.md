@@ -4,40 +4,40 @@ Date: 2026-04-26
 
 ## Overview
 
-将 Banana Slides 打包为桌面应用，支持 Windows (NSIS installer) 和 macOS (DMG)。采用 Electron 作为桌面壳，PyInstaller 打包 Python 后端为独立可执行文件，前端构建产物作为静态资源嵌入。
+Yes, sir. Banana Slides Packing as desktop application, support Windows (NSIS installer) and macOS (DMG)。Adopt Electron As Desktop Shell，PyInstaller Pack up. Python Backend is independent executable, front end build product embedded as static resource。
 
-核心体验目标：**一流品牌感**。自定义无边框标题栏、精致的启动画面、流畅的启动流程，不能有任何廉价感。
+Core experience objectives：**First-class brand sense.**。Customized borderless titlebar, fine startup image, smooth startup process, no cheap feeling。
 
-## 1. 项目结构
+## 1. Project structure
 
 ```
 desktop/
-├── main.js                 # Electron 主进程
-├── preload.js              # 预加载脚本（暴露 IPC API）
-├── python-manager.js       # Python 后端进程生命周期管理
-├── auto-updater.js         # GitHub Releases 版本检测
-├── splash.html             # 启动画面
-├── package.json            # Electron 项目配置
-├── electron-builder.yml    # 打包配置（NSIS + DMG）
+├── main.js                 # Electron Main Process
+├── preload.js              # Preload script (exposure) IPC API）
+├── python-manager.js       # Python Back-end process life cycle management
+├── auto-updater.js         # GitHub Releases Version Test
+├── splash.html             # Start the video.
+├── package.json            # Electron Project Configuration
+├── electron-builder.yml    # Packing Configuration（NSIS + DMG）
 ├── resources/
-│   ├── icon.ico            # Windows 图标
-│   ├── icon.icns           # macOS 图标
-│   ├── icon.png            # 通用图标
-│   ├── installer.nsh       # NSIS 自定义安装脚本
-│   └── README.md           # 资源说明
+│   ├── icon.ico            # Windows Icon
+│   ├── icon.icns           # macOS Icon
+│   ├── icon.png            # Generic Icon
+│   ├── installer.nsh       # NSIS Custom Install Script
+│   └── README.md           # Resource justification
 ├── scripts/
-│   └── build-all.bat       # Windows 一键构建脚本
+│   └── build-all.bat       # Windows One-click build script
 └── .gitignore
 ```
 
-## 2. Electron 主进程 (main.js)
+## 2. Electron Main Process (main.js)
 
-### 2.1 窗口配置
+### 2.1 Window Configuration
 
-使用无边框窗口 + 平台原生窗口控制：
+Use borderless windows + Platform Native Window Control：
 
-- macOS: `titleBarStyle: 'hidden'`，保留原生红绿灯按钮
-- Windows: `titleBarStyle: 'hidden'` + `titleBarOverlay`，使用系统原生最小化/最大化/关闭按钮
+- macOS: `titleBarStyle: 'hidden'`，Keep the original red and green light button
+- Windows: `titleBarStyle: 'hidden'` + `titleBarOverlay`，Use system primary minimization/Maximize/Close button
 
 ```javascript
 const win = new BrowserWindow({
@@ -49,7 +49,7 @@ const win = new BrowserWindow({
   titleBarStyle: 'hidden',
   ...(process.platform !== 'darwin' ? {
     titleBarOverlay: {
-      color: '#00000000',  // 透明背景，融入页面
+      color: '#00000000',  // Transparent background, integration page
       symbolColor: '#6b7280',
       height: 48
     }
@@ -62,166 +62,166 @@ const win = new BrowserWindow({
 });
 ```
 
-### 2.2 启动流程
+### 2.2 Start Process
 
-1. 显示 splash 窗口（无边框、居中、不可调整大小）
-2. 启动 Python 后端进程（通过 python-manager）
-3. 轮询 `http://localhost:{port}/health` 等待后端就绪
-4. 后端就绪后，主窗口加载前端页面
-5. 主窗口 ready-to-show 后，关闭 splash，显示主窗口
+1. Show splash Window (no borders, centering, unresizeable)）
+2. Start Python Backend Process (through python-manager）
+3. Rotation `http://localhost:{port}/health` Waiting for the backend to be ready
+4. When backend is ready, the main window loads the front page
+5. Main Window ready-to-show After, off splash，Show main window
 
-### 2.3 系统托盘
+### 2.3 System Tray
 
-关闭窗口时最小化到系统托盘，托盘右键菜单：
-- 显示主窗口
-- 分隔线
-- 退出应用
+Minimise to system tray when closing window, right-click menu：
+- Show main window
+- Separator
+- Quit Apply
 
-macOS 上 dock 图标点击时恢复窗口。
+macOS Let’s go. dock Restore window when icon clicks。
 
-### 2.4 应用菜单（中文）
+### 2.4 Apply Menu (Chinese)）
 
-自定义中文菜单栏：
-- 文件：新建窗口、退出
-- 编辑：撤销、重做、剪切、复制、粘贴、全选
-- 视图：重新加载、开发者工具、全屏
-- 窗口：最小化、关闭
-- 帮助：关于、检查更新
+Custom Chinese Menu Bar：
+- File： New Window, Exit
+- Edit： Undo, Redo, Cut, Copy, Paste, Select
+- View： Reload, Developer Tool, Full Screen
+- Window： Minimize, Close
+- Help： About, check for updates
 
-### 2.5 用户数据目录
+### 2.5 User Data Catalogue
 
-使用 `app.getPath('userData')` 作为数据根目录：
+Usage `app.getPath('userData')` As Data Root Directory：
 - Windows: `%APPDATA%/BananaSlides/`
 - macOS: `~/Library/Application Support/BananaSlides/`
 
-子目录：
-- `data/database.db` — SQLite 数据库
-- `uploads/` — 用户上传文件
-- `exports/` — 导出的 PPT/PDF
-- `logs/` — 应用日志
+Subdirectories：
+- `data/database.db` — SQLite Database
+- `uploads/` — User Uploading File
+- `exports/` — Export PPT/PDF
+- `logs/` — Apply Log
 
-通过环境变量传递给后端：`DATABASE_PATH`, `UPLOAD_FOLDER`, `EXPORT_FOLDER`。
+Passing through environmental variables to the backend：`DATABASE_PATH`, `UPLOAD_FOLDER`, `EXPORT_FOLDER`。
 
-## 3. 预加载脚本 (preload.js)
+## 3. Preload Script (preload.js)
 
-通过 `contextBridge` 暴露安全 API：
+Pass. `contextBridge` Exposure safe. API：
 
 ```javascript
 contextBridge.exposeInMainWorld('electronAPI', {
-  // 版本信息
+  // Version Information
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
-  // 更新检查
+  // Update Check
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
-  // 平台信息
+  // Platform Information
   getPlatform: () => process.platform,
-  // 窗口控制（用于自定义标题栏）
+  // Window Control (for custom title bar)）
   minimizeWindow: () => ipcRenderer.send('window-minimize'),
   maximizeWindow: () => ipcRenderer.send('window-maximize'),
   closeWindow: () => ipcRenderer.send('window-close'),
-  // 外部链接
+  // External links
   openExternal: (url) => ipcRenderer.invoke('open-external', url),
 });
 ```
 
-## 4. Python 后端管理 (python-manager.js)
+## 4. Python Backend Management (python-manager.js)
 
-### 4.1 职责
+### 4.1 Duties
 
-- 定位 PyInstaller 打包的后端可执行文件
-- 分配可用端口
-- 启动后端进程，传递环境变量
-- 健康检查轮询
-- 进程退出时清理
+- Positioning PyInstaller Pack Backend Executable
+- Distribute Available Ports
+- Start a back-end process to transmit environmental variables
+- Health check call.
+- Clean-up on process exit
 
-### 4.2 端口分配
+### 4.2 Port Distribution
 
-开发模式使用固定端口 5000，打包模式动态分配可用端口（从 15000 开始扫描）。
+Development mode with fixed port 5000，Packing mode dynamic distribution of available ports (from 15000 Start scanning.）。
 
-### 4.3 环境变量传递
+### 4.3 Environmental variables transfer
 
-启动后端时设置：
-- `DATABASE_PATH` — 数据库文件路径
-- `UPLOAD_FOLDER` — 上传目录
-- `EXPORT_FOLDER` — 导出目录
+Setup on Backend Start：
+- `DATABASE_PATH` — Database File Path
+- `UPLOAD_FOLDER` — Upload directory
+- `EXPORT_FOLDER` — Export Directory
 - `CORS_ORIGINS` — `http://localhost:{electronPort}`
 - `FLASK_ENV` — `production`
 
-### 4.4 健康检查
+### 4.4 Health screening
 
-每 500ms 轮询 `/health`，最多等待 30 秒。超时则显示错误对话框并退出。
+Every 500ms Rotation `/health`，At most, wait. 30 seconds. Timeout displays the error dialogue box and exits。
 
-### 4.5 进程清理
+### 4.5 Process Cleaning
 
-应用退出时（`app.on('before-quit')`）：
-- 发送 SIGTERM 给后端进程
-- 等待 5 秒
-- 如果仍在运行，发送 SIGKILL
-- Windows 上使用 `taskkill /F /PID`
+Apply exit（`app.on('before-quit')`）：
+- Send SIGTERM To Backend Process
+- Wait. 5 sec
+- Send if still running SIGKILL
+- Windows Use Up `taskkill /F /PID`
 
-## 5. 自动更新检测 (auto-updater.js)
+## 5. Automatically update detection (auto-updater.js)
 
-### 5.1 检测逻辑
+### 5.1 Test Logic
 
-- 调用 GitHub API: `GET https://api.github.com/repos/Anionex/banana-slides/releases/latest`
-- 比较 `tag_name`（semver）与当前 `app.getVersion()`
-- 如果有新版本，返回版本号、更新说明、下载链接
+- Call GitHub API: `GET https://api.github.com/repos/Anionex/banana-slides/releases/latest`
+- Comparison `tag_name`（semver）With Current `app.getVersion()`
+- If new version is available, return version number, update description, download links
 
-### 5.2 触发时机
+### 5.2 Trigger Time
 
-- 应用启动后 5 秒自动检查一次
-- 用户可通过菜单"帮助 → 检查更新"手动触发
-- 前端 UpdateChecker 组件通过 IPC 调用
+- Apply after startup 5 Autocheck every second.
+- Users can use the menu"Help → Check for updates"Manual Trigger
+- Frontend UpdateChecker Component passes. IPC Call
 
-### 5.3 交互方式
+### 5.3 Interactive Method
 
-检测到新版本后，前端显示非侵入式通知条，包含：
-- 新版本号
-- 更新说明摘要
-- "前往下载"按钮（打开 GitHub Releases 页面）
-- "稍后提醒"按钮
+When a new version is detected, the front end displays a non-intrusive notification entry, including：
+- New version number
+- Updated summary of notes
+- "Go to Download"Buttons (Open GitHub Releases Page）
+- "Remind later."button
 
-## 6. 启动画面 (splash.html)
+## 6. Start the video. (splash.html)
 
-独立 HTML 文件，无边框窗口加载。设计要求：
+Independence HTML File, load without border window. Design requirements：
 
-- 尺寸：480×360，居中显示，不可调整大小
-- 背景：渐变色（banana 品牌色系，暖黄到橙色渐变）
-- Logo：居中显示应用 logo
-- 应用名："Banana Slides" 使用品牌字体
-- 加载动画：底部细长进度条 + 状态文字（"正在启动后端服务..."）
-- 整体风格：简洁、高级、品牌感强
+- Dimensions：480×360，Centre Show Unresizeable
+- Background： Gradual colour（banana Brand colour system, yellow to orange.）
+- Logo：Centre Display Application logo
+- Apply Name："Banana Slides" Use brand fonts
+- Load animated： bottom long progress bar + Status Text（"Starting backend service..."）
+- Corporate style： concise, advanced, strong brand
 
-## 7. 前端自定义标题栏 (DesktopTitleBar.tsx)
+## 7. Frontend Custom Title Bar (DesktopTitleBar.tsx)
 
-### 7.1 设计要求
+### 7.1 Design requirements
 
-仅在桌面模式下渲染。高级感、不廉价。
+Renders only in desktop mode. Advanced sense, not cheap。
 
-- 高度 48px，与页面内容无缝融合
-- 左侧：macOS 上留出红绿灯空间（~70px padding），Windows 上显示应用 logo + 名称
-- 中间：可选显示当前页面标题
-- 右侧：Windows 上由 `titleBarOverlay` 处理原生按钮，macOS 上可放置功能按钮
-- 整个标题栏区域可拖拽（`-webkit-app-region: drag`），按钮区域设为 `no-drag`
-- 支持亮色/暗色主题
-- 背景使用毛玻璃效果（`backdrop-filter: blur`）或与页面背景融合
+- Height 48px，Isolated integration with page contents
+- Left：macOS Leave a red and green light space up there.（~70px padding），Windows Show Application Up logo + Name
+- Middle： Optional display of current Slide title
+- Right：Windows Override `titleBarOverlay` Process raw buttons，macOS Upshowable buttons
+- The entire title bar area can be dragged（`-webkit-app-region: drag`），Set button area as `no-drag`
+- Support bright colors/Dark Theme
+- Use gross glass effect in the background（`backdrop-filter: blur`）or merge with page background
 
-### 7.2 实现
+### 7.2 Achieved
 
-- 检测 `window.electronAPI` 是否存在来判断桌面模式
-- 通过 CSS `env(titlebar-area-*)` 适配 Windows titleBarOverlay 区域
-- macOS 上通过 `navigator.platform` 或 preload 暴露的 `getPlatform()` 判断
+- Test `window.electronAPI` Existence to judge desktop mode
+- Pass. CSS `env(titlebar-area-*)` Fit Windows titleBarOverlay Regional
+- macOS Up through. `navigator.platform` or preload It’s exposed. `getPlatform()` Judgement.
 
-## 8. 前端更新检查组件 (UpdateChecker.tsx)
+## 8. Frontend Update Check Component (UpdateChecker.tsx)
 
-- 应用启动后通过 `window.electronAPI.checkForUpdates()` 检查
-- 有新版本时在页面顶部显示通知条（不遮挡内容，推挤布局）
-- 通知条样式：品牌色渐变背景，圆角，带关闭按钮
-- "前往下载"按钮调用 `window.electronAPI.openExternal(url)`
-- 用户关闭后本次会话不再显示
+- Apply after startup to pass `window.electronAPI.checkForUpdates()` Inspection
+- Show notice bars at the top of the page when a new version is available (without blocking content, push layout)）
+- Notification style： brand colour gradient background, round corner, with closed buttons
+- "Go to Download"Button Call `window.electronAPI.openExternal(url)`
+- This session is no longer visible after user closes
 
-## 9. 前端 API Client 适配 (client.ts)
+## 9. Frontend API Client Fit (client.ts)
 
-桌面模式下，前端不通过 Vite proxy 而是直接连接后端：
+Desktop mode, frontend not passed Vite proxy It’s a direct link to the back.：
 
 ```typescript
 const isDesktop = typeof window !== 'undefined' && 'electronAPI' in window;
@@ -230,13 +230,13 @@ const API_BASE_URL = isDesktop
   : '';
 ```
 
-后端端口通过 Electron preload 脚本在 `contextBridge.exposeInMainWorld` 中注入到 `window.__BACKEND_PORT__`。主进程在启动后端时确定端口，通过 IPC 传递给 preload。
+Backend Passes Electron preload Script in `contextBridge.exposeInMainWorld` injects into `window.__BACKEND_PORT__`。Main process establishes port at backend, by IPC Passed to preload。
 
-## 10. Backend 改动 (app.py)
+## 10. Backend Changes (app.py)
 
-### 10.1 Windows UTF-8 输出
+### 10.1 Windows UTF-8 Output
 
-在文件顶部、所有 import 之前：
+At the top of the file, all import Before：
 
 ```python
 if sys.platform == 'win32':
@@ -246,40 +246,40 @@ if sys.platform == 'win32':
         sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 ```
 
-### 10.2 环境变量路径支持
+### 10.2 Environmental variable path support
 
-`create_app()` 中检查 `DATABASE_PATH`, `UPLOAD_FOLDER`, `EXPORT_FOLDER` 环境变量。如果存在则使用（桌面模式），否则使用现有的相对路径逻辑（开发模式）。
+`create_app()` Checking `DATABASE_PATH`, `UPLOAD_FOLDER`, `EXPORT_FOLDER` Environment variable. Use (desktop mode) if available, otherwise use existing relative path logic (development mode)）。
 
-### 10.3 数据库表自动创建
+### 10.3 Database table automatically created
 
-在 `with app.app_context():` 块中添加 `db.create_all()`，确保打包后首次运行时自动创建表。开发模式下 Alembic 仍然是主要的迁移工具，`db.create_all()` 作为兜底。
+Yes. `with app.app_context():` Add to Blocks `db.create_all()`，Ensures that a table is automatically created when you start running for the first time after packing. Alembic Still the main migration tool.，`db.create_all()` As a front.。
 
-## 11. PyInstaller 打包规格 (banana-slides.spec)
+## 11. PyInstaller Packing specification (banana-slides.spec)
 
-### 11.1 入口
+### 11.1 Access.
 
 `backend/app.py`
 
-### 11.2 数据文件
+### 11.2 Data Files
 
-- `fonts/` — 字体文件
-- `migrations/` — Alembic 迁移文件
+- `fonts/` — Font File
+- `migrations/` — Alembic Migration File
 
-### 11.3 隐式导入
+### 11.3 Invisible Import
 
-收集所有关键依赖的子模块：flask, sqlalchemy, google.generativeai, openai, pptx, docx, lxml, httpx, aiohttp, reportlab, markitdown 等。
+Collect all critical dependent submodules：flask, sqlalchemy, google.generativeai, openai, pptx, docx, lxml, httpx, aiohttp, reportlab, markitdown Wait.。
 
-### 11.4 排除
+### 11.4 Exclude
 
-tkinter, matplotlib, scipy, IPython, jupyter, notebook — 减小体积。
+tkinter, matplotlib, scipy, IPython, jupyter, notebook — Volume Reduction。
 
-### 11.5 输出
+### 11.5 Output
 
-- 可执行文件名：`banana-backend`
-- 模式：`console=False`（无控制台窗口）
-- 使用 COLLECT 模式（非单文件），便于调试和更新
+- Executable File Name：`banana-backend`
+- Mode：`console=False`（No Console Window）
+- Usage COLLECT Mode (non-single file) to facilitate debugging and updating
 
-## 12. electron-builder 配置
+## 12. electron-builder Configuration
 
 ```yaml
 appId: com.banana.slides
@@ -331,36 +331,36 @@ nsis:
 compression: maximum
 ```
 
-## 13. GitHub Actions 发布工作流 (release-desktop.yml)
+## 13. GitHub Actions Release Workstream (release-desktop.yml)
 
-### 13.1 触发条件
+### 13.1 Trigger Condition
 
-推送 `v*` 标签时触发。
+Send `v*` Trigger on Label。
 
-### 13.2 构建矩阵
+### 13.2 Build Matrix
 
 - Windows: `windows-latest`
 - macOS: `macos-latest`
 
-### 13.3 步骤
+### 13.3 Steps
 
-1. Checkout 代码
-2. 从 tag 同步版本号到 `desktop/package.json` 和 `frontend/package.json`
-3. 安装 Node.js 依赖
-4. 安装 Python + uv
-5. 构建前端 (`npm run build`)
-6. PyInstaller 打包后端
-7. 复制构建产物到 `desktop/frontend/` 和 `desktop/backend/`
-8. electron-builder 打包
-9. 上传到 GitHub Release
+1. Checkout Code
+2. From tag Sync Version Number to `desktop/package.json` and `frontend/package.json`
+3. Install Node.js Dependency
+4. Install Python + uv
+5. Build Frontend (`npm run build`)
+6. PyInstaller Pack Backend
+7. Copy Build to `desktop/frontend/` and `desktop/backend/`
+8. electron-builder Pack up.
+9. Upload to GitHub Release
 
-## 14. Vite 配置改动
+## 14. Vite Configure Changes
 
-添加 `base: './'` 确保构建产物使用相对路径，适配 Electron 的 `file://` 协议加载。
+Add `base: './'` Ensure that the construction product uses a relative path and adapts Electron It’s... `file://` Protocol Loading。
 
-## 15. 不在范围内
+## 15. It’s not in range.
 
-- 百度 OCR API Key 设置：已在当前代码中实现，无需改动
-- 应用内自动下载安装：仅做版本检测 + 引导下载
-- Linux 支持：本次不做
-- 代码签名：本次不配置，后续可加
+- 100 degrees OCR API Key Settings： Achieved in the current code without change
+- Autodown installation in application： version testing only + Guide Downloads
+- Linux Support： Not this time
+- Code signing is not configured yet; it can be added later

@@ -43,7 +43,7 @@ test('service test sends resolved vendor name for lazyllm global format', async 
     await route.fulfill({ json: { data: { task_id: 'mock-task-123' } } });
   });
 
-  const textModelTestBtn = page.locator('button', { hasText: /开始测试|Start Test/ }).nth(1);
+  const textModelTestBtn = page.locator('button', { hasText: /\u5f00\u59cb\u6d4b\u8bd5|Start Test/ }).nth(1);
   await textModelTestBtn.click();
 
   expect(capturedPayload).toBeTruthy();
@@ -59,7 +59,7 @@ test('service test sends empty model source to clear saved per-model override', 
     await route.fulfill({ json: { data: { task_id: 'mock-task-123' } } });
   });
 
-  const textModelTestBtn = page.locator('button', { hasText: /开始测试|Start Test/ }).nth(1);
+  const textModelTestBtn = page.locator('button', { hasText: /\u5f00\u59cb\u6d4b\u8bd5|Start Test/ }).nth(1);
   await textModelTestBtn.click();
 
   expect(capturedPayload).toBeTruthy();

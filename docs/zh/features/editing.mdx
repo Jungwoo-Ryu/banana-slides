@@ -1,74 +1,74 @@
 ---
-title: "编辑幻灯片"
-description: "用自然语言修改演示文稿"
+title: "Editing Slides"
+description: "Modify presentations with natural language"
 ---
 
-## 自然语言编辑
+## Natural Language Editing
 
-直接用口头描述修改，无需菜单操作：
+Instead of navigating complex menus, describe your changes in plain language:
 
-- "把第三页改成案例分析"
-- "把这个图换成饼图"
-- "背景调暗一点"
-- "加一个要点列表"
+- "Change the third page to a case study"
+- "Replace this chart with a pie chart"
+- "Make the background darker"
+- "Add a summary bullet list"
 
-## 大纲编辑
+## Outline Editing
 
-在大纲编辑器中输入指令调整结构：
+In the Outline Editor, refine the structure by typing instructions like:
 
-- "在引言后面加一节竞品分析"
-- "合并最后两页"
-- "把总结移到问答页前面"
+- "Add a section about competitive analysis after the introduction"
+- "Merge the last two pages"
+- "Move the conclusion before the Q&A page"
 
-也可以手动拖拽页面重新排序，或编辑章节归属。
+You can also manually drag and drop pages to reorder them, or edit chapter assignments.
 
-## 页面属性面板
+## Page Properties Panel
 
-预览页右边缘常驻一个拉手，点开就是当前页的属性面板。所有字段都能就地修改并自动保存（停止输入约 1 秒后写回，面板顶部会显示「保存中 / 已保存」），不用来回开关弹窗：
+A grip sits permanently on the right edge of the Slide Preview page — click it to open the current page's properties panel. Every field is editable in place and saves automatically about a second after you stop typing, with a **Saving / Saved** indicator at the top of the panel, so there is no dialog to keep opening and closing:
 
-| 字段 | 说明 |
-|------|------|
-| 标题 | 页面标题，同步显示在左侧缩略图列表 |
-| 所属章节 | 页面归属的章节名，留空表示未分组 |
-| 页面描述 | 生成图片的依据，和详细编辑器里是同一份内容，支持 Markdown、粘贴图片和从素材库插图 |
-| 描述额外字段 | 视觉元素、视觉焦点、排版布局、演讲者备注等，字段列表跟随详细编辑器的「描述设置 → 额外字段」；标了「不影响图片生成」的字段不会进入生图提示词 |
-| 旁白讲稿 | 折叠在面板最底部，导出讲解视频时朗读；留空则由导出流程自动生成 |
+| Field | Notes |
+|-------|-------|
+| Title | The page title, mirrored in the thumbnail list on the left |
+| Section | The chapter this page belongs to — leave it empty to keep the page ungrouped |
+| Description | What the image is generated from — the same content you edit in the Description Editor. Supports Markdown, pasted images, and inserting images from the material library |
+| Description extra fields | Visual Elements, Visual Focus, Layout, Speaker Notes, and so on; the list follows **Description Settings → Extra Fields** in the Description Editor. Fields marked **Not used in image generation** stay out of the image prompt |
+| Narration script | Collapsed at the very bottom of the panel. Read aloud when exporting a narration video; leave it empty and the export flow generates one |
 
-每页独立模板模式下还会出现「模板」区块，可以直接给这一页换模板图、写模板提示词，也能跳转到批量配置。面板底部还会展示该页的状态、页码、图片版本数和创建/更新时间。
+In per-page template mode a **Template** block appears as well, where you can swap this page's template image, write a **Template prompt** for it, or jump straight to **Template Setup** for bulk changes. The panel also shows the page's status, its position in the deck, the number of image versions, and the creation and update timestamps.
 
-拖动面板左边缘可调整宽度（300–640px），双击边缘恢复默认宽度，也可以聚焦边缘后用 ←/→ 微调、Home/End 直接到两端。宽度和展开状态会记住，下次打开预览页保持一致。窄屏上面板改为浮层显示，点击遮罩即可关闭。
+Drag the panel's left edge to resize it (300–640px), or double-click the edge to restore the default width. You can also focus the edge and nudge it with ←/→, or jump to either limit with Home/End. Both the width and the open/collapsed state are remembered, so the preview page looks the same the next time you open it. On narrow screens the panel becomes an overlay — tap the scrim to close it.
 
 <Note>
-描述改动只会更新文字，不会自动重画图片。想让改动生效，记得点「重新生成」。
+  Editing a description only updates the text; it does not redraw the image. Click **Regenerate** to make your changes take effect.
 </Note>
 
 <Tip>
-页面的「要点」属于大纲阶段，只在大纲编辑器里出现；到了预览页，真正驱动出图的是页面描述。
+  A page's **key points** belong to the outline stage, so they only appear in the Outline Editor. On the preview page it is the description that drives image generation.
 </Tip>
 
-## 就地编辑与区域选图
+## In-place editing and Region Select
 
-在预览页点击「**编辑**」，当前页下方会平滑展开一条指令栏，幻灯片原地不动、不再被弹窗遮住，让你边看大图边改（窄屏空间不足时仍改为弹窗）：
+On the preview page, click **Edit** and a command bar smoothly expands beneath the current slide — the slide stays put at full size instead of being covered by a dialog, so you edit while watching it (narrow screens still fall back to a dialog):
 
-1. 在「输入修改指令」里描述要改什么（例如：把背景改成蓝色、增大标题字号）
-2. 可选：点图片左上角的「**区域选图**」，直接在大图上拖拽框选——框中的部分会裁剪下来作为参考图一起提交，帮 AI 聚焦到你要改的地方
-3. 可选：从素材库选择或上传更多参考图
-4. 点击「**生成图片**」，AI 结合页面描述、指令与参考图重绘该页
+1. Describe the change in **Enter edit instructions** (e.g., change the background to blue, enlarge the title)
+2. Optional: click **Region Select** at the top-left of the image, then drag directly on the full-size slide — the boxed area is cropped and submitted as a reference image so the AI focuses on the part you care about
+3. Optional: pick more reference images from Materials or upload them
+4. Click **Generate Image** — the AI redraws the page using the page description, your instruction, and the reference images
 
 <Note>
-区域选图框出的部分是作为**参考图**提交的，用来告诉 AI 你关心哪一块，并不是只重画框内、框外像素级保留。想精确擦除或局部替换某个元素，可用顶部「素材生成」里的局部编辑与智能擦除工具。
+The Region Select box is submitted as a **reference image** to tell the AI which part matters — it does not regenerate only inside the box while keeping the outside pixel-for-pixel. For precise erase or local replacement of an element, use the local-edit and smart-erase tools under **Material Generation** at the top.
 </Note>
 
-## 描述详细程度
+## Description Detail Level
 
-在详细编辑器的「批量生成描述」按钮旁，可选择描述的详细程度：
+Next to the **Batch Generate Descriptions** button in the Detail Editor, you can choose a detail level:
 
-| 级别 | 说明 |
-|------|------|
-| 精简 | 简洁描述，生成速度更快，适合快速原型 |
-| 默认 | 平衡详细程度与生成速度 |
-| 详细 | 更丰富的描述，AI 有更多构图参考，适合精细打磨 |
+| Level | Description |
+|-------|-------------|
+| Concise | Brief descriptions, faster generation, good for quick prototypes |
+| Default | Balanced between detail and speed |
+| Detailed | Richer descriptions give AI more compositional reference, ideal for fine-tuning |
 
-## 历史版本
+## Version History
 
-每次重新生成幻灯片图片时，旧版本会自动保留。在预览页点击「历史版本」可查看和切换到任意历史版本，不必担心误操作覆盖满意的效果。
+Every time you regenerate a slide image, the previous version is automatically saved. Click **History Versions** on the preview page to view and restore any previous version — no need to worry about accidentally overwriting a result you liked.

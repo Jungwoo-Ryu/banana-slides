@@ -84,11 +84,11 @@ test.describe('Settings env fallback - Mock tests', () => {
     await resolutionSelect.selectOption('4K')
 
     // Click save
-    const saveButton = page.getByRole('button', { name: /保存|Save/i })
+    const saveButton = page.getByRole('button', { name: /\u4fdd\u5b58|Save/i })
     await saveButton.click()
 
-    // Verify success toast appears (text is "设置保存成功" or "Settings saved successfully")
-    await expect(page.getByText(/设置保存成功|Settings saved successfully/)).toBeVisible({ timeout: 5000 })
+    // Verify success toast appears (text is "Settings saved successfully" or "Settings saved successfully")
+    await expect(page.getByText(/\u8bbe\u7f6e\u4fdd\u5b58\u6210\u529f|Settings saved successfully/)).toBeVisible({ timeout: 5000 })
 
     // Verify PUT payload does NOT include api_key (frontend only sends it when user types a new value)
     expect(putPayload).not.toBeNull()

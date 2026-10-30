@@ -127,17 +127,17 @@ test.describe('Skeleton during description re-generation', () => {
     await expect(page.getByText(OLD_DESC_2)).toBeVisible()
 
     // Click batch generate (triggers re-generation confirmation dialog)
-    await page.getByRole('button', { name: /批量生成描述|Batch Generate/i }).click()
+    await page.getByRole('button', { name: /\u6279\u91cf\u751f\u6210\u63cf\u8ff0|Batch Generate/i }).click()
 
     // Confirm the regeneration dialog (may or may not appear)
     try {
-      await page.getByRole('button', { name: /确认|确定/ }).click({ timeout: 2000 })
+      await page.getByRole('button', { name: /\u786e\u8ba4|\u786e\u5b9a/ }).click({ timeout: 2000 })
     } catch {
       // Dialog may not appear, which is expected
     }
 
     // After clicking generate, skeleton should appear — old descriptions should NOT be visible
-    await expect(page.getByText(/生成中|Generating/).first()).toBeVisible({ timeout: 5000 })
+    await expect(page.getByText(/\u751f\u6210\u4e2d|Generating/).first()).toBeVisible({ timeout: 5000 })
 
     // Old descriptions should be hidden while skeleton is showing
     await expect(page.getByText(OLD_DESC_1)).not.toBeVisible()

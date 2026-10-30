@@ -47,9 +47,9 @@ def test_editable_export_task_preserves_progress_and_structured_failure(
     )
 
     def fail_during_style_extraction(*_args, progress_callback=None, **_kwargs):
-        progress_callback("样式提取", "正在分析 12 个文本元素...", 50)
+        progress_callback("Style Ripping", "I’m analyzing. 12 Text elements...", 50)
         raise ExportError(
-            message="文本样式提取失败：图片识别服务请求超时",
+            message="Text style extraction failed： photo recognition service request timed out",
             error_type="style_extraction",
             error_code="EXPORT_STYLE_TIMEOUT",
             stage="style_extraction",
@@ -60,7 +60,7 @@ def test_editable_export_task_preserves_progress_and_structured_failure(
                 "model": "gpt-5.4",
                 "retryable": True,
             },
-            help_text="请稍后重试。",
+            help_text="Please try again later.。",
         )
 
     monkeypatch.setattr(
@@ -82,8 +82,8 @@ def test_editable_export_task_preserves_progress_and_structured_failure(
     progress = failed_task.get_progress()
 
     assert failed_task.status == "FAILED"
-    assert failed_task.error_message == "文本样式提取失败：图片识别服务请求超时"
-    assert "请稍后重试" not in failed_task.error_message
+    assert failed_task.error_message == "Text style extraction failed： photo recognition service request timed out"
+    assert "Please try again later." not in failed_task.error_message
     assert progress["percent"] == 50
     assert progress["completed"] == 50
     assert progress["backend_status"] == "FAILED"
@@ -91,7 +91,7 @@ def test_editable_export_task_preserves_progress_and_structured_failure(
     assert progress["error_stage"] == "style_extraction"
     assert progress["error_details"]["provider"] == "CodexTextProvider"
     assert progress["error_details"]["model"] == "gpt-5.4"
-    assert progress["help_text"] == "请稍后重试。"
+    assert progress["help_text"] == "Please try again later.。"
 
 
 def test_editable_export_creation_is_idempotent_with_client_task_id(

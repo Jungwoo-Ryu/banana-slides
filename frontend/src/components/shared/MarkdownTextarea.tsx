@@ -6,14 +6,14 @@ import { isUploadingUrl, getUploadingPreviewUrl } from '@/hooks/useImagePaste';
 const markdownTextareaI18n = {
   zh: {
     markdownTextarea: {
-      dropImages: '拖放图片到此处',
-      dropImagesOrFiles: '拖放图片或文件到此处',
-      uploadImage: '上传图片',
-      localUpload: '本地上传',
-      selectFromLibrary: '从素材库选择',
-      imageDescription: '图片描述',
-      doubleClickToEdit: '双击编辑描述',
-      uploading: '上传中...',
+      dropImages: 'Drop images here',
+      dropImagesOrFiles: 'Drop images or files here',
+      uploadImage: 'Upload image',
+      localUpload: 'Local upload',
+      selectFromLibrary: 'Select from library',
+      imageDescription: 'Image description',
+      doubleClickToEdit: 'Double-click to edit description',
+      uploading: 'Uploading...',
     }
   },
   en: {

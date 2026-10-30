@@ -68,8 +68,8 @@ test.describe('Global lazyllm vendor — mock tests', () => {
     await vendorKeyInput.fill('test-doubao-key-123')
 
     // Save
-    await page.getByRole('button', { name: /保存|Save/ }).click()
-    await expect(page.locator('text=保存成功').or(page.locator('text=saved'))).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: /\u4fdd\u5b58|Save/ }).click()
+    await expect(page.locator('text=Save successfully').or(page.locator('text=saved'))).toBeVisible({ timeout: 5000 })
 
     // Key assertion: payload should send "doubao", NOT "lazyllm"
     expect(capturedPayload).not.toBeNull()
@@ -161,8 +161,8 @@ test.describe('Global lazyllm vendor — integration tests', () => {
     await vendorKeyInput.fill('test-doubao-integration-key')
 
     // Save
-    await page.getByRole('button', { name: /保存|Save/ }).click()
-    await expect(page.locator('text=保存成功').or(page.locator('text=saved'))).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: /\u4fdd\u5b58|Save/ }).click()
+    await expect(page.locator('text=Save successfully').or(page.locator('text=saved'))).toBeVisible({ timeout: 5000 })
 
     // Reload page
     await page.goto('/settings')
@@ -182,8 +182,8 @@ test.describe('Global lazyllm vendor — integration tests', () => {
     await vendorKeyInput.fill('test-qwen-key')
 
     // Save
-    await page.getByRole('button', { name: /保存|Save/ }).click()
-    await expect(page.locator('text=保存成功').or(page.locator('text=saved'))).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: /\u4fdd\u5b58|Save/ }).click()
+    await expect(page.locator('text=Save successfully').or(page.locator('text=saved'))).toBeVisible({ timeout: 5000 })
 
     // Verify via API that backend stored "qwen", not "lazyllm"
     const response = await page.request.get('/api/settings')
@@ -198,13 +198,13 @@ test.describe('Global lazyllm vendor — integration tests', () => {
     await globalProviderPill(page, 'doubao').click()
     const vendorKeyInput = page.locator('input[type="password"]').first()
     await vendorKeyInput.fill('test-key')
-    await page.getByRole('button', { name: /保存|Save/ }).click()
-    await expect(page.locator('text=保存成功').or(page.locator('text=saved'))).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: /\u4fdd\u5b58|Save/ }).click()
+    await expect(page.locator('text=Save successfully').or(page.locator('text=saved'))).toBeVisible({ timeout: 5000 })
 
     // Reset
-    await page.getByRole('button', { name: /重置|Reset/ }).click()
-    await page.getByRole('button', { name: /确定重置|Confirm/ }).click()
-    await expect(page.locator('text=设置已重置').or(page.locator('text=reset successfully'))).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: /\u91cd\u7f6e|Reset/ }).click()
+    await page.getByRole('button', { name: /\u786e\u5b9a\u91cd\u7f6e|Confirm/ }).click()
+    await expect(page.locator('text=Settings reset').or(page.locator('text=reset successfully'))).toBeVisible({ timeout: 5000 })
 
     // After reset, format should revert to .env default (typically gemini)
     const response = await page.request.get('/api/settings')

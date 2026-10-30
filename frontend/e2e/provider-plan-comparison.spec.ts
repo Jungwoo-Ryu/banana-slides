@@ -77,9 +77,9 @@ test.describe('Settings: promoted provider pills', () => {
 
     await expect(gemini).not.toHaveAttribute('aria-describedby', /.+/);
     await expect(apimart).toHaveCount(0);
-    await expect(volcengine).toContainText('国内直连');
-    await expect(volcengine).not.toContainText('高性价比');
-    await expect(doubao).not.toContainText('国内直连');
+    await expect(volcengine).toContainText('Direct domestic company');
+    await expect(volcengine).not.toContainText('High value for money');
+    await expect(doubao).not.toContainText('Direct domestic company');
     await expect(page.locator('[data-provider="ppio"]')).toHaveCount(0);
     await expect(page.locator('[data-provider="aiping"]')).toHaveCount(0);
 
@@ -93,18 +93,18 @@ test.describe('Settings: promoted provider pills', () => {
     await volcengine.hover();
     await expect(apimartPromo).not.toBeVisible();
     await expect(volcenginePromo).toBeVisible();
-    await expect(volcenginePromo.getByText('火山 Agent Plan', { exact: true })).toBeVisible();
-    await expect(volcenginePromo.getByText('国内直连，无需特殊网络环境')).toBeVisible();
+    await expect(volcenginePromo.getByText('Volcanic Agent Plan', { exact: true })).toBeVisible();
+    await expect(volcenginePromo.getByText('Direct domestic connection, no special network environment')).toBeVisible();
   });
 
   test('applies Volcengine Agent Plan from its hover panel', async ({ page }) => {
     const volcengine = page.locator('[data-provider="volcengine"]');
     await volcengine.hover();
-    await page.getByTestId('provider-plan-volcengine').getByRole('button', { name: '选择此方案' }).click();
+    await page.getByTestId('provider-plan-volcengine').getByRole('button', { name: 'Select this scheme' }).click();
 
     await expect(volcengine).toHaveAttribute('aria-checked', 'true');
     await expect(page.getByTestId('global-api-config-section').locator('input').first())
       .toHaveValue('https://ark.cn-beijing.volces.com/api/plan/v3');
-    await expect(page.getByText('为什么选择火山 Agent Plan？')).toBeVisible();
+    await expect(page.getByText('Why the volcano? Agent Plan？')).toBeVisible();
   });
 });

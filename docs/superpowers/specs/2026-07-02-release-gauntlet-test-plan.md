@@ -1,233 +1,233 @@
-# Release Gauntlet：发布前自动化测试验收方案
+# Release Gauntlet：Pre-issuance automated test collection programme
 
-> 目标：一条命令 `npm run release:gauntlet`，运行后自动发现绝大多数功能与体验问题，
-> 并对无法自动验证的剩余风险生成明确的《残余风险报告》交给开发者做最小化人工抽查。
+> Objective： an order `npm run release:gauntlet`，Automatically discover most functional and experience problems after running，
+> and generate clarity about the remaining risks that cannot be verified automatically《Residual risk reporting》Give it to the developers for a minimalized manual spot check.。
 
-## 0. 第一性原理：为什么"99％ 自动检出"不能靠堆测试用例
+## 0. First Principle： Why"99％ Autocheckout"You can’t use a stack of tests.
 
-一个 bug 被自动发现，必须同时满足两个条件：
+One. bug It’s self-discovered. It has to meet both conditions.：
 
-1. **触达（Reachability）**：测试执行路径覆盖到了出问题的状态。
-2. **判定（Oracle）**：存在一个自动化的"对/错"判断标准。
+1. **Touche.（Reachability）**：Test execution path overwrites a problem state。
+2. **Decision（Oracle）**：There’s an automated one."Yeah./Wrong."Criteria for judgement。
 
-传统测试方案（本项目现有的 unit + e2e）在两个维度上都有结构性盲区：
+Traditional testing programme (under this project) unit + e2e）There’s a structural blind zone at both dimensions.：
 
-- 触达盲区：测试只走"编写者想到的路径"。真实用户会乱点、中途刷新、断网、
-  开两个标签页、上传奇怪的文件。
-- 判定盲区：Banana Slides 是**生成式 AI 产品**，核心产出（幻灯片图片）没有唯一正确答案。
-  `expect(x).toBe(y)` 无法判断"这页 PPT 文字被截断了""对比度太低看不清"——
-  而这些恰恰是用户最在意的"体验问题"。
+- Touched blind zone： test only."Path the author thought of"。Real users are a little bit messy, they’re a little refreshed, they’re off the grid.、
+  Open two tabs, upload strange files。
+- The determination of the blind zone：Banana Slides Yes.**Generating AI Products**，Core output (show pictures) does not have the only correct answer。
+  `expect(x).toBe(y)` I can’t judge."This page. PPT The text was cut off.""The contrast is too low to see."——
+  And that’s exactly what users care about."Experience problems"。
 
-所以本方案的核心不是"写更多用例"，而是**按判定器（Oracle）的强弱把产品分层，
-给每一层配上它能用的最强判定器**：
+So the core of this program is not"Write more examples"，It’s...**Press the certifier（Oracle）The strong and the weak divide the product.，
+Each floor is equipped with the most powerful decorator it can use.**：
 
-| 产品层 | 行为性质 | 最强可用 Oracle |
+| Product Layer | Nature of the act | Best Available Oracle |
 |---|---|---|
-| API 契约 / DB / 任务状态机 / 导出文件结构 | 确定性 | 精确断言、Schema 校验、属性测试 |
-| 前端 UI 逻辑 / 路由 / i18n / 状态管理 | 确定性 | e2e 断言 + 控制台零报错 + 视觉回归 |
-| 用户旅程的健壮性（乱序操作、异常输入、网络故障） | 半确定性 | **不变量断言**（永不白屏、永不无提示等待、永不静默失败）+ Agent 探索 |
-| AI 生成产物质量（排版、可读性、贴合描述） | 概率性 | **VLM-as-Judge**（视觉模型按评分卡打分） |
-| 主观审美 / 品味 | 主观 | 无自动 Oracle → 进入残余风险报告 |
+| API Contracts / DB / Task status machine / Export File Structure | Determination | Exact assertion、Schema Verify, Properties Test |
+| Frontend UI Logical / Route / i18n / Status Management | Determination | e2e The assertion. + Console Zero. + Visual regression |
+| Validity of user journeys (disorder operations, abnormal input, network failure)） | Semi-certainty | **Non-variant assertion**（Never white screen, never without hints, never silently fail.）+ Agent Explore |
+| AI Production (format, readability, adhesive description)） | Probability | **VLM-as-Judge**（Visual model scores by score card） |
+| Subjective aesthetics / Taste. | Subjective | No Auto Oracle → Enter residual risk report |
 
-关键洞察：**"体验问题"大多可以转写成不变量（invariant）**，从而变成可自动判定的：
+Critical insight.：**"Experience problems"Most of them can be transcribed into no variables.（invariant）**，So it becomes self-declarable.：
 
-- 「困惑的说明文字」→ 不变量：所有可见文案必须在 i18n 字典中成对存在（zh/en），
-  且 VLM 审阅每个界面截图回答"这个界面上有没有让新用户困惑的文案？"
-- 「无提示的等待」→ 不变量：任何 >800ms 的 pending 网络请求期间，
-  页面上必须存在 loading 指示元素（spinner/skeleton/progress）。这条可以写成
-  Playwright 全局钩子，**挂在全部 70 个现有 e2e 上白捡覆盖**。
-- 「点了没反应」→ 不变量：任何 click 后 2s 内必须发生 DOM 变化、路由变化或网络请求之一。
-- 「白屏/崩溃」→ 不变量：任何时刻 console 无 uncaught error，root 元素非空。
+- 「Confusion Note Text」→ No variable： all visible files must be i18n Dictionary pairing exists（zh/en），
+  and VLM Review the screenshot answers for each interface"Is there a file on this interface that confuses new users?？"
+- 「Waiting without hint」→ No variable： any >800ms It’s... pending Network request period，
+  must exist on the page loading Indicator elements（spinner/skeleton/progress）。This one can be written.
+  Playwright Global hooks，**Hang on to All 70 Existing e2e Whitecovering**。
+- 「It’s not responding.」→ No variable： any click Back 2s It has to happen inside. DOM Change, change of route or one of the network requests。
+- 「Whitescreen/Crash」→ No variable： any moment console None uncaught error，root Element is not empty。
 
-## 1. 总体架构：8 层流水线（Release Gauntlet）
+## 1. Overall structure：8 Streaming waterline（Release Gauntlet）
 
-按"便宜的先跑、贵的后跑、fail-fast"排列。L0–L3 是现有资产的加固，
-L4–L7 是新增的、真正拉开与普通项目差距的部分。
+Press"Cheap run first, expensive run later.、fail-fast"Arrange。L0–L3 It’s a reinforcement of existing assets.，
+L4–L7 It’s a new part of the real gap with the normal project.。
 
 ```
-L0 静态防线（~2min）      → lint / tsc / py_compile / 依赖审计 / 迁移可逆性 / i18n 完整性
-L1 单元+集成（~5min）     → 现有 pytest + vitest（补齐属性测试）
-L2 契约防漂移（~3min）    → 后端 OpenAPI schema ⇄ 前端 mock ⇄ 真实响应 三方一致性
-L3 确定性 E2E（~15min）   → 现有 70 个 spec + 全局不变量钩子 + 视觉回归矩阵
-L4 产物验证（~10min）     → PPTX/PDF/视频/编辑版 PPTX 的结构级深度校验
-L5 真实 AI 全流程（~25min）→ 现有 ui-full-flow + provider 矩阵 + VLM 质量评分
-L6 Agent 探索测试（~40min）→ 多人格 AI agent 驱动真实浏览器做破坏性/探索性测试
-L7 混沌与升级（~15min）   → 故障注入、并发、旧版本数据升级、环境矩阵
-→ 产出《发布报告》+《残余风险报告》
+L0 Static defences（~2min）      → lint / tsc / py_compile / Reliance on audit / Reversibility of migration / i18n Integrity
+L1 Units+Integration（~5min）     → Existing pytest + vitest（Completion Properties Test）
+L2 Deeds against drifting（~3min）    → Backend OpenAPI schema ⇄ Frontend mock ⇄ True response, triangulation.
+L3 Determination E2E（~15min）   → Existing 70 individual spec + Global non-variant hooks + Visual regression matrix
+L4 Product validation（~10min）     → PPTX/PDF/Video/Edit Version PPTX Structure-level depth verification
+L5 Real. AI Full Process（~25min）→ Existing ui-full-flow + provider Matrix + VLM Quality rating
+L6 Agent Explore testing（~40min）→ Multiple personality. AI agent Driver Real Browser to Disruption/Exploration tests
+L7 Disruption and escalation（~15min）   → Fault injection, co-production, old version data upgrade, environment matrix
+→ Outputs《Publication of the report》+《Residual risk reporting》
 ```
 
-总时长 ≈ 2 小时（L5–L7 可并行压到 ~1h）。按 CLAUDE.md 原则"不在意测试成本"，
-真实 API 调用费用预计每次 $3–8。
+Total duration ≈ 2 Hours（L5–L7 But it’s on the same side. ~1h）。Press CLAUDE.md Principles"I don’t care about the cost of testing."，
+Real. API Projected call costs per call $3–8。
 
 ---
 
-## 2. 各层详细设计
+## 2. Detailed design of each layer
 
-### L0 静态防线（新增 3 项）
+### L0 Static defence line (new) 3 Item）
 
-现有：flake8、eslint、`npm run build`。新增：
+Existing：flake8、eslint、`npm run build`。Add：
 
-1. **`tsc --noEmit` 严格类型检查**（build 能过不代表类型干净）。
-2. **迁移可逆性测试**：空库 `alembic upgrade head` → `downgrade base` → 再 `upgrade head`；
-   再用**上一个 release tag 的 DB fixture** 直接 upgrade（见 L7）。
-3. **i18n 完整性扫描**：脚本遍历所有 `useT()` 内联字典，断言 zh/en 键成对、
-   无空串、无残留的 `TODO`/中英混杂。本项目 i18n 是组件级内联的，最容易漏翻。
+1. **`tsc --noEmit` Strict type checks**（build It doesn’t mean it’s clean.）。
+2. **Migration reversibility test**：Empty library `alembic upgrade head` → `downgrade base` → Again. `upgrade head`；
+   Again.**Previous release tag It’s... DB fixture** Direct upgrade（See L7）。
+3. **i18n Complete Scan**：Scripts all over. `useT()` The Inline Dictionary. zh/en Type pairing、
+   No emptiness, no residue. `TODO`/China-United Kingdom of Great Britain and Northern Ireland. i18n It’s a component-level connection. It’s the easiest to slip.。
 
-### L1 单元 + 属性测试
+### L1 Units + Properties Test
 
-现有测试保留。新增 **property-based testing**（后端 `hypothesis`）打确定性核心：
+Existing test retention. Add **property-based testing**（Backend `hypothesis`）Call the core of certainty.：
 
-- `file_parser_service`：随机构造损坏/超大/空/非 UTF-8 的 PDF/DOCX/MD，
-  不变量 = 永不抛未捕获异常，永远返回结构化错误。
-- 任务状态机（`task_manager`）：随机操作序列（创建/取消/并发完成），
-  不变量 = 状态只能沿合法边迁移，Task 永不停留在 pending 超时。
-- 导出：随机页数/比例/缺图组合 → 导出函数要么成功要么给出用户可读错误。
+- `file_parser_service`：Random tectonic damage/It’s huge./Empty/Not UTF-8 It’s... PDF/DOCX/MD，
+  No Variables = Never leave the uncaptured anomaly, always return to a structural error。
+- Task status machine（`task_manager`）：Random sequence of operations (creation)/Cancel/Convergence Finish），
+  No Variables = The state can only move along the legal edge.，Task I’ll stay forever. pending Timeout。
+- Export： Random Pages/Percentage/Shortchart Group → Export function successfully or give user-readable error。
 
-### L2 契约防漂移（本项目最大的隐藏风险）
+### L2 Contract protection against drift (largest hidden risk under this project)）
 
-现有 70 个 e2e 里大量使用 `page.route()` mock。**mock 与真实后端漂移**是这类
-测试体系最经典的假阴性来源：后端改了字段名，mock e2e 全绿，真实环境全挂。
+Existing 70 individual e2e It’s used extensively. `page.route()` mock。**mock Drifting with Real Backend**It’s like this.
+The most classic source of false negatives in the test system： the backend changed the field name，mock e2e It’s all green. It’s all real.。
 
-对策（三方一致性）：
+Response (triangular coherence)）：
 
-1. 后端用 flask 路由自动导出 OpenAPI schema（`apispec` 或手写 schema 文件均可）。
-2. 写一个 pytest：对每个端点用 seed 数据发真实请求，响应体用 schema 校验。
-3. 写一个 lint 脚本：扫描 `frontend/e2e/**/*.spec.ts` 中所有 `page.route()` 的
-   mock JSON，用同一份 schema 校验。**mock 不符合 schema = 测试自身失败**。
+1. Backend flask Route Auto Export OpenAPI schema（`apispec` Or handwritten. schema It’s all right.）。
+2. Write one. pytest：For each peer seed Data sending real requests, responding body use. schema Verify。
+3. Write one. lint Script： Scan `frontend/e2e/**/*.spec.ts` All `page.route()` It’s...
+   mock JSON，Use the same. schema Verify。**mock Do not match schema = Test Failed**。
 
-从此 schema 是唯一事实源，前后端和测试三方谁漂移谁报警。
+Since then, schema It’s the only source of facts.。
 
-### L3 确定性 E2E：全局不变量钩子（性价比最高的一项）
+### L3 Determination E2E：Global non-variant hook (highest value for money)）
 
-不新写用例，而是给 `playwright.config.ts` 加全局 fixture，让**现有全部 spec
-在跑原有断言的同时，免费检查 §0 列出的体验不变量**：
+It’s not a new example. It’s for you. `playwright.config.ts` Add Global fixture，Jean.**All available spec
+While running the original claim, free of charge. §0 Listed experience not variable**：
 
 ```
-- console error/warn 收集器：任何 uncaught error / React warning → 测试失败
-- 网络监听器：任何非预期 4xx/5xx → 失败；>800ms pending 且无 loading 元素 → 失败
-- 死按钮探测：每次 click 后 2s 无任何反馈 → 失败
-- a11y 快扫（axe-core）：严重级别违规 → 失败（对比度、无 label 的输入框
-  本身就是"体验问题"）
+- console error/warn Collector： Any uncaught error / React warning → Test failed
+- Network listening device： any unexpected 4xx/5xx → Failed；>800ms pending None loading Elements → Failed
+- Dead button detection： every time click Back 2s No feedback → Failed
+- a11y Sweep it!（axe-core）：Serious level violations → Failed ( Contrast, None) label input box
+  It’s in itself."Experience problems"）
 ```
 
-视觉回归升级为**矩阵**：现有 `visual-regression.spec.ts` 扩展到
-`{zh, en}` × `{desktop 1280, mobile 375}` × 关键页面（Home / Outline / Detail /
-Preview / Settings / History），基线截图入库，diff 超阈值即失败。
-移动端视口是现有测试完全没覆盖的盲区（memory 里也记录了要避免 hover-only 交互）。
+Visual regression to**Matrix**：Existing `visual-regression.spec.ts` Expand
+`{zh, en}` × `{desktop 1280, mobile 375}` × Key Pages（Home / Outline / Detail /
+Preview / Settings / History），Baseline screenshot repository，diff Super-threshold is failure。
+The mobile view is a blind zone that is completely uncovered by existing tests.（memory It’s written to avoid it. hover-only Interactive）。
 
-### L4 导出产物深度验证
+### L4 Export product depth verification
 
-导出是用户拿到手的最终交付物，一票否决。对 seed 项目
-（`frontend/e2e/helpers/seed-project.ts` 已支持免 AI 造数据）执行全部导出路径，
-然后**打开文件验内脏**，而不只是断言 HTTP 200：
+Export is the final delivery that the user gets, one vote vetoes. seed Item
+（`frontend/e2e/helpers/seed-project.ts` Supported exempt AI Execute all export paths，
+And then...**Open file for internal intestation**，It’s not just an assertion. HTTP 200：
 
-- **PPTX**：`python-pptx` 打开 → 页数一致、每页含图、页面比例与项目设置一致、
-  文件能被 LibreOffice headless 转 PDF 不报错（近似"能被 Office 打开"的自动化代理）。
-- **编辑版 PPTX**：提取的文本框内容与页面描述文本做包含性比对；字体/位置字段非空。
-- **PDF**：`pypdf` 校验页数、页面尺寸、每页有内容流。
-- **视频**：`ffprobe` 校验时长 >0、有视频流、（若配了旁白）有音频流、无损坏帧。
+- **PPTX**：`python-pptx` Open → Same number of pages, same graphics per page, same page ratio as item settings、
+  The file can be used LibreOffice headless Turn. PDF No error (approximation)"I can be. Office Open"Automation agents）。
+- **Edit Version PPTX**：text box contents extracted against page description text to include; fonts/Location field is not empty。
+- **PDF**：`pypdf` Check pages, page sizes, content flow per page。
+- **Video**：`ffprobe` Validation duration >0、Video stream, audio stream, no damage frame.。
 
-### L5 真实 AI 全流程 + VLM 质量评审（解决"生成质量"盲区）
+### L5 Real. AI Full Process + VLM Quality assessment (resolution"Generate Mass"Blind areas）
 
-在现有 nightly `ui-full-flow.spec.ts`（真实 Gemini）基础上：
+Existing nightly `ui-full-flow.spec.ts`（Real. Gemini）Based on：
 
-1. **Provider 矩阵**：gemini 真跑；openai/vertex 至少跑到"请求构造正确 + 能解析
-   真实格式的录制响应"（用录制回放，避免多份 API key 成本）。
-2. **VLM-as-Judge**：全流程生成的每页幻灯片图片 + 对应页面描述，送给视觉模型
-   （Gemini/Claude），按固定评分卡打分：
+1. **Provider Matrix**：gemini Run!；openai/vertex At least run to"Request for correct construction + I can parse.
+   Recording Response for Real Format"（Playback with recording. Avoid multiple copies. API key Cost）。
+2. **VLM-as-Judge**：A slide picture of each page generated by the entire process + Corresponds to page description, to visual model.
+   （Gemini/Claude），Rating by fixed score card：
 
    ```
-   逐项 0–2 分：文字完整无截断 / 无元素重叠 / 对比度可读 /
-   内容与描述相符 / 版式基本对齐 / 无明显 AI 伪影（乱码字、畸变图标）
-   任一项 0 分 → 该页 FAIL，附截图和理由进报告
+   Item by Item 0–2 min： text is intact / No Element Overlay / Contrast Readable /
+   Content corresponds to description. / Layout Basic Alignment / No visible AI Hypocrisy (discretion, malformation icon)）
+   Any one of them. 0 min → Page FAIL，A screenshot and rationale for the report
    ```
 
-   同一模型跑 3 次取多数投票压制评审随机性。这是把"人眼验收"自动化的核心组件。
-3. **界面文案审查**：对 L3 矩阵产生的每张关键页截图，让 VLM 回答
-   "假设你是第一次使用的用户，这个界面上是否有困惑、歧义或中英混杂的文案？"
-   —— 直接对应 CLAUDE.md 的 UX 约束 #1。
+   Same model running. 3 A second majority vote to silence randomity."Human eye check-ups."Automation of core components。
+3. **Interface case review**：Yeah. L3 Every key page cutout from the matrix, let’s VLM Answer!
+   "Assuming you’re a first-time user, there’s no confusion, ambiguity or Chinese-British writing on this interface.？"
+   —— Directly. CLAUDE.md It’s... UX Constraints #1。
 
-### L6 Agent 探索测试（覆盖"没人想到的路径"）
+### L6 Agent Explore testing (overrided)"The path no one thought of."）
 
-用 Claude Agent SDK（或 Claude Code headless + Playwright MCP）启动 **5 个人格
-agent**，各自在独立 seed 环境里自由使用产品 30 分钟，唯一的判定标准就是
-L3 那套全局不变量（白屏/报错/死按钮/无提示等待）+ agent 自身的主观报告：
+Use it. Claude Agent SDK（or Claude Code headless + Playwright MCP）Start **5 Personality
+agent**，They’re on their own. seed Free use of products in the environment 30 Minutes. The only test is...
+L3 The global set of no variables (white screens)/Wrong./Dead button./No hint to wait）+ agent Your own subjective reports.：
 
-| 人格 | 行为脚本倾向 |
+| Personality | Behavioural Script Orientation |
 |---|---|
-| 小白用户 | 只看界面提示操作，遇到看不懂的文案就记录 |
-| 急性子 | 疯狂连点、不等 loading 就切页、生成中途刷新/后退 |
-| 破坏者 | 超长输入、emoji/RTL 文本、0 页大纲、上传 200MB 文件、非法文件改后缀 |
-| 双开用户 | 两个标签页同时编辑同一项目（SQLite 并发写的经典雷区） |
-| 英文移动端用户 | en locale + 375px 视口走完整流程 |
+| White Users | It’s only an interface tip, and it’s recorded when you can’t read it. |
+| Acute | It’s crazy. It doesn’t wait. loading Just cut off the page, generate intermediate refreshing/Back |
+| Destroyer. | Overlong Inputs、emoji/RTL Text、0 Page outline, upload 200MB Document, illegal document suffix |
+| Double Users | Both tabs edit the same item simultaneously（SQLite It’s also a classic minefield.） |
+| English Mobile Users | en locale + 375px A complete process of visualization. |
 
-Agent 探索的本质是**用 LLM 的常识替代人类测试员的直觉**去扩大触达面。
-每个 agent 结束后输出结构化 findings（截图 + 复现步骤），由一个汇总 agent
-去重、按严重度排序、并**自动尝试用 Playwright 写出最小复现脚本**——
-能稳定复现的进 bug 列表，不能复现的进残余风险报告标记为 flaky 疑点。
+Agent The essence of exploration is...**Use it. LLM Common sense replaces the instincts of humans.**To expand the reach.。
+Every one agent Output structured after completion findings（Screenshots + Reverted steps) , by a summary agent
+Weighted, sequenced by severity, and**Automatically try Playwright Write minimum recurrence scripts**——
+It’s a steady recovery. bug List, unrecoverable in-removable risk report marked as flaky Doubtful.。
 
-### L7 混沌、并发与升级
+### L7 Chaos, mixed hair and upgrade
 
-1. **故障注入**（Playwright route + 后端故障开关）：
-   - AI API 返回 429/500/超时/截断 JSON → 断言前端有用户可读的错误提示且可重试；
-   - 生成图片进行到 50% 时 kill 后端再拉起 → 任务状态可恢复或明确失败，不僵死 pending；
-   - 磁盘写满（小容量 tmpfs 挂载 uploads/）→ 导出给出明确错误。
-2. **并发压测**：10 个项目同时生成 → ThreadPoolExecutor 不死锁、SQLite 无
-   `database is locked` 泄漏到用户、任务全部到达终态。
-3. **升级测试**：仓库里存一份**上一 release 的真实 DB + uploads fixture**，
-   新版本直接启动其上 → 迁移成功、历史项目可打开、可继续编辑导出。
-   每次 release 后由脚本自动刷新这份 fixture。
-4. **环境矩阵**：docker-compose、Dockerfile.allinone、源码直跑三种方式各做一次
-   冒烟（启动 → 健康检查 → 创建项目 → seed 导出）。
-
----
-
-## 3. 残余风险报告（那 1％ 的诚实清单)
-
-流水线最后一步自动生成 `release-report/RISK.md`，内容不是套话，而是**由本次
-运行的实际覆盖数据推导**：
-
-1. **本次未触达清单**（自动统计）：未真跑的 provider×model 组合、未覆盖的
-   浏览器（只测了 Chromium；Safari/Firefox 未测）、未测的操作系统字体渲染差异。
-2. **无自动 Oracle 的项**（固定 + VLM 标记的低置信项）：
-   - PPTX 在真实 PowerPoint / WPS / Keynote 中的渲染保真度
-     （LibreOffice 转换只是代理指标）；
-   - 幻灯片的审美品味（VLM 只能判"错"，不能判"美"）；
-   - 视频旁白的语音自然度；
-   - 上游 AI API 未来行为变化（今天全绿不代表下周模型更新后还绿）。
-3. **人工抽查清单（≤10 分钟）**：由以上两项生成的具体动作，例如
-   "用 PowerPoint 打开 release-artifacts/sample.pptx 翻一遍"
-   "肉眼看 VLM 打了 1 分（及格线边缘）的这 3 页截图"。
-4. **Flaky 隔离区**：本次重试后才通过的用例列表——它们是未来 bug 的高发预测区。
+1. **Fault injection.**（Playwright route + Backend failure switch）：
+   - AI API Back 429/500/Timeout/Cut JSON → Confirm that the frontend has a user-readable error hint and can be retried；
+   - Generate pictures to 50% Time kill Backend again. → Mission status can be restored or clearly failed, not frozen. pending；
+   - Full disk (small capacity) tmpfs Mount uploads/）→ Export to give clear error。
+2. **And pressurized.**：10 Co-generation of projects → ThreadPoolExecutor I’m not gonna die.、SQLite None
+   `database is locked` Spill to user. Tasks all reach final.。
+3. **Upgrade Test**：I’ll put one in the warehouse.**Previous release Real. DB + uploads fixture**，
+   The new version starts directly on it. → Migration successfully, history projects can be opened, and editing continues for export。
+   Every time. release And then it’s automatically refreshed by a script. fixture。
+4. **Environment Matrix**：docker-compose、Dockerfile.allinone、The source code runs in three ways.
+   Smoke (starting) → Health screening → Create Item → seed Export）。
 
 ---
 
-## 4. 与现有资产的关系 & 落地路线
+## 3. Residual risk report. 1％ It’s an honest list.)
 
-| 阶段 | 内容 | 工作量 | 检出增益 |
+The last step of the current line is automatically generated. `release-report/RISK.md`，It’s not about words. It’s about words.**This time.
+Run the actual overwhelm data extrapolation**：
+
+1. **This unattainable list.**（Autostat： Unreal running provider×model Group, Uncovered
+   Browser (checked only) Chromium；Safari/Firefox Undetected, undetected font differences in operating systems。
+2. **No Auto Oracle Item**（Fixed + VLM Marked low faith entries）：
+   - PPTX In reality. PowerPoint / WPS / Keynote Rendering level in
+     （LibreOffice Conversion is a proxy indicator.）；
+   - Aesthetic taste for slides（VLM It’s just a sentence."Wrong."，I can’t."Beautiful."）；
+   - The voice nature of the video ads.；
+   - Upstream AI API Future behavioral changes (neither green today nor green next week after the model is updated)）。
+3. **Manual random check list（≤10 min）**：Specific actions generated by the two above, e.g.
+   "Use it. PowerPoint Open release-artifacts/sample.pptx Go over it."
+   "Look at it with your eyes. VLM Yes. 1 This is it. 3 Pageshot"。
+4. **Flaky Zone of separation**：List of examples adopted after this retry——They’re the future. bug High-pregnancy zone。
+
+---
+
+## 4. Relationship to existing assets & Landing route
+
+| Phase | Contents | Workload | Checking out gains |
 |---|---|---|---|
-| P1（先做，性价比最高） | L3 全局不变量钩子 + console/网络/loading 监听挂到现有 70 个 spec；L0 三项新增；L4 产物深度校验 | ~3 天 | 高：现有用例覆盖面 × 新 Oracle |
-| P2 | L2 契约三方一致性；L1 属性测试；L7 升级/并发测试 | ~4 天 | 高：消灭 mock 漂移假阴性 |
-| P3 | L5 VLM-as-Judge + provider 矩阵；视觉回归矩阵 | ~3 天 | 中高：生成质量首次可自动判定 |
-| P4 | L6 多人格 agent 探索 + 自动复现脚本生成；残余风险报告生成器 | ~5 天 | 中：覆盖长尾路径 |
+| P1（Let’s do it first. It’s the highest price.） | L3 Global non-variant hooks + console/Network/loading Listen up to the current. 70 individual spec；L0 Three new；L4 Product Depth Verification | ~3 Jesus. | High： Existing case coverage × New Oracle |
+| P2 | L2 Tripartite coherence of the compact；L1 Properties Test；L7 Upgrade/Combination Test | ~4 Jesus. | High： Extermination mock Drifting fake negatives |
+| P3 | L5 VLM-as-Judge + provider matrices;visual regression matrices | ~3 Jesus. | Medium height： Generating quality is automatically determined for the first time |
+| P4 | L6 Multiple personality. agent Explore + Auto-repeated script generation; residue risk report generator | ~5 Jesus. | Medium： Override Long End Path |
 
-入口统一为：
+use a single entry point:：
 
 ```bash
-npm run release:gauntlet          # 全量，release 前必跑
-npm run release:gauntlet -- --fast  # L0–L4，日常合并前
+npm run release:gauntlet          # Full，release I’ll run.
+npm run release:gauntlet -- --fast  # L0–L4，Before day-to-day merger
 ```
 
-CI 挂法：现有 `ci-test.yml` 不动（PR 快检）；nightly 跑 `--fast`；
-打 release tag 时跑全量并把两份报告附到 GitHub Release。
+CI Hanging： Existing `ci-test.yml` Don’t move.（PR Quick Check）；nightly Run! `--fast`；
+Fight! release tag Run full time and attach two reports to it. GitHub Release。
 
-## 5. 诚实的边界声明
+## 5. An honest border statement.
 
-- "找出 99% 问题"作为**渐近目标**成立，作为承诺不成立——测试只能证明 bug 存在，
-  不能证明不存在（Dijkstra）。本方案的可证伪指标是：**发布后逃逸缺陷数**。
-  每个逃逸缺陷做归因（属于哪层的触达/判定失败），反哺对应层。这个闭环
-  （而非任何一次性的用例集合）才是大厂验收体系真正"无敌"的部分。
-- VLM 评审和 agent 探索是概率性组件，会有假阳性（误报）——用多数投票和
-  自动复现脚本过滤；也会有假阴性——靠残余风险报告兜底。
-- 成本随层数上升：L5–L6 每次运行有真实 API 开销，已按项目"不在意测试成本"
-  原则设计，但 `--fast` 模式保证日常开发零额外成本。
+- "Find out. 99% Problem"As**Approaching target.**Founded, not committed——The test can only prove it. bug Existence，
+  It can’t prove it doesn’t exist.（Dijkstra）。The programme’s perjury indicators are：：**Number of escape defects after release**。
+  Every defect of escape is attributed to it./This is a closed ring.
+  （Not any one-off collection of examples) is the real acceptance system."Invincible."Part of。
+- VLM Review and assessment agent Exploration is a probabilistic component. It’s a false positive.）——Number of votes cast by majority
+  Automatically repeat script filters; also false negatives——Use residual risk report as a cover.。
+- Cost rises with layers：L5–L6 There’s real in every run. API Cost, by item"I don’t care about the cost of testing."
+  Principle design, but `--fast` The model guarantees zero extra costs for daily development。

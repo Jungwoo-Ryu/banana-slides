@@ -1,16 +1,16 @@
 #!/bin/bash
 
-# E2E 测试重构验证脚本
-# 用于验证重构是否成功完成
+# E2E Test Reconstruct Verification Script
+# To verify whether the reconstruction was successfully completed
 
 set -e
 
 echo "======================================"
-echo "🔍 E2E 测试重构验证"
+echo "🔍 E2E Test Reconstruction Validation"
 echo "======================================"
 echo
 
-# 颜色输出
+# Colour Output
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
@@ -29,114 +29,114 @@ check_warn() {
     echo -e "${YELLOW}⚠${NC} $1"
 }
 
-# 1. 检查前端 E2E 目录
-echo "1. 检查前端 E2E 目录..."
+# 1. Check Frontend E2E Contents
+echo "1. Check Frontend E2E Contents..."
 if [ -d "frontend/e2e" ]; then
-    check_pass "frontend/e2e/ 目录存在"
+    check_pass "frontend/e2e/ Directory Exists"
 else
-    check_fail "frontend/e2e/ 目录不存在"
+    check_fail "frontend/e2e/ Directory does not exist"
 fi
 
-# 2. 检查前端 E2E 测试文件
-echo "2. 检查前端 E2E 测试文件..."
+# 2. Check Frontend E2E Test File
+echo "2. Check Frontend E2E Test File..."
 if [ -f "frontend/e2e/ui-full-flow.spec.ts" ]; then
-    check_pass "ui-full-flow.spec.ts 已移动到 frontend/e2e/"
+    check_pass "ui-full-flow.spec.ts Moved to frontend/e2e/"
 else
-    check_fail "ui-full-flow.spec.ts 不在 frontend/e2e/"
+    check_fail "ui-full-flow.spec.ts No, I’m not. frontend/e2e/"
 fi
 
 if [ -f "frontend/e2e/visual-regression.spec.ts" ]; then
-    check_pass "visual-regression.spec.ts 已移动到 frontend/e2e/"
+    check_pass "visual-regression.spec.ts Moved to frontend/e2e/"
 else
-    check_fail "visual-regression.spec.ts 不在 frontend/e2e/"
+    check_fail "visual-regression.spec.ts No, I’m not. frontend/e2e/"
 fi
 
-# 3. 检查 Playwright 配置
-echo "3. 检查 Playwright 配置..."
+# 3. Inspection Playwright Configuration
+echo "3. Inspection Playwright Configuration..."
 if [ -f "frontend/playwright.config.ts" ]; then
-    check_pass "playwright.config.ts 已移动到 frontend/"
+    check_pass "playwright.config.ts Moved to frontend/"
 else
-    check_fail "playwright.config.ts 不在 frontend/"
+    check_fail "playwright.config.ts No, I’m not. frontend/"
 fi
 
-# 4. 检查前端 package.json
-echo "4. 检查前端 package.json..."
+# 4. Check Frontend package.json
+echo "4. Check Frontend package.json..."
 if grep -q "@playwright/test" frontend/package.json; then
-    check_pass "frontend/package.json 包含 Playwright 依赖"
+    check_pass "frontend/package.json Organisation Playwright Dependency"
 else
-    check_fail "frontend/package.json 缺少 Playwright 依赖"
+    check_fail "frontend/package.json Missing Playwright Dependency"
 fi
 
 if grep -q "test:e2e" frontend/package.json; then
-    check_pass "frontend/package.json 包含 E2E 测试脚本"
+    check_pass "frontend/package.json Organisation E2E Test script"
 else
-    check_fail "frontend/package.json 缺少 E2E 测试脚本"
+    check_fail "frontend/package.json Missing E2E Test script"
 fi
 
-# 5. 检查后端集成测试
-echo "5. 检查后端集成测试..."
+# 5. Check for backend integration tests
+echo "5. Check for backend integration tests..."
 if [ -f "backend/tests/integration/test_api_full_flow.py" ]; then
-    check_pass "test_api_full_flow.py 已创建在 backend/tests/integration/"
+    check_pass "test_api_full_flow.py Created in backend/tests/integration/"
 else
-    check_fail "test_api_full_flow.py 不在 backend/tests/integration/"
+    check_fail "test_api_full_flow.py No, I’m not. backend/tests/integration/"
 fi
 
-# 6. 检查根目录清理
-echo "6. 检查根目录清理..."
+# 6. Check root directory cleanup
+echo "6. Check root directory cleanup..."
 if [ ! -d "e2e" ]; then
-    check_pass "根目录 e2e/ 已删除"
+    check_pass "Root Directory e2e/ Deleted"
 else
-    check_warn "根目录 e2e/ 仍然存在（应该已删除）"
+    check_warn "Root Directory e2e/ Still exists (should have been deleted)）"
 fi
 
 if [ ! -f "playwright.config.ts" ]; then
-    check_pass "根目录 playwright.config.ts 已删除"
+    check_pass "Root Directory playwright.config.ts Deleted"
 else
-    check_warn "根目录 playwright.config.ts 仍然存在（应该已删除）"
+    check_warn "Root Directory playwright.config.ts Still exists (should have been deleted)）"
 fi
 
 if [ ! -f "tsconfig.json" ]; then
-    check_pass "根目录 tsconfig.json 已删除"
+    check_pass "Root Directory tsconfig.json Deleted"
 else
-    check_warn "根目录 tsconfig.json 仍然存在（应该已删除）"
+    check_warn "Root Directory tsconfig.json Still exists (should have been deleted)）"
 fi
 
 if [ ! -d "node_modules" ]; then
-    check_pass "根目录 node_modules/ 已删除"
+    check_pass "Root Directory node_modules/ Deleted"
 else
-    check_warn "根目录 node_modules/ 仍然存在（应该已删除）"
+    check_warn "Root Directory node_modules/ Still exists (should have been deleted)）"
 fi
 
-# 7. 检查 CI 配置
-echo "7. 检查 CI 配置..."
+# 7. Inspection CI Configuration
+echo "7. Inspection CI Configuration..."
 if grep -q "cd frontend" .github/workflows/ci-test.yml; then
-    check_pass "CI 配置已更新（包含 'cd frontend'）"
+    check_pass "CI Configuration updated (includes) 'cd frontend'）"
 else
-    check_warn "CI 配置可能未更新"
+    check_warn "CI Configuration may not be updated"
 fi
 
 if grep -q "test_api_full_flow.py" .github/workflows/ci-test.yml; then
-    check_pass "CI 配置包含后端 API 测试"
+    check_pass "CI Configure contains backends API Test"
 else
-    check_warn "CI 配置可能缺少后端 API 测试"
+    check_warn "CI Configure may lack a backend API Test"
 fi
 
-# 8. 检查 .gitignore
-echo "8. 检查 .gitignore..."
+# 8. Inspection .gitignore
+echo "8. Inspection .gitignore..."
 if grep -q "test-results/" frontend/.gitignore; then
-    check_pass "frontend/.gitignore 已更新"
+    check_pass "frontend/.gitignore Updated"
 else
-    check_warn "frontend/.gitignore 可能需要更新"
+    check_warn "frontend/.gitignore It may need updating."
 fi
 
 echo
 echo "======================================"
-echo "✅ E2E 测试重构验证完成！"
+echo "✅ E2E Test reconstruction validation complete！"
 echo "======================================"
 echo
-echo "下一步："
-echo "1. cd frontend && npm install  # 安装前端依赖（包括 Playwright）"
-echo "2. cd frontend && npm run test:e2e  # 运行前端 E2E 测试"
-echo "3. cd backend && uv run pytest tests/integration/ -v  # 运行后端集成测试"
+echo "Next："
+echo "1. cd frontend && npm install  # Install front-end dependency (includes) Playwright）"
+echo "2. cd frontend && npm run test:e2e  # Run Frontend E2E Test"
+echo "3. cd backend && uv run pytest tests/integration/ -v  # Run backend integration test"
 echo
 

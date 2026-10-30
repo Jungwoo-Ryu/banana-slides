@@ -61,7 +61,7 @@ class ResearchService:
     def research(self, query: str, project_id: str, app) -> dict:
         """
         Run gpt-researcher and save report as a ReferenceFile.
-        
+
         Returns: {"report": str, "sources": list, "reference_file_id": str}
         """
 ```
@@ -152,7 +152,7 @@ Add `tavily_api_key` to the allowed fields in `backend/controllers/settings_cont
 
 ### 1. Project Creation (Home.tsx)
 
-Add a "联网搜索" / "Web Research" checkbox in the idea input area. Only visible for `idea` creation type.
+Add a "Network Search" / "Web Research" checkbox in the idea input area. Only visible for `idea` creation type.
 
 When checked and user clicks "Generate":
 1. Create project as normal
@@ -167,7 +167,7 @@ The checkbox state is local UI state, not persisted on the project model.
 During research, show a progress indicator in the same area where outline generation progress appears. Use the existing task polling mechanism (`GET /api/tasks/{task_id}`).
 
 Suggested UX:
-- While researching: "正在搜索网络资料..." / "Searching the web..."
+- While researching: "Searching for network information..." / "Searching the web..."
 - On complete: Brief toast/notification, then auto-proceed to outline generation
 - On failure: Show error, allow user to retry or skip research and generate outline directly
 

@@ -5,52 +5,52 @@ import logoUrl from '@/assets/logo.png';
 import { useT } from '@/hooks/useT';
 import PresetCapsules from '@/components/shared/PresetCapsules';
 
-// 组件内翻译
+// Translation within Component
 const outlineI18n = {
   zh: {
     home: { title: 'Banana Slides' },
     outline: {
-      title: "编辑大纲", pageCount: "共 {{count}} 页", addPage: "添加页面",
-      generateDescriptions: "生成描述", generating: "生成中...", chapter: "章节",
-      page: "第 {{num}} 页", titleLabel: "标题", keyPoints: "要点",
-      keyPointsPlaceholder: "要点（每行一个）", addKeyPoint: "添加要点",
-      deletePage: "删除页面", confirmDeletePage: "确定要删除这一页吗？",
-      preview: "预览", clickToPreview: "点击左侧卡片查看详情",
-      noPages: "还没有页面", noPagesHint: "点击「添加页面」手动创建，或「自动生成大纲」让 AI 帮你完成",
-      parseOutline: "解析大纲", autoGenerate: "自动生成大纲",
-      reParseOutline: "重新解析大纲", reGenerate: "重新生成大纲", export: "导出大纲", import: "导入", importExport: "导入/导出",
-      aiPlaceholder: "例如：增加一页关于XXX的内容、删除第3页、合并前两页... · Ctrl+Enter提交",
-      aiPlaceholderShort: "例如：增加/删除页面... · Ctrl+Enter",
-      contextLabels: { idea: "PPT构想", outline: "大纲", description: "描述" },
-      inputLabel: { idea: "PPT 构想", outline: "原始大纲", description: "页面描述", ppt_renovation: "原始 PPT 内容" },
-      inputPlaceholder: { idea: "输入你的 PPT 构想...", outline: "输入大纲内容...", description: "输入页面描述...", ppt_renovation: "已从 PDF 中提取内容" },
-      outlineRequirements: "大纲生成要求",
-      outlineRequirementsPlaceholder: "例如：限制在10页以内、每页要点不超过3条、多使用图表...",
-      importModalTitle: "导入 Markdown",
-      importModalDesc: "可直接粘贴 Markdown，也可以上传 `.md`、`.markdown` 或 `.txt` 文件。导入的页面会追加到当前项目末尾。",
-      importPasteLabel: "粘贴内容",
-      importPastePlaceholder: "把大纲或大纲+描述的 Markdown 粘贴到这里...",
-      importUploadLabel: "上传文件",
-      importUploadHint: "点击选择文件，或拖拽 Markdown 文件到这里",
-      importUploadFormatsHint: "支持 `.md`、`.markdown`、`.txt`",
-      importPreviewReady: "将追加 {{count}} 页到当前项目",
-      importPreviewEmpty: "未识别到可导入页面，请确认包含 `## 第 N 页: 标题` 或 `## Page N: Title`",
-      importConfirm: "导入到项目",
-      importCancel: "取消",
+      title: "Edit Outline", pageCount: "{{count}} pages", addPage: "Add Page",
+      generateDescriptions: "Generate Descriptions", generating: "Generating...", chapter: "Chapter",
+      page: "Page {{num}}", titleLabel: "Title", keyPoints: "Key Points",
+      keyPointsPlaceholder: "Key points (one per line)", addKeyPoint: "Add Key Point",
+      deletePage: "Delete Page", confirmDeletePage: "Are you sure you want to delete this page?",
+      preview: "Preview", clickToPreview: "Click a card on the left to view details",
+      noPages: "No pages yet", noPagesHint: "Click \"Add Page\" to create manually, or \"Auto Generate\" to let AI help you",
+      parseOutline: "Parse Outline", autoGenerate: "Auto Generate Outline",
+      reParseOutline: "Re-parse Outline", reGenerate: "Regenerate Outline", export: "Export Outline", import: "Import", importExport: "Import/Export",
+      aiPlaceholder: "e.g., Add a page about XXX, delete page 3, merge first two pages... · Ctrl+Enter to submit",
+      aiPlaceholderShort: "e.g., Add/delete pages... · Ctrl+Enter",
+      contextLabels: { idea: "PPT Idea", outline: "Outline", description: "Description" },
+      inputLabel: { idea: "PPT Idea", outline: "Original Outline", description: "Page Descriptions", ppt_renovation: "Original PPT Content" },
+      inputPlaceholder: { idea: "Enter your PPT idea...", outline: "Enter outline content...", description: "Enter page descriptions...", ppt_renovation: "Content extracted from PDF" },
+      outlineRequirements: "Generation Requirements",
+      outlineRequirementsPlaceholder: "e.g., Limit to 10 pages, max 3 points per page, use more charts...",
+      importModalTitle: "Import Markdown",
+      importModalDesc: "Paste Markdown directly, or upload a `.md`, `.markdown`, or `.txt` file. Imported pages will be appended to the current project.",
+      importPasteLabel: "Paste Content",
+      importPastePlaceholder: "Paste outline or outline+description Markdown here...",
+      importUploadLabel: "Upload File",
+      importUploadHint: "Click to choose a file, or drag a Markdown file here",
+      importUploadFormatsHint: "Supports `.md`, `.markdown`, `.txt`",
+      importPreviewReady: "{{count}} page(s) will be appended to this project",
+      importPreviewEmpty: "No importable pages detected. Use `## Page N: Title` or `## Page N Page: Title`.",
+      importConfirm: "Import into Project",
+      importCancel: "Cancel",
       messages: {
-        outlineEmpty: "大纲不能为空", generateSuccess: "描述生成完成", generateFailed: "生成描述失败",
-        generateIncomplete: "大纲生成可能不完整，请检查后重试",
-        confirmRegenerate: "重新生成将更新所有页面标题。已有的描述和图片会按位置保留，但如果新大纲页数减少，多出的页面及其内容将被删除。确定继续吗？",
-        confirmRegenerateTitle: "确认重新生成",
-        lockPageCount: "锁定页面数量（不允许减少，用空白页填补）",
-        refineSuccess: "大纲修改成功",
-        refineFailed: "修改失败，请稍后重试", exportSuccess: "导出成功",
-        importSuccess: "导入成功", importFailed: "导入失败，请检查文件格式", importEmpty: "文件中未找到有效页面",
-        importContentEmpty: "请先粘贴内容或上传文件",
-        importReadFailed: "读取文件失败，请重试",
-        importInvalidFileType: "只能导入 .md、.markdown 或 .txt 文件",
-        loadingProject: "加载项目中...", generatingOutline: "生成大纲中...",
-        saveFailed: "保存失败",
+        outlineEmpty: "Outline cannot be empty", generateSuccess: "Descriptions generated successfully", generateFailed: "Failed to generate descriptions",
+        generateIncomplete: "Outline generation may be incomplete, please review and retry",
+        confirmRegenerate: "Regenerating will update all page titles. Existing descriptions and images are preserved by position, but if the new outline has fewer pages, extra pages and their content will be removed. Continue?",
+        confirmRegenerateTitle: "Confirm Regenerate",
+        lockPageCount: "Lock page count (prevent reduction, fill with blank pages)",
+        refineSuccess: "Outline modified successfully",
+        refineFailed: "Modification failed, please try again", exportSuccess: "Export successful",
+        importSuccess: "Import successful", importFailed: "Import failed, please check file format", importEmpty: "No valid pages found in file",
+        importContentEmpty: "Paste some content or upload a file first",
+        importReadFailed: "Failed to read file, please try again",
+        importInvalidFileType: "Only .md, .markdown, or .txt files can be imported",
+        loadingProject: "Loading project...", generatingOutline: "Generating outline...",
+        saveFailed: "Save failed",
       }
     }
   },
@@ -81,7 +81,7 @@ const outlineI18n = {
       importUploadHint: "Click to choose a file, or drag a Markdown file here",
       importUploadFormatsHint: "Supports `.md`, `.markdown`, `.txt`",
       importPreviewReady: "{{count}} page(s) will be appended to this project",
-      importPreviewEmpty: "No importable pages detected. Use `## Page N: Title` or `## 第 N 页: 标题`.",
+      importPreviewEmpty: "No importable pages detected. Use `## Page N: Title` or `## Page N Page: Title`.",
       importConfirm: "Import into Project",
       importCancel: "Cancel",
       messages: {
@@ -129,7 +129,7 @@ import type { Material } from '@/types';
 import { exportProjectToMarkdown, parseMarkdownPages } from '@/utils/projectUtils';
 import type { Page } from '@/types';
 
-// 可排序的卡片包装器
+// Sortable card wrapper
 const SortableCard: React.FC<{
   page: Page;
   index: number;
@@ -146,7 +146,7 @@ const SortableCard: React.FC<{
   });
 
   const style = {
-    // 只使用位移变换，不使用缩放，避免拖拽时元素被拉伸
+    // Use only offsets, not zooms, and avoid stretching elements while dragging
     transform: transform ? CSS.Translate.toString(transform) : undefined,
     transition,
   };
@@ -206,7 +206,7 @@ export const OutlineEditor: React.FC = () => {
   const { show, ToastContainer } = useToast();
   const autoGenerateStartedRef = useRef<string | null>(null);
 
-  // 左侧可编辑文本区域 — desktop and mobile use separate refs to avoid
+  // Left Editable Text Area — desktop and mobile use separate refs to avoid
   // the shared-ref bug where insertAtCursor targets the wrong (hidden) instance.
   const desktopTextareaRef = useRef<MarkdownTextareaRef>(null);
   const mobileTextareaRef = useRef<MarkdownTextareaRef>(null);
@@ -242,7 +242,7 @@ export const OutlineEditor: React.FC = () => {
     reqTextareaRef.current?.insertAtCursor(markdown + '\n');
   }, []);
 
-  // 点击外部关闭下拉
+  // Click External Close Down
   useEffect(() => {
     if (!fileMenuOpen && !settingsOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
@@ -261,7 +261,7 @@ export const OutlineEditor: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [fileMenuOpen, settingsOpen]);
 
-  // 项目切换时：强制加载文本
+  // Item switching： Force loading of text
   useEffect(() => {
     if (currentProject) {
       setInputText(getInputText(currentProject));
@@ -283,7 +283,7 @@ export const OutlineEditor: React.FC = () => {
       await syncProject(projectId);
       setIsInputDirty(false);
     } catch (e) {
-      console.error('保存输入文本失败:', e);
+      console.error('Failed to save input text:', e);
       show({ message: t('outline.messages.saveFailed'), type: 'error' });
     }
   }, [projectId, show, syncProject]);
@@ -305,7 +305,7 @@ export const OutlineEditor: React.FC = () => {
         await updateProject(projectId, { outline_requirements: outlineRequirements });
         setIsRequirementsDirty(false);
       } catch (e) {
-        console.error('保存大纲要求失败:', e);
+        console.error('Failed to save outline request:', e);
       }
     }, 1000);
     return () => clearTimeout(timer);
@@ -348,7 +348,7 @@ export const OutlineEditor: React.FC = () => {
     insertAtCursor: insertAtReqCursor,
   });
 
-  // 空白项目没有 AI 生成的来源文本，来源输入区和"自动生成大纲"都不适用
+  // No blank items AI Source text generated, source input area and"Auto Generate Outline"Not applicable.
   const isBlankProject = currentProject?.creation_type === 'blank';
 
   const inputLabel = useMemo(() => {
@@ -363,14 +363,14 @@ export const OutlineEditor: React.FC = () => {
     return t(`outline.inputPlaceholder.${key}` as any) || '';
   }, [currentProject?.creation_type, t]);
 
-  // 加载项目数据
+  // Loading project data
   useEffect(() => {
     if (projectId && (!currentProject || currentProject.id !== projectId)) {
       syncProject(projectId);
     }
   }, [projectId, currentProject, syncProject]);
 
-  // 拖拽传感器配置
+  // Drag and Drag Sensor Configuration
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -402,7 +402,7 @@ export const OutlineEditor: React.FC = () => {
           show({ message: t('outline.messages.generateIncomplete'), type: 'warning' });
         }
       } catch (error: any) {
-        console.error('生成大纲失败:', error);
+        console.error('Failed to generate outline:', error);
         const message = error.friendlyMessage || error.message || t('outline.messages.generateFailed');
         show({ message, type: 'error' });
       }
@@ -440,7 +440,7 @@ export const OutlineEditor: React.FC = () => {
           show({ message: t('outline.messages.generateIncomplete'), type: 'warning' });
         }
       } catch (error: any) {
-        console.error('自动生成大纲失败:', error);
+        console.error('Failed to automatically generate outline:', error);
         const message = error.message || t('outline.messages.generateFailed');
         show({ message, type: 'error' });
       }
@@ -458,7 +458,7 @@ export const OutlineEditor: React.FC = () => {
         type: 'success'
       });
     } catch (error: any) {
-      console.error('修改大纲失败:', error);
+      console.error('Failed to modify outline:', error);
       const errorMessage = error?.response?.data?.error?.message
         || error?.message
         || t('outline.messages.refineFailed');
@@ -467,14 +467,14 @@ export const OutlineEditor: React.FC = () => {
     }
   }, [currentProject, projectId, syncProject, show]);
 
-  // 导出大纲为 Markdown 文件
+  // Export Outline As Markdown Documentation
   const handleExportOutline = useCallback(() => {
     if (!currentProject) return;
     exportProjectToMarkdown(currentProject, { outline: true, description: false });
     show({ message: t('outline.messages.exportSuccess'), type: 'success' });
   }, [currentProject, show]);
 
-  // 导入大纲 Markdown（追加新页面）
+  // Import Outline Markdown（Add New Page）
   const handleImportOutline = useCallback(async (text: string) => {
     if (!currentProject || !projectId) return;
     try {
@@ -518,10 +518,10 @@ export const OutlineEditor: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-background-primary flex flex-col">
-      {/* 顶栏 */}
+      {/* Topbar */}
       <header className="bg-white dark:bg-background-secondary shadow-sm dark:shadow-background-primary/30 border-b border-gray-200 dark:border-border-primary px-3 md:px-6 py-2 md:py-3 flex-shrink-0">
         <div className="flex items-center justify-between gap-2 md:gap-4">
-          {/* 左侧：Logo 和标题 */}
+          {/* Left：Logo and title */}
           <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
             <Button
               variant="ghost"
@@ -546,7 +546,7 @@ export const OutlineEditor: React.FC = () => {
             <span className="text-sm md:text-lg font-semibold hidden lg:inline">{t('outline.title')}</span>
           </div>
 
-          {/* 中间：AI 修改输入框 */}
+          {/* Centre：AI Modify Input Box */}
           <div className="flex-1 max-w-xl mx-auto hidden md:block md:-translate-x-2 pr-10">
             <AiRefineInput
               title=""
@@ -558,7 +558,7 @@ export const OutlineEditor: React.FC = () => {
             />
           </div>
 
-          {/* 右侧：操作按钮 */}
+          {/* Right： Operation button */}
           <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
             <Button
               variant="primary"
@@ -574,7 +574,7 @@ export const OutlineEditor: React.FC = () => {
                   try {
                     await updateProject(projectId, { [field]: inputText } as any);
                   } catch (e) {
-                    console.error('自动保存失败:', e);
+                    console.error('Autosave failed:', e);
                   }
                 }
                 navigate(`/project/${projectId}/detail`);
@@ -586,7 +586,7 @@ export const OutlineEditor: React.FC = () => {
           </div>
         </div>
 
-        {/* 移动端：AI 输入框 */}
+        {/* Move Side：AI Input Box */}
         <div className="mt-2 md:hidden">
             <AiRefineInput
             title=""
@@ -599,7 +599,7 @@ export const OutlineEditor: React.FC = () => {
         </div>
       </header>
 
-      {/* 操作栏 - 与 DetailEditor 风格一致 */}
+      {/* Operations Bar - and DetailEditor The style is the same. */}
       <div className="bg-white dark:bg-background-secondary border-b border-gray-200 dark:border-border-primary px-3 md:px-6 py-3 md:py-4 flex-shrink-0">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3">
           <div className="flex items-center gap-2 sm:gap-3 flex-1">
@@ -632,7 +632,7 @@ export const OutlineEditor: React.FC = () => {
                   : currentProject.creation_type === 'outline' ? t('outline.reParseOutline') : t('outline.reGenerate')}
               </Button>
             )}
-            {/* 设置 popover */}
+            {/* Settings popover */}
             <div className="relative" ref={settingsRef}>
               <Button
                 variant="ghost"
@@ -670,7 +670,7 @@ export const OutlineEditor: React.FC = () => {
                 </div>
               )}
             </div>
-            {/* 导入导出下拉菜单 */}
+            {/* Import and Export Dropdown Menu */}
             <div className="relative" ref={fileMenuRef}>
               <Button
                 variant="secondary"
@@ -704,7 +704,7 @@ export const OutlineEditor: React.FC = () => {
                 </div>
               )}
             </div>
-            {/* 手机端：保存按钮 */}
+            {/* Mobile： Save buttons */}
             <Button
               variant="secondary"
               icon={<Save size={16} className="md:w-[18px] md:h-[18px]" />}
@@ -720,9 +720,9 @@ export const OutlineEditor: React.FC = () => {
         </div>
       </div>
 
-      {/* 主内容区 */}
+      {/* Main Content Area */}
       <main className="flex-1 flex flex-col md:flex-row gap-3 md:gap-6 p-3 md:p-6 overflow-y-auto min-h-0 relative">
-        {/* 左侧：可编辑文本区域（可收起）—— 空白项目无来源文本，不显示 */}
+        {/* Left： Editable Text Area (Closed)）—— Blank items without source text, do not appear */}
         <div
           className={`flex-shrink-0 transition-[width] duration-300 ease-in-out ${isBlankProject ? 'hidden' : 'hidden md:block'}`}
           style={{ width: isPanelOpen ? undefined : 0 }}
@@ -773,7 +773,7 @@ export const OutlineEditor: React.FC = () => {
           </div>
         </div>
 
-        {/* 收起时的把手 - 绝对定位贴左边缘 */}
+        {/* The handle when you put it away. - Absolute position to left edge */}
         {!isPanelOpen && !isBlankProject && (
           <button
             type="button"
@@ -784,7 +784,7 @@ export const OutlineEditor: React.FC = () => {
           </button>
         )}
 
-        {/* 移动端：始终显示卡片（空白项目无来源文本，不显示） */}
+        {/* Moving end： always display cards (no source text for blank items, no display)） */}
         <div className={`${isBlankProject ? 'hidden' : 'md:hidden'} w-full flex-shrink-0`}>
           <div className="bg-white dark:bg-background-secondary rounded-card shadow-md border border-gray-100 dark:border-border-primary overflow-hidden">
             <div className="px-4 py-2.5 flex items-center gap-2 border-b border-gray-100 dark:border-border-secondary">
@@ -814,7 +814,7 @@ export const OutlineEditor: React.FC = () => {
           />
         </div>
 
-        {/* 右侧：大纲列表 */}
+        {/* Right： outline list */}
         <div className="flex-1 min-w-0">
           {currentProject.pages.length === 0 && !isOutlineStreaming ? (
             <div className="text-center py-12 md:py-20">

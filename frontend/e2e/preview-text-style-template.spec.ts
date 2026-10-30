@@ -60,32 +60,32 @@ test.describe('Preview text style template - Mock tests', () => {
 
     // Open template modal
     await page.getByTestId('template-menu').click()
-    await page.getByRole('button', { name: /更换模板|Change Template/ }).click()
+    await page.getByRole('button', { name: /\u66f4\u6362\u6a21\u677f|Change Template/ }).click()
 
     // Initially should show toggle label but NOT TextStyleSelector content
-    await expect(page.getByText(/使用文字描述风格|Use text description for style/)).toBeVisible()
-    await expect(page.getByText(/预设风格：|Preset styles:/)).not.toBeVisible()
+    await expect(page.getByText(/\u4f7f\u7528\u6587\u5b57\u63cf\u8ff0\u98ce\u683c|Use text description for style/)).toBeVisible()
+    await expect(page.getByText(/\u9884\u8bbe\u98ce\u683c：|Preset styles:/)).not.toBeVisible()
 
     // Toggle to text style mode (click label text — the actual input is sr-only/off-screen)
-    await page.getByText(/使用文字描述风格|Use text description for style/).click()
+    await page.getByText(/\u4f7f\u7528\u6587\u5b57\u63cf\u8ff0\u98ce\u683c|Use text description for style/).click()
 
     // Now TextStyleSelector should be visible
-    await expect(page.getByText(/预设风格：|Preset styles:/)).toBeVisible()
+    await expect(page.getByText(/\u9884\u8bbe\u98ce\u683c：|Preset styles:/)).toBeVisible()
     // Apply button should appear
-    await expect(page.getByText(/应用风格|Apply Style/)).toBeVisible()
+    await expect(page.getByText(/\u5e94\u7528\u98ce\u683c|Apply Style/)).toBeVisible()
   })
 
   test('clicking preset style fills textarea', async ({ page }) => {
     await setupMocks(page)
     await page.goto(`${BASE_URL}/project/mock-proj/preview`)
     await page.getByTestId('template-menu').click()
-    await page.getByRole('button', { name: /更换模板|Change Template/ }).click()
+    await page.getByRole('button', { name: /\u66f4\u6362\u6a21\u677f|Change Template/ }).click()
 
     // Toggle to text style mode
-    await page.getByText(/使用文字描述风格|Use text description for style/).click()
+    await page.getByText(/\u4f7f\u7528\u6587\u5b57\u63cf\u8ff0\u98ce\u683c|Use text description for style/).click()
 
-    // Click first preset style button (简约商务 / Business Simple)
-    await page.getByText(/简约商务|Business Simple/).click()
+    // Click first preset style button (Brief business / Business Simple)
+    await page.getByText(/\u7b80\u7ea6\u5546\u52a1|Business Simple/).click()
 
     // Textarea should now contain the preset description
     await expect(page.getByRole('dialog').locator('textarea')).not.toHaveValue('')
@@ -94,20 +94,20 @@ test.describe('Preview text style template - Mock tests', () => {
     await setupMocks(page)
     await page.goto(`${BASE_URL}/project/mock-proj/preview`)
     await page.getByTestId('template-menu').click()
-    await page.getByRole('button', { name: /更换模板|Change Template/ }).click()
+    await page.getByRole('button', { name: /\u66f4\u6362\u6a21\u677f|Change Template/ }).click()
 
     // Toggle to text style, click a preset
-    await page.getByText(/使用文字描述风格|Use text description for style/).click()
-    await page.getByText(/简约商务|Business Simple/).click()
+    await page.getByText(/\u4f7f\u7528\u6587\u5b57\u63cf\u8ff0\u98ce\u683c|Use text description for style/).click()
+    await page.getByText(/\u7b80\u7ea6\u5546\u52a1|Business Simple/).click()
     await expect(page.getByRole('dialog').locator('textarea')).not.toHaveValue('')
 
     // Close modal without clicking Apply
-    await page.getByRole('button', { name: /^关闭$|^Close$/ }).first().click()
-    await expect(page.getByText(/预设风格：|Preset styles:/)).not.toBeVisible()
+    await page.getByRole('button', { name: /^\u5173\u95ed$|^Close$/ }).first().click()
+    await expect(page.getByText(/\u9884\u8bbe\u98ce\u683c：|Preset styles:/)).not.toBeVisible()
 
     // Reopen — toggle is still on, textarea should be empty (draft discarded)
     await page.getByTestId('template-menu').click()
-    await page.getByRole('button', { name: /更换模板|Change Template/ }).click()
+    await page.getByRole('button', { name: /\u66f4\u6362\u6a21\u677f|Change Template/ }).click()
     await expect(page.getByRole('dialog').locator('textarea')).toHaveValue('')
   })
 })
@@ -130,20 +130,20 @@ test.describe('Preview text style template - Integration tests', () => {
 
     // Open template modal
     await page.getByTestId('template-menu').click()
-    await page.getByRole('button', { name: /更换模板|Change Template/ }).click()
+    await page.getByRole('button', { name: /\u66f4\u6362\u6a21\u677f|Change Template/ }).click()
 
     // Toggle to text style mode
-    await page.getByText(/使用文字描述风格|Use text description for style/).click()
+    await page.getByText(/\u4f7f\u7528\u6587\u5b57\u63cf\u8ff0\u98ce\u683c|Use text description for style/).click()
 
     // Type a custom style
     const textarea = page.getByRole('dialog').locator('textarea')
     await textarea.fill('E2E test custom style description')
 
     // Click apply
-    await page.getByText(/应用风格|Apply Style/).click()
+    await page.getByText(/\u5e94\u7528\u98ce\u683c|Apply Style/).click()
 
     // Modal should close
-    await expect(page.getByText(/预设风格：|Preset styles:/)).not.toBeVisible()
+    await expect(page.getByText(/\u9884\u8bbe\u98ce\u683c：|Preset styles:/)).not.toBeVisible()
 
     // Reload and verify persistence
     await page.reload()
@@ -151,8 +151,8 @@ test.describe('Preview text style template - Integration tests', () => {
 
     // Reopen template modal and toggle to text style to verify saved value
     await page.getByTestId('template-menu').click()
-    await page.getByRole('button', { name: /更换模板|Change Template/ }).click()
-    await page.getByText(/使用文字描述风格|Use text description for style/).click()
+    await page.getByRole('button', { name: /\u66f4\u6362\u6a21\u677f|Change Template/ }).click()
+    await page.getByText(/\u4f7f\u7528\u6587\u5b57\u63cf\u8ff0\u98ce\u683c|Use text description for style/).click()
     await expect(page.getByRole('dialog').locator('textarea')).toHaveValue('E2E test custom style description')
   })
 })

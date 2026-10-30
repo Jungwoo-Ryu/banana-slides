@@ -55,11 +55,11 @@ test.describe('Template invalid response handling', () => {
 
     await page.goto(BASE_URL);
 
-    await page.getByRole('textbox').fill('生成一份关于模板校验的演示文稿');
-    await page.getByAltText(/复古卷轴|Retro Scroll/).click();
-    await page.getByRole('button', { name: /下一步|Next/ }).click();
+    await page.getByRole('textbox').fill('Generate a presentation on template validation');
+    await page.getByAltText(/\u590d\u53e4\u5377\u8f74|Retro Scroll/).click();
+    await page.getByRole('button', { name: /\u4e0b\u4e00\u6b65|Next/ }).click();
 
-    await expect(page.getByText(/加载模板失败|Failed to load the template/)).toBeVisible();
+    await expect(page.getByText(/\u52a0\u8f7d\u6a21\u677f\u5931\u8d25|Failed to load the template/)).toBeVisible();
     expect(projectCreateCalls).toBe(0);
   });
 });

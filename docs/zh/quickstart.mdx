@@ -1,21 +1,21 @@
 ---
-title: "快速开始"
-description: "立即体验或在本地部署 Banana Slides"
+title: "Quick Start"
+description: "Try the demo or deploy Banana Slides locally"
 ---
 
-## 在线 Demo
+## Online Demo
 
-无需安装，直接体验：[bananaslides.online](https://bananaslides.online/)
+No installation needed — try it instantly: [bananaslides.online](https://bananaslides.online/)
 
 ---
 
-## 自托管部署
+## Self-Hosting
 
-### 第一步：安装 Docker
+### Step 1: Install Docker
 
 <Tabs>
   <Tab title="Windows / macOS">
-    下载并安装 [Docker Desktop](https://www.docker.com/products/docker-desktop/)，安装完成后启动它，确保系统托盘（Windows）或菜单栏（macOS）中出现 Docker 图标。
+    Download and install [Docker Desktop](https://www.docker.com/products/docker-desktop/). After installation, launch it and confirm the Docker icon appears in the system tray (Windows) or menu bar (macOS).
   </Tab>
   <Tab title="Linux">
     ```bash
@@ -24,9 +24,9 @@ description: "立即体验或在本地部署 Banana Slides"
   </Tab>
 </Tabs>
 
-### 第二步：一键下载并启动
+### Step 2: Download and Start
 
-新建一个目录，进入后执行以下命令，自动下载配置文件并启动服务：
+Create a new directory, enter it, and run the following command to download the config files and start the service:
 
 ```bash
 mkdir banana-slides && cd banana-slides && \
@@ -35,36 +35,36 @@ curl -O https://raw.githubusercontent.com/Anionex/banana-slides/main/.env.exampl
 cp .env.example .env
 ```
 
-然后编辑 `.env` 文件，填入你的 API 密钥（详见[配置说明](/zh/configuration)），再启动：
+Edit the `.env` file to fill in your API key (see [Configuration](/configuration)), then start:
 
 ```bash
 docker compose -f docker-compose.prod.yml up -d
 ```
 
 <Tip>
-  推荐使用 [AIHubMix](https://api.inferera.com/?aff=17EC) 获取 API 密钥，同时支持 Gemini 和 OpenAI 格式，且能稳定进行高并发生图。
+  [AIHubMix](https://api.inferera.com/?aff=17EC) is recommended for API keys — it supports both Gemini and OpenAI formats and handles high-concurrency image generation reliably.
 </Tip>
 
-### 第三步：访问应用
+### Step 3: Open the App
 
-浏览器打开 [http://localhost:3011](http://localhost:3011)，即可开始使用。
+Visit [http://localhost:3011](http://localhost:3011) in your browser.
 
 <Note>
-  默认端口为 3011（前端）和 5011（后端）。如需修改，在 `.env` 中设置 `FRONTEND_PORT` 和 `BACKEND_PORT`。
+  Default ports are 3011 (frontend) and 5011 (backend). To change them, set `FRONTEND_PORT` and `BACKEND_PORT` in `.env`.
 </Note>
 
 ---
 
-## 更新
+## Update
 
-在应用内进入 **设置 → 关于 → 检查更新**，可以根据当前版本 SHA 判断是否已有可用更新；源码运行时也会用当前 Git SHA 参与判断。
+In the app, open **Settings → About → Check for Updates** to compare the current version SHA with the latest available version. Local source-code runs are checked with the current Git SHA as well.
 
 ```bash
 docker compose -f docker-compose.prod.yml pull && \
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-## 查看日志
+## View Logs
 
 ```bash
 docker logs -f --tail 100 banana-slides-backend
@@ -72,27 +72,27 @@ docker logs -f --tail 100 banana-slides-backend
 
 ---
 
-## 从源码部署
+## Deploy from Source
 
-<Accordion title="展开查看源码部署步骤">
+<Accordion title="Expand for source deployment steps">
 
-### 环境要求
+### Requirements
 
 - Python 3.10+
-- [uv](https://github.com/astral-sh/uv) 包管理器
-- Node.js 16+ 和 npm
+- [uv](https://github.com/astral-sh/uv) package manager
+- Node.js 16+ and npm
 
-### 后端
+### Backend
 
 ```bash
 git clone https://github.com/Anionex/banana-slides
 cd banana-slides
-cp .env.example .env  # 编辑 .env 填入 API 密钥
+cp .env.example .env  # Edit .env and add your API key
 cd backend
 uv run alembic upgrade head && uv run python app.py
 ```
 
-### 前端
+### Frontend
 
 ```bash
 cd frontend

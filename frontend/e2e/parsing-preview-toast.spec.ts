@@ -57,7 +57,7 @@ test.describe('Parsing attachment preview toast (mocked)', () => {
     await parsingCard.waitFor({ state: 'visible', timeout: 10_000 })
     await parsingCard.click()
 
-    const toast = page.locator('text=解析完成后可预览').or(page.locator('text=Preview available after parsing'))
+    const toast = page.locator('text=Preview after parsing').or(page.locator('text=Preview available after parsing'))
     await expect(toast.first()).toBeVisible({ timeout: 3_000 })
 
     expect(parsingFileFetched).toBe(false)

@@ -55,12 +55,12 @@ test('uploaded template badge auto-refreshes off "Analyzing" without manual relo
 
   // The asset card (and its analyzing badge) appears.
   await expect(
-    page.getByText(/解析中|Analyzing|已解析|Analyzed|解析失败|Analysis failed/).first()
+    page.getByText(/\u89e3\u6790\u4e2d|Analyzing|\u5df2\u89e3\u6790|Analyzed|\u89e3\u6790\u5931\u8d25|Analysis failed/).first()
   ).toBeVisible({ timeout: 15000 })
 
   // Crucially: WITHOUT reloading the page, the background poll must move the
   // badge to a terminal state. On the pre-fix code this never happens.
   await expect(
-    page.getByText(/已解析|Analyzed|解析失败|Analysis failed/).first()
+    page.getByText(/\u5df2\u89e3\u6790|Analyzed|\u89e3\u6790\u5931\u8d25|Analysis failed/).first()
   ).toBeVisible({ timeout: 120000 })
 })

@@ -1,53 +1,53 @@
-# Per-Page Template 工程实施 Spec
+# Per-Page Template Project implementation Spec
 
-> 创建日期:2026-06-23  
-> 上游 PRD:`docs/superpowers/specs/2026-06-22-prd-per-page-template.md`  
-> 上游交接:`docs/superpowers/plans/2026-06-22-per-page-template-handoff.md`  
-> 范围声明:**全功能一次做完**,不分 MVP/v2。所有 PRD §14 决策(1-6)+ §3.2 决策 7 一并实施。
+> Create Date:2026-06-23<br>
+> Upstream PRD:`docs/superpowers/specs/2026-06-22-prd-per-page-template.md`<br>
+> Upstream.:`docs/superpowers/plans/2026-06-22-per-page-template-handoff.md`<br>
+> Scope statement:**It’s all done at once.**,None MVP/v2。All PRD §14 Decision-making(1-6)+ §3.2 Decision-making 7 I and implementation。
 
 ---
 
-## 1. 范围与原则
+## 1. Scope and principles
 
-### 1.1 包含的功能
+### 1.1 Contained Functions
 
-本次实施覆盖 PRD 全部章节,不留 v2 阶段:
+Coverage of this implementation PRD All Chapters,I’m not staying. v2 Phase:
 
-| 模块 | 来源 | 状态 |
+| Module | Source | Status |
 |------|------|------|
-| 项目模板库(`project_template_assets`) | PRD §5 | 实施 |
-| 页级模板字段(`pages` 加 5 列) | PRD §6 | 实施 |
-| TemplateSetupPage 完整页面 | PRD §7 | 实施(决策 1) |
-| PDF 拆页上传 | PRD §5.4 + 决策 3 | 实施 |
-| AI 模板解析(自动 + 用户编辑) | PRD §5.3 + 决策 4 | 实施 |
-| 自动匹配(全项目 + 单页) | PRD §8/§9 + 决策 5 | 实施 |
-| 手动选择模板(弹层) | PRD §10 | 实施 |
-| 模板删除 + 引用页清空 | PRD §11 | 实施 |
-| 模式双向切换(单↔多) | PRD §3.2 决策 7 | 实施 |
-| 图片生成链路按页级模板优先级读取 | PRD §13 | 实施 |
-| 解析失败降级(可手动用,不进自动匹配) | 决策 2 | 实施 |
-| 单模板路由跳过 | 决策 6 | 实施 |
+| Project Template Library(`project_template_assets`) | PRD §5 | Implementation |
+| Page-level template field(`pages` Add 5 Columns) | PRD §6 | Implementation |
+| TemplateSetupPage Full Page | PRD §7 | Implementation(Decision-making 1) |
+| PDF Open Page Upload | PRD §5.4 + Decision-making 3 | Implementation |
+| AI Template Parsing(Auto + User Edit) | PRD §5.3 + Decision-making 4 | Implementation |
+| Automatic Matching(Whole project + Single Page) | PRD §8/§9 + Decision-making 5 | Implementation |
+| Manual selection template(Bounce Layer) | PRD §10 | Implementation |
+| Template Delete + Empty Quote Page | PRD §11 | Implementation |
+| Mode two-way switch(Single↔More) | PRD §3.2 Decision-making 7 | Implementation |
+| Picture Generation Link Read by Page Template Priority | PRD §13 | Implementation |
+| Parsing failed to downgrade(Available,Do Not Automatic Match) | Decision-making 2 | Implementation |
+| Single Template Route Skipping | Decision-making 6 | Implementation |
 
-### 1.2 留白(扩展余地)
+### 1.2 Leave a message.(Scope of Extension)
 
-为避免锁死后续演进,以下点显式做"接口预留 + 当前不实现":
+In order to avoid locking in subsequent evolution,,The following dots are visible"Interface set-up + Not achieved at present":
 
-- **系统预设模板**:`GET /api/templates`(`template_controller.py:98`)已存在但返回空列表,不动它,后续作为系统模板池入口
-- **模板版本/历史**:`project_template_assets` 不加 `version` 字段,但 `analysis_json` 用 JSON 存,schema 演进无需 migration
-- **匹配算法多版本**:`pages.template_selection_source` enum 预留 `auto_v2 / hybrid` 等值,当前只用 `manual / auto / batch_apply`
+- **System preset template**:`GET /api/templates`(`template_controller.py:98`)Existing but returned empty list,Don’t touch it.,Follow-up as system template pool entry
+- **Template Version/History**:`project_template_assets` No, I don’t. `version` Field,But... `analysis_json` Use it. JSON Save,schema It doesn’t have to be. migration
+- **Match Algorithm Multiple Versions**:`pages.template_selection_source` enum Retention `auto_v2 / hybrid` Equivalent,Current only `manual / auto / batch_apply`
 
 ---
 
-## 2. 数据模型
+## 2. Data Model
 
-### 2.1 `projects` 表加 1 列
+### 2.1 `projects` Table + 1 Columns
 
 ```python
 template_mode = db.Column(db.String(10), nullable=False, server_default='single', default='single')
-# 'single' | 'multi' — 仅 UI 渲染分支,不影响页级字段读写
+# 'single' | 'multi' — Only UI Render Branch,Do not affect page-level field reading and writing
 ```
 
-### 2.2 新增 `project_template_assets` 表
+### 2.2 Add `project_template_assets` Table
 
 ```python
 class ProjectTemplateAsset(db.Model):
@@ -55,19 +55,19 @@ class ProjectTemplateAsset(db.Model):
 
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     project_id = db.Column(db.String(36), db.ForeignKey('projects.id', ondelete='CASCADE'), nullable=False, index=True)
-    image_path = db.Column(db.String(500), nullable=False)        # 原图相对路径
-    thumb_path = db.Column(db.String(500), nullable=True)         # 缩略图,生成失败可空
+    image_path = db.Column(db.String(500), nullable=False)        # The original map relative path
+    thumb_path = db.Column(db.String(500), nullable=True)         # Thumbnail,Failed to generate empty
     file_size = db.Column(db.Integer, nullable=True)
     source = db.Column(db.String(20), nullable=False, default='upload')  # upload | pdf_split | system_preset
-    source_pdf_id = db.Column(db.String(36), nullable=True)       # PDF 拆页时记录原 PDF task_id
-    source_page_index = db.Column(db.Integer, nullable=True)      # PDF 拆页时记录原 PDF 页码
+    source_pdf_id = db.Column(db.String(36), nullable=True)       # PDF Record when unpaged PDF task_id
+    source_page_index = db.Column(db.Integer, nullable=True)      # PDF Record when unpaged PDF Page Number
 
     analysis_status = db.Column(db.String(20), nullable=False, default='pending')  # pending|processing|completed|failed
-    analysis_json = db.Column(db.Text, nullable=True)             # JSON 字符串,9 字段 schema(PRD §5.3)
-    analysis_notes = db.Column(db.Text, nullable=True)            # AI 自由文本补充
-    analysis_error = db.Column(db.Text, nullable=True)            # 失败原因(决策 2)
-    user_label = db.Column(db.String(200), nullable=True)         # 用户标记
-    user_edited_analysis = db.Column(db.Boolean, nullable=False, default=False)  # 用户是否编辑过解析
+    analysis_json = db.Column(db.Text, nullable=True)             # JSON String,9 Field schema(PRD §5.3)
+    analysis_notes = db.Column(db.Text, nullable=True)            # AI Free Text Supplement
+    analysis_error = db.Column(db.Text, nullable=True)            # Reason for failure(Decision-making 2)
+    user_label = db.Column(db.String(200), nullable=True)         # User Tags
+    user_edited_analysis = db.Column(db.Boolean, nullable=False, default=False)  # Whether or not the user edits the resolution
 
     sort_order = db.Column(db.Integer, nullable=False, default=0)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
@@ -79,7 +79,7 @@ class ProjectTemplateAsset(db.Model):
 
 `Project.template_assets = db.relationship('ProjectTemplateAsset', back_populates='project', cascade='all, delete-orphan', order_by='ProjectTemplateAsset.sort_order')`
 
-### 2.3 `pages` 表加 5 列
+### 2.3 `pages` Table + 5 Columns
 
 ```python
 template_asset_id = db.Column(db.String(36), db.ForeignKey('project_template_assets.id', ondelete='SET NULL'), nullable=True, index=True)
@@ -89,217 +89,217 @@ template_match_reason = db.Column(db.Text, nullable=True)
 template_match_confidence = db.Column(db.Float, nullable=True)
 ```
 
-外键 `ondelete='SET NULL'` 实现 PRD §11"删除模板自动清空引用页"。
+external keys `ondelete='SET NULL'` Achieved PRD §11"Remove the template automatically emptys the reference page"。
 
 ### 2.4 Alembic migration
 
-文件:`backend/migrations/versions/2026_06_23_add_per_page_template.py`
+Documentation:`backend/migrations/versions/2026_06_23_add_per_page_template.py`
 
-upgrade 步骤:
-1. 加 `projects.template_mode` 列
-2. 创建 `project_template_assets` 表
-3. 加 `pages` 5 列
-4. **Backfill**:对所有现有项目,把 `projects.template_image_path` / `template_style` 批量同步到所有页:
-   - 若 `template_image_path` 非空 **且文件存在**:为该项目创建一条 `project_template_assets` 记录(source='upload', analysis_status='pending', image_path 指向原文件,thumb_path 留空交由后续懒生成),把所有页的 `template_asset_id` 指向它
-   - 若 `template_image_path` 非空但文件已丢失:跳过 asset 创建,记一行 warning log,该项目仍保持单模板模式但模板字段为空(用户后续可在 setup 页重新上传)
-   - 若 `template_style` 非空:把所有页的 `template_style_text` 设成项目级值
-   - `template_mode` 默认 `'single'`(对存量项目语义正确——所有页同一模板)
+upgrade Steps:
+1. Add `projects.template_mode` Columns
+2. Create `project_template_assets` Table
+3. Add `pages` 5 Columns
+4. **Backfill**:All existing projects,Take it. `projects.template_image_path` / `template_style` Batch Sync to All Pages:
+   - If `template_image_path` Non-empty **And the file exists**:Create an article for this project `project_template_assets` Records(source='upload', analysis_status='pending', image_path Point to the original file,thumb_path Leave room for subsequent lazy generation.),All the pages. `template_asset_id` Point it.
+   - If `template_image_path` Non-empty but missing files:Skip asset Create,Take a line. warning log,The item maintains a single template mode but the template field is empty(User follow-up setup Page Re-upload)
+   - If `template_style` Non-empty:All the pages. `template_style_text` Set as Project Level Value
+   - `template_mode` Default `'single'`(Correct semantics for stock items——All pages with the same template)
 
-downgrade 步骤(对称回滚)略。
+downgrade Steps(Symmetric Roll Back)Slight。
 
-### 2.5 数据语义约束(应用层维护,不写 DB 约束)
+### 2.5 Data Semantic Constraint(Application layer maintenance,Do Not Write DB Constraints)
 
-- 单模板模式下,所有页 `template_asset_id` 应一致、`template_style_text` 应一致——切换/批量赋值时由后端保证;不在 DB 层加 trigger
-- "未确认页":`template_asset_id IS NULL AND (template_style_text IS NULL OR template_style_text = '')`
-- 多模板模式门禁(PRD §4):应用层在进入 `SlidePreview` 前校验,不在 DB 层加 check
+- Single Template Mode,All pages `template_asset_id` It should be consistent.、`template_style_text` It should be consistent.——Switch/Bulk value assured by the backend;No, I’m not. DB Layers trigger
+- "Unconfirmed Page":`template_asset_id IS NULL AND (template_style_text IS NULL OR template_style_text = '')`
+- Multiple Template Mode Dock Disable(PRD §4):The application layer is entering. `SlidePreview` Previous Validation,No, I’m not. DB Layers check
 
 ---
 
 ## 3. API Schema
 
-### 3.1 路由组织
+### 3.1 Routes
 
-新建蓝图 `template_assets_bp = Blueprint('template_assets', __name__, url_prefix='/api/projects')`,挂在 `template_controller.py` 内,与现有 `template_bp` 共存(后者保留旧的"项目级单模板上传"入口,本期不删,作为决策 7 切换语义的兼容层)。
+New Blueprint `template_assets_bp = Blueprint('template_assets', __name__, url_prefix='/api/projects')`,Hang on `template_controller.py` Internal,Compared to existing `template_bp` Coexistence(The latter keeps the old one."Project-level list template upload"Access.,Not for the current period.,As decision-making 7 Switch Semantic Compatibility Layers)。
 
-### 3.2 模板资产 CRUD
+### 3.2 Template assets CRUD
 
-**`GET /api/projects/:projectId/template-assets`** — 列出项目模板库
+**`GET /api/projects/:projectId/template-assets`** — List Project Template Library
 ```json
 // Response
 { "assets": [
   { "id": "...", "image_url": "/files/...", "thumb_url": "/files/...",
     "analysis_status": "completed", "analysis_json": {...}, "analysis_notes": "...",
-    "user_label": "封面图", "source": "upload", "sort_order": 0,
+    "user_label": "Cover Map", "source": "upload", "sort_order": 0,
     "referenced_page_ids": ["p1", "p2"] }
 ]}
 ```
 
-**`POST /api/projects/:projectId/template-assets`** — 上传单张模板图片
+**`POST /api/projects/:projectId/template-assets`** — Put on a flyer with a template picture
 ```
 Content-Type: multipart/form-data
-Form: image=@file.png, user_label=封面图(可选)
+Form: image=@file.png, user_label=Cover Map(Optional)
 ```
-- 同步:保存原图 + 缩略图 + 写 `project_template_assets` 行(`analysis_status='pending'`)
-- 异步:立即触发 `analyze_template_task`(决策 4),不阻塞响应
+- Sync:Save original map + Thumbnail + Write `project_template_assets` Okay.(`analysis_status='pending'`)
+- A walk.:Activate Now `analyze_template_task`(Decision-making 4),Do not block response.
 - Response:`{ "asset": {...}, "analyze_task_id": "..." }`
-- 可选 query 参数 `bind_to_page=:pageId`(对应 PRD §10.3 "弹层上传时自动绑定当前页")
+- Optional query Parameters `bind_to_page=:pageId`(Correspond PRD §10.3 "Automatically bind the current page on uploading the shell layer")
 
-**`POST /api/projects/:projectId/template-assets/upload-pdf`** — 上传 PDF 拆页(决策 3)
+**`POST /api/projects/:projectId/template-assets/upload-pdf`** — Upload PDF Open Pages(Decision-making 3)
 ```
 Content-Type: multipart/form-data
 Form: pdf=@file.pdf
 ```
-- 同步:保存 PDF 到 `uploads/:projectId/template-pdf/:taskId.pdf`,创建 `Task(task_type='SPLIT_TEMPLATE_PDF')`
-- 异步:`process_pdf_to_template_images_task` 拆页 → 每页生成一条 `project_template_assets`(`source='pdf_split'`, `source_pdf_id` / `source_page_index` 填充)→ 每条触发独立解析任务
-- Response:`{ "task_id": "..." }`,前端轮询 `GET /api/tasks/:taskId` 拿进度(progress 含 `total/completed/failed`)
-- 上限:页数 ≤ 50,超过返回 `bad_request`
+- Sync:Save PDF Present. `uploads/:projectId/template-pdf/:taskId.pdf`,Create `Task(task_type='SPLIT_TEMPLATE_PDF')`
+- A walk.:`process_pdf_to_template_images_task` Open Pages → Each page generates one `project_template_assets`(`source='pdf_split'`, `source_pdf_id` / `source_page_index` Fill)→ Each triggers an independent resolution mission
+- Response:`{ "task_id": "..." }`,Front wheel query `GET /api/tasks/:taskId` Get the progress.(progress Ham `total/completed/failed`)
+- Upper limit:Pages ≤ 50,More than return `bad_request`
 
-**`PATCH /api/projects/:projectId/template-assets/:assetId`** — 编辑资产(用户标记 / 修正解析)
+**`PATCH /api/projects/:projectId/template-assets/:assetId`** — Edit Assets(User Tags / Fix Parsing)
 ```json
 // Request
-{ "user_label": "对比页",
-  "analysis_json": { ...用户编辑后的 9 字段... },
+{ "user_label": "Contrast Pages",
+  "analysis_json": { ...Edited by User 9 Field... },
   "analysis_notes": "..." }
 ```
-- 任一字段可选;`analysis_json` 一旦被改,自动设 `user_edited_analysis=true`
-- 不允许通过此端点改 `analysis_status`(状态由任务驱动)
+- Optional for any field;`analysis_json` Once it’s changed,,Autoset `user_edited_analysis=true`
+- Could not initialise Bonobo `analysis_status`(Status is task-driven)
 
-**`DELETE /api/projects/:projectId/template-assets/:assetId`** — 删除资产
-- 删文件(原图 + 缩略图)
-- DB 层 `ON DELETE SET NULL` 自动清空所有引用页的 `template_asset_id`
-- 应用层把被清空的页 `template_selection_source` 也置 `NULL`,符合 PRD §11"进入未确认状态"
-- Response:`{ "deleted": true, "cleared_page_ids": ["p1", "p2"] }`(让前端 toast 提示)
+**`DELETE /api/projects/:projectId/template-assets/:assetId`** — Delete Assets
+- Delete File(Original Chart + Thumbnail)
+- DB Layer `ON DELETE SET NULL` Automatically empty all reference pages `template_asset_id`
+- Apply layer to empty the emptied page `template_selection_source` Yes, sir. `NULL`,Match PRD §11"Unrecognized status"
+- Response:`{ "deleted": true, "cleared_page_ids": ["p1", "p2"] }`(Let the frontend toast Hint)
 
-**`POST /api/projects/:projectId/template-assets/:assetId/reanalyze`** — 手动重新解析(决策 2)
-- 触发 `analyze_template_task`,把 `analysis_status` 置 `pending`
+**`POST /api/projects/:projectId/template-assets/:assetId/reanalyze`** — Manually Resolved(Decision-making 2)
+- Trigger `analyze_template_task`,Take it. `analysis_status` Set `pending`
 - Response:`{ "analyze_task_id": "..." }`
 
-### 3.3 页级模板 + 模式切换
+### 3.3 Page-level template + Mode Switch
 
-**`PATCH /api/projects/:projectId/pages/:pageId/template`** — 单页设置模板
+**`PATCH /api/projects/:projectId/pages/:pageId/template`** — Single Page Setup Template
 ```json
 // Request
 { "template_asset_id": "..." | null,
   "template_style_text": "..." | null,
-  "selection_source": "manual" }  // 默认 manual
+  "selection_source": "manual" }  // Default manual
 ```
-- 任一字段可选;同时为 null 即"清空模板"
-- 校验:`pageId` 必须属于 `projectId`;`template_asset_id` 必须属于同项目
-- 多模板模式下不校验"至少一个非空"(让用户暂存空状态),但 SlidePreview 前端按 PRD §4 做门禁
+- Optional for any field;And in the meantime null That’s..."Empty Templates"
+- Verify:`pageId` It has to be. `projectId`;`template_asset_id` Must belong to the same project
+- Do not verify in multiple templates mode"At least one is not empty."(Leave user with blank status),But... SlidePreview Front Press PRD §4 It’s a lockdown.
 - Response:`{ "page": { ...page.to_dict()... } }`
 
-**`PATCH /api/projects/:projectId/template-mode`** — 切换模板模式(决策 7,JSON 路径)
+**`PATCH /api/projects/:projectId/template-mode`** — Toggle Template Mode(Decision-making 7,JSON Path)
 ```json
-// Request — 单 → 多
+// Request — Single → More
 { "mode": "multi" }
 
-// Request — 多 → 单(选择已有 asset / 仅文字模板)
+// Request — More → Single(Organisation asset / Text Templates Only)
 { "mode": "single",
-  "unified_asset_id": "..." | null,    // 至少 asset_id 或 style_text 之一非空
+  "unified_asset_id": "..." | null,    // At least. asset_id or style_text One is not empty
   "unified_style_text": "..." | null }
 ```
-- 单→多:仅改 `projects.template_mode='multi'`,不动页级字段
-- 多→单:把 `unified_asset_id` / `unified_style_text` **批量覆盖**到所有页,然后改 `template_mode='single'`;事务内完成(单条 `update().where(Page.project_id==pid)`)
-- 校验:`unified_asset_id` 必须属于同项目;两字段同时为空返回 `bad_request`
+- Single→More:Change only `projects.template_mode='multi'`,Do Not Move Page Level Fields
+- More→Single:Take it. `unified_asset_id` / `unified_style_text` **Batch Overwrite**To All Pages,And change. `template_mode='single'`;Completed within Service(Single `update().where(Page.project_id==pid)`)
+- Verify:`unified_asset_id` Must belong to the same project;Both fields returned empty at once `bad_request`
 
-**`POST /api/projects/:projectId/template-mode/single-with-upload`** — 多→单 + 新上传统一模板(multipart 路径)
+**`POST /api/projects/:projectId/template-mode/single-with-upload`** — More→Single + A new traditional template(multipart Path)
 ```
 Content-Type: multipart/form-data
-Form: image=@file.png, unified_style_text=...(可选)
+Form: image=@file.png, unified_style_text=...(Optional)
 ```
-- 服务端先创建 asset(同 §3.2 上传),再批量覆盖所有页,再切 `template_mode='single'`,全程一个事务
+- Service first created asset(The same §3.2 Upload),Revolumes all pages,Cut again. `template_mode='single'`,One full-time business.
 - Response:`{ "asset": {...}, "project": {...} }`
 
-**`POST /api/projects/:projectId/template-assets/auto-match`** — 全项目自动匹配(决策 5)
+**`POST /api/projects/:projectId/template-assets/auto-match`** — Automatically match all items(Decision-making 5)
 ```json
 // Request
-{ "overwrite_existing": true,        // 默认 true,与 PRD §8.4 一致
-  "preserve_non_empty": false }      // 勾选"保留已有模板选择"时为 true
+{ "overwrite_existing": true,        // Default true,and PRD §8.4 Unanimously
+  "preserve_non_empty": false }      // Check"Keep an existing template selection"Time true
 ```
-- 前置校验:所有页都有描述(PRD §8.3),不满足返回 `{ "error": "missing_descriptions", "missing_page_ids": [...] }`
-- 触发 `auto_match_templates_task`,Response:`{ "task_id": "..." }`
-- 任务内部:决策 5 阈值——页 ≤ 50 且模板 ≤ 20 一次调用,否则按 30 页分批
-- 任务完成后,把每页的 `template_asset_id` / `template_match_reason` / `template_match_confidence` / `template_selection_source='auto'` 写入
+- Pre-validation:All pages are described.(PRD §8.3),Unsatisfactory returns `{ "error": "missing_descriptions", "missing_page_ids": [...] }`
+- Trigger `auto_match_templates_task`,Response:`{ "task_id": "..." }`
+- In-mission:Decision-making 5 threshold——Page ≤ 50 and templates ≤ 20 One call.,Or I’ll press. 30 Page in Series
+- After the mission.,Put every page of it. `template_asset_id` / `template_match_reason` / `template_match_confidence` / `template_selection_source='auto'` Writing
 
-**`POST /api/projects/:projectId/pages/:pageId/template/auto-match`** — 单页自动匹配(PRD §9)
-- 前置:仅校验当前页有描述;若项目模板库中无 `analysis_status='completed'` 的 asset 则返回 `{ "error": "no_analyzed_templates" }`
-- 异步任务,Response:`{ "task_id": "..." }`(与全项目自动匹配口径一致,便于前端复用进度组件)
+**`POST /api/projects/:projectId/pages/:pageId/template/auto-match`** — Auto Matching One Page(PRD §9)
+- Prefix:Verify description only for current page;If None in Project Template Library `analysis_status='completed'` It’s... asset Then return `{ "error": "no_analyzed_templates" }`
+- Step-by-step mission,Response:`{ "task_id": "..." }`(Consistency with automatic project-wide calibration,Enable front-end reuse of progress components)
 
-### 3.4 进度查询
+### 3.4 Progress queries
 
-复用现有 `GET /api/tasks/:taskId`(`task_manager.py`),3 种新任务类型(`SPLIT_TEMPLATE_PDF` / `ANALYZE_TEMPLATE` / `AUTO_MATCH_TEMPLATES`)的 `progress` JSON 形态:
+Reuse Existing `GET /api/tasks/:taskId`(`task_manager.py`),3 new task types(`SPLIT_TEMPLATE_PDF` / `ANALYZE_TEMPLATE` / `AUTO_MATCH_TEMPLATES`)It’s... `progress` JSON Form:
 ```json
-// SPLIT_TEMPLATE_PDF — 多页累计型
+// SPLIT_TEMPLATE_PDF — Multipage Cumulative
 { "total": 12, "completed": 8, "failed": 0, "created_asset_ids": ["..."] }
-// ANALYZE_TEMPLATE — 单 asset 阶段型(无 total/completed,仅阶段标记)
+// ANALYZE_TEMPLATE — Single asset Phase(None total/completed,Stage tags only)
 { "asset_id": "...", "stage": "calling_ai" | "parsing_json" | "done" | "failed" }
-// AUTO_MATCH_TEMPLATES — 多页累计 + 分批
+// AUTO_MATCH_TEMPLATES — Multipage Cumulative + Batch
 { "total_pages": 30, "matched": 25, "undecided": 5, "batch_index": 1, "batch_total": 1 }
 ```
-前端展示约定:`SPLIT_TEMPLATE_PDF` / `AUTO_MATCH_TEMPLATES` 走进度条;`ANALYZE_TEMPLATE` 走 chip 状态(pending/processing/completed/failed)。
+Show pre-end engagements:`SPLIT_TEMPLATE_PDF` / `AUTO_MATCH_TEMPLATES` Walk the progress bar.;`ANALYZE_TEMPLATE` Come on. chip Status(pending/processing/completed/failed)。
 
 ---
 
-## 4. 文件存储
+## 4. File Storage
 
-### 4.1 目录布局
+### 4.1 Directory Layout
 
-复用现有 `UPLOAD_FOLDER`(由 `FileService` 管理):
+Reuse Existing `UPLOAD_FOLDER`(By `FileService` Management):
 
 ```
 uploads/
   :projectId/
-    template/                    # 旧:项目级单模板(决策 7 兼容层保留)
+    template/                    # Old:Project-level list template(Decision-making 7 Compatibility retention)
       template.png
-    template-assets/             # 新:项目模板库
+    template-assets/             # New:Project Template Library
       :assetId/
-        original.png             # 原图(扩展名按上传保留)
-        thumb.jpg                # 缩略图,宽 480px,JPEG q85
-    template-pdf/                # PDF 拆页临时与原始 PDF
-      :taskId.pdf                # 用户原始 PDF,任务结束后保留 7 天供重试
-      :taskId/                   # 拆出的临时 PNG,拆完导入 template-assets/ 后删除
+        original.png             # Original Chart(Extensions are kept by upload)
+        thumb.jpg                # Thumbnail,Kwang 480px,JPEG q85
+    template-pdf/                # PDF Page Breaking & Original PDF
+      :taskId.pdf                # User Original PDF,Retain after mandate has ended 7 It’s for retesting.
+      :taskId/                   # Temporary undiscovered PNG,Disassembly Import template-assets/ Deleted after
         page_1.png ...
-    pages/...                    # 现有结构
-    materials/...                # 现有结构
+    pages/...                    # Existing structure
+    materials/...                # Existing structure
 ```
 
-URL 生成沿用现有路由 `/files/:projectId/...`,见 `file_controller.py:14-47`。新增 `template-assets/:assetId/original.png` 和 `thumb.jpg` 的访问需要在 `file_controller` 加路径放行(逻辑同 `template/`)。
+URL Generate continuation of existing routes `/files/:projectId/...`,See `file_controller.py:14-47`。Add `template-assets/:assetId/original.png` and `thumb.jpg` I’m going to need a visit. `file_controller` Additional Path Release(Logical. `template/`)。
 
-### 4.2 FileService 新增方法
+### 4.2 FileService Add Method
 
-写到 `backend/services/file_service.py`(沿用 `save_user_template_thumbnail` 的 Pillow 缩略图模式,见 file_service.py:209-243):
+write to `backend/services/file_service.py`(Continue `save_user_template_thumbnail` It’s... Pillow Thumbnail Mode,See file_service.py:209-243):
 
 ```python
 def save_template_asset(self, file, project_id: str, asset_id: str) -> tuple[str, str]:
-    """保存原图 + 缩略图,返回 (image_path, thumb_path)。包含 PIL verify 防御。"""
+    """Save original map + Thumbnail,Back (image_path, thumb_path)。Organisation PIL verify Defense.。"""
 
 def save_template_asset_from_path(self, src_path: str, project_id: str, asset_id: str) -> tuple[str, str]:
-    """从已有本地文件复制(PDF 拆页用),返回 (image_path, thumb_path)。"""
+    """Copy from an existing local file(PDF Open Pages),Back (image_path, thumb_path)。"""
 
 def delete_template_asset(self, project_id: str, asset_id: str) -> None:
-    """删除 template-assets/:assetId/ 目录。"""
+    """Delete template-assets/:assetId/ Contents。"""
 
 def save_template_pdf(self, file, project_id: str, task_id: str) -> str:
-    """保存上传的 PDF,返回路径。"""
+    """Save Uploaded PDF,Return Path。"""
 
 def cleanup_template_pdf_temp(self, project_id: str, task_id: str) -> None:
-    """删除 PDF 拆页的中间 PNG 目录(不删原 PDF)。"""
+    """Delete PDF Middle of page unscrew PNG Contents(Do Not Delete PDF)。"""
 ```
 
-### 4.3 清理策略
+### 4.3 Cleanup Policy
 
-- 删除 asset:同步删文件
-- 删除 project:cascade 已通过 ORM 实现,文件由 `cleanup_project_files()`(已存在)兜底
-- PDF 拆页中间文件:任务结束立即清理 `:taskId/` 目录;原始 PDF 保留 7 天(后续做"重新拆页"用),用定时任务扫描清理(留接口,本期不实现,加 TODO 注释)
-- 缩略图缺失:`thumb_url` 为 null 时前端 fallback 到 `image_url`(已在前端 store 处理)
+- Delete asset:Synchronise delete files
+- Delete project:cascade It’s passed. ORM Achieved,File by `cleanup_project_files()`(Exists)Bottoms up.
+- PDF Page-dismantling middle file:Clean up immediately after the mission. `:taskId/` Contents;Original PDF Reservations 7 Jesus.(Follow-up"Rediscover Page"Use it.),Clean up with a time-scan(Leave interface,Not achieved during the period,Add TODO Comment)
+- Thumbnail Missing:`thumb_url` Yes. null Frontend fallback Present. `image_url`(Already at Frontend store Processing)
 
 ---
 
-## 5. AI 服务与异步任务
+## 5. AI Services and grounding
 
-### 5.1 PDF 拆页服务(决策 3)
+### 5.1 PDF Pagebreaking service(Decision-making 3)
 
-**新建 `backend/services/pdf_image_service.py`:**
+**New `backend/services/pdf_image_service.py`:**
 
 ```python
 import fitz
@@ -308,8 +308,8 @@ from pathlib import Path
 def pdf_to_page_images(pdf_path: str, output_dir: str, dpi: int = 150,
                        max_pages: int = 50) -> list[dict]:
     """
-    渲染 PDF 每页为 PNG,返回 [{"index": 1, "path": "..."}],失败页 path=None 但保留 index。
-    超过 max_pages 抛 ValueError(由 controller 转 bad_request)。
+    Render PDF Each page is as PNG,Back [{"index": 1, "path": "..."}],Failed Page path=None But it’s reserved. index。
+    More than max_pages Throw! ValueError(By controller Turn. bad_request)。
     """
     doc = fitz.open(pdf_path)
     if len(doc) > max_pages:
@@ -331,105 +331,105 @@ def pdf_to_page_images(pdf_path: str, output_dir: str, dpi: int = 150,
     return results
 ```
 
-参考代码:`backend/controllers/project_controller.py` 中已有的 `fitz.open() + page.get_pixmap()` 调用。
+Reference Code:`backend/controllers/project_controller.py` Existing `fitz.open() + page.get_pixmap()` Call。
 
-### 5.2 Prompt 模板(决策 4 / 决策 5)
+### 5.2 Prompt Template(Decision-making 4 / Decision-making 5)
 
-**新增到 `backend/services/prompts.py`:**
+**Add to `backend/services/prompts.py`:**
 
 #### 5.2.1 `get_template_analysis_prompt(language: str = 'zh') -> str`
 
-按现有 prompts.py 风格(函数返回字符串),输出格式与 `get_outline_generation_prompt`(L280)一致——markdown JSON 块,3 次软重试由 `generate_json()` 兜底。
+Based on existing prompts.py Style(Function returns string),Output Format and `get_outline_generation_prompt`(L280)Unanimously——markdown JSON Blocks,3 Try again softly by `generate_json()` Bottoms up.。
 
-要点:
-- 嵌入 2-3 个真实模板的解析样本(few-shot),覆盖"封面图 / 双栏正文 / 时间线"三种典型 layout
-- 9 字段 schema 显式列出(PRD §5.3),`text_regions[]` / `image_regions[]` 用 array of objects
-- `notes` 字段说明"AI 主观观察",鼓励填充
-- 失败标志:若图片无法识别为 slide,要求返回 `{"error": "not_a_slide"}`,任务侧据此把 `analysis_status='failed'`
+Key points:
+- Embedded 2-3 A real template parsing sample(few-shot),Overwrite"Cover Map / Double Bar Body / Timeline"Three paradigms. layout
+- 9 Field schema Visible List(PRD §5.3),`text_regions[]` / `image_regions[]` Use it. array of objects
+- `notes` Field description"AI Subjective observation",Encourage Filling
+- Signs of failure:If the picture cannot be identified as slide,Requesting Return `{"error": "not_a_slide"}`,That’s the side of the mission. `analysis_status='failed'`
 
 #### 5.2.2 `get_template_auto_match_prompt(templates: list[dict], pages: list[dict], language: str) -> str`
 
-输入裁剪(决策 5 实现要点):
-- 每页:`{ page_id, order_index, title, summary[≤100字], content_density: 'low'|'medium'|'high' }`
-  - `content_density` 在 controller 层派生,不入库:按 `len(page.description)` 估算——`<200` 字 low、200-600 medium、`>600` high(阈值后续可调)
-- 每模板:`{ asset_id, user_label, layout_structure, content_capacity, visual_density, style_keywords[≤5], notes[≤200字] }`
-- 输出 schema 严格遵循 PRD §8.2(数组,每元素含 `page_id / template_asset_id / status / confidence / reason`)
-- prompt 显式禁止"未在候选模板里出现的 asset_id"
-- `status` enum: `matched | undecided`(`undecided` 时 `template_asset_id=null`,符合 PRD §8.4)
+Enter Crop(Decision-making 5 Elements of achievement):
+- Every page:`{ page_id, order_index, title, summary[≤100 Word], content_density: 'low'|'medium'|'high' }`
+  - `content_density` Yes. controller It’s from the ground up.,Do Not Enter Library:Press `len(page.description)` Estimate——`<200` Word low、200-600 medium、`>600` high(Thresholds can be subsequently adjusted)
+- Every Template:`{ asset_id, user_label, layout_structure, content_capacity, visual_density, style_keywords[≤5], notes[≤200 Word] }`
+- Output schema Strictly follow. PRD §8.2(Array,Each element contains `page_id / template_asset_id / status / confidence / reason`)
+- prompt Visible Ban"Not on candidate template asset_id"
+- `status` enum: `matched | undecided`(`undecided` Time `template_asset_id=null`,Match PRD §8.4)
 
-### 5.3 AIService 新增方法
+### 5.3 AIService Add Method
 
 **`backend/services/ai_service.py`:**
 
 ```python
 def analyze_template(self, image_path: str, language: str = 'zh') -> dict:
     """
-    调用 generate_with_image + JSON 解析。
-    复用 self.generate_json 的 3 次重试(L202-232),失败抛异常由任务捕获。
-    返回 9 字段 dict(PRD §5.3 schema)或 {"error": "not_a_slide"}。
+    Call generate_with_image + JSON Parsing。
+    Reuse self.generate_json It’s... 3 Try again(L202-232),Failed to drop anomaly captured by task。
+    Back 9 Field dict(PRD §5.3 schema)or {"error": "not_a_slide"}。
     """
 
 def auto_match_templates(self, project_id: str, language: str = 'zh',
                          overwrite_existing: bool = True,
                          preserve_non_empty: bool = False) -> list[dict]:
     """
-    自动匹配:决策 5 的阈值与分批逻辑在此实现。
-    - 取项目所有 ProjectTemplateAsset(过滤 analysis_status != 'completed' 的不进候选,决策 2)
-    - 取项目所有 Page(只保留有描述的,前置校验在 controller)
-    - 若 len(pages)<=50 and len(templates)<=20:一次调用
-    - 否则:按 30 页分批,batch 间合并
-    返回 [{"page_id", "template_asset_id"|None, "status", "confidence", "reason"}]
+    Automatic Matching:Decision-making 5 This is where the threshold and batch logic are achieved.。
+    - Take Item All ProjectTemplateAsset(Filter analysis_status != 'completed' I’m not a candidate.,Decision-making 2)
+    - Take Item All Page(Only those that have a description.,Prevalidation in controller)
+    - If len(pages)<=50 and len(templates)<=20:One call.
+    - Otherwise...:Press 30 Page in Series,batch Combination
+    Back [{"page_id", "template_asset_id"|None, "status", "confidence", "reason"}]
     """
 ```
 
-### 5.4 task_manager 新任务
+### 5.4 task_manager New Task
 
-**`backend/services/task_manager.py` 新增 3 个 task type 常量与处理函数:**
+**`backend/services/task_manager.py` Add 3 individual task type Constants and Process Functions:**
 
-| Task Type | 触发处 | 资源池 | 说明 |
+| Task Type | Trigger | Pools | Annotations |
 |-----------|--------|--------|------|
-| `SPLIT_TEMPLATE_PDF` | `POST .../template-assets/upload-pdf` | `image_resource_limiter` | 调 `pdf_to_page_images` → 每页 `save_template_asset_from_path` → 创建 asset 行 → 触发子 `ANALYZE_TEMPLATE` 任务 |
-| `ANALYZE_TEMPLATE` | 上传/拆页/手动 reanalyze | `text_resource_limiter` | 调 `ai_service.analyze_template`,写 `analysis_json` / `analysis_notes` / `analysis_status` |
-| `AUTO_MATCH_TEMPLATES` | `POST .../template-assets/auto-match` | `text_resource_limiter` | 调 `ai_service.auto_match_templates`,事务批量更新 pages |
+| `SPLIT_TEMPLATE_PDF` | `POST .../template-assets/upload-pdf` | `image_resource_limiter` | Rotation `pdf_to_page_images` → Every page `save_template_asset_from_path` → Create asset Okay. → Trigger `ANALYZE_TEMPLATE` Tasks |
+| `ANALYZE_TEMPLATE` | Upload/Open Pages/Manual reanalyze | `text_resource_limiter` | Rotation `ai_service.analyze_template`,Write `analysis_json` / `analysis_notes` / `analysis_status` |
+| `AUTO_MATCH_TEMPLATES` | `POST .../template-assets/auto-match` | `text_resource_limiter` | Rotation `ai_service.auto_match_templates`,Bulk Update pages |
 
-事务规范:沿用 `_commit_with_retry`(`task_manager.py:261-273`),失败时进度 JSON 把 failed +1 但不阻塞其他任务。
+Code of conduct:Continue `_commit_with_retry`(`task_manager.py:261-273`),Progress when failure JSON Take it. failed +1 But no other tasks are blocked.。
 
-并发约定:
-- 单 PDF 拆页内的 N 个 `ANALYZE_TEMPLATE` 子任务通过 `text_resource_limiter` 限流(沿用 `generate_descriptions_task` 模式)
-- `AUTO_MATCH_TEMPLATES` 项目内串行(同一项目同一时刻只允许一个,controller 层用 `Task.query.filter_by(project_id, task_type, status='PROCESSING').first()` 防重)
+I’ll make a deal.:
+- Single PDF Open Pages N individual `ANALYZE_TEMPLATE` Submission passed. `text_resource_limiter` Limited flow(Continue `generate_descriptions_task` Mode)
+- `AUTO_MATCH_TEMPLATES` Lines within Projects(Only one item is allowed at the same time,controller Layer `Task.query.filter_by(project_id, task_type, status='PROCESSING').first()` Weight protection)
 
 ---
 
-## 6. 图片生成链路改造
+## 6. Image Generation Link Retrofit
 
-### 6.1 改造点定位
+### 6.1 Change Point Positioning
 
-主路径:`backend/services/task_manager.py:645-668`(现有 `use_template` 分支),配合 `prompts.py:815-860` 的 `generate_image_prompt`。
+Main Path:`backend/services/task_manager.py:645-668`(Existing `use_template` Branch),Complement `prompts.py:815-860` It’s... `generate_image_prompt`。
 
-### 6.2 优先级链(PRD §13)
+### 6.2 Priority chain(PRD §13)
 
-替换现有的 `use_template = bool(project.template_image_path)` 单一判断,改为按页查询:
+Replace existing `use_template = bool(project.template_image_path)` Single judgement,query by page instead:
 
 ```python
-# 伪代码
+# False code.
 def resolve_page_template(page: Page, project: Project) -> tuple[str | None, str | None]:
-    """返回 (image_path_for_ref, style_text)"""
+    """Back (image_path_for_ref, style_text)"""
     image_path = None
     style_text = None
 
-    # 优先级 1:页级图片模板
+    # Priority 1:Page-level image template
     if page.template_asset_id:
         asset = page.template_asset  # relationship
         if asset:
             image_path = file_service.resolve_template_asset_path(asset)
 
-    # 优先级 2:页级文字模板
+    # Priority 2:Page Text Template
     if page.template_style_text:
         style_text = page.template_style_text
 
-    # 优先级 3 / 4:项目级 fallback(兼容旧项目和决策 7 单模板模式)
-    # 注意:单模板模式下 backfill 已把项目级值同步到页级,此处主要为
-    # "存量项目未跑 backfill" 和"单模板模式下用户跳过模板选择"兜底
+    # Priority 3 / 4:Project level fallback(Compatibility of old projects and decision-making 7 Single Template Mode)
+    # Attention.:Single Template Mode backfill Synchronizes project-level values to page level,The main here is
+    # "Inventory project not running backfill" and"User Skipping Template Selection in Single Template Mode"Bottoms up.
     if image_path is None and project.template_image_path:
         image_path = file_service.get_template_path(project.id)
     if style_text is None and project.template_style:
@@ -438,73 +438,73 @@ def resolve_page_template(page: Page, project: Project) -> tuple[str | None, str
     return image_path, style_text
 ```
 
-### 6.3 prompt 拼接
+### 6.3 prompt Collapse
 
-`generate_image_prompt` 当前签名 `has_template: bool`,扩展为:
+`generate_image_prompt` Current Signature `has_template: bool`,Extension to:
 ```python
 def generate_image_prompt(..., has_template_image: bool, page_style_text: str | None, ...) -> str:
-    # has_template_image: True 时加"配色和设计语言和模板图片严格相似"(prompts.py:836)
-    # page_style_text: 非空时拼入风格段(替代原 project.template_style 的项目级拼接)
+    # has_template_image: True Time plus"Coloring and design language and template pictures are strictly similar"(prompts.py:836)
+    # page_style_text: Unempty-time-to-script style segment(Alternative project.template_style Project-level couplings)
 ```
 
-调用处:`task_manager.py` 在 `generate_image_prompt` 调用前先 `resolve_page_template(page, project)` 取出本页的 (image_path, style_text),分别透传。
+Useful.:`task_manager.py` Yes. `generate_image_prompt` Before calling. `resolve_page_template(page, project)` Take out the page (image_path, style_text),Separate transmissions。
 
-### 6.4 单页重生成入口
+### 6.4 One Page Reproduction Entry
 
-`generate_single_page_image_task`(已存在)同步改造,确保用户在多模板模式下"重新生成单页"时真用本页的 `template_asset_id` 对应图片。这是决策 7 "已生成图片不受切换影响"的反向保证——一旦用户点重生成,新模板生效。
+`generate_single_page_image_task`(Exists)Synchronization,Ensure that users are in multi-template mode"Regenerated Single Page"It’s a real page. `template_asset_id` Corresponds to the picture. It’s a decision. 7 "Generated pictures are not affected by switching"A reverse guarantee.——Once User Point Regenerated,New template effective。
 
-### 6.5 兼容性
+### 6.5 Compatibility
 
-- 旧项目:migration backfill 已把项目级模板写入页级,改造后路径无差别
-- 模式切换中产生的页级模板覆盖:由 `PATCH .../template-mode` 在事务内同步完成,保证图片生成读到的是切换后的值
-- 图生失败的重试沿用现有 `task_manager.py` 重试链,无需改
+- Old items:migration backfill Project-level templates were written to the page level,There’s no difference in retrofitting paths.
+- Page-level templates generated by mode switching overwrite:By `PATCH .../template-mode` Synchronize within the service,Ensures that the image generation is read by switching values
+- Tusheng failed to repeat the existing test `task_manager.py` Retry Chain,There’s no need to change.
 
 ---
 
-## 7. 前端架构
+## 7. Frontend Structure
 
-### 7.1 路由
+### 7.1 Route
 
-`frontend/src/App.tsx` 路由序列扩展为(决策 1 + 决策 6):
+`frontend/src/App.tsx` Route sequence extended to(Decision-making 1 + Decision-making 6):
 
 ```
 /                                     Home
 /project/:projectId/outline           OutlineEditor
 /project/:projectId/detail            DetailEditor
-/project/:projectId/template-setup    TemplateSetupPage(新页面,多模板必经)
+/project/:projectId/template-setup    TemplateSetupPage(New Page,Multiple templates must pass)
 /project/:projectId/preview           SlidePreview
 ```
 
-**`Home.initializeProject` 完成后**:无论 `templateMode` 是 single 还是 multi,统一 `navigate(/project/:id/outline)`——模板配置发生在 outline / detail 之后(PRD §2 流程)。
+**`Home.initializeProject` After completion**:Whatever. `templateMode` Yes. single Or is it? multi,Harmonization `navigate(/project/:id/outline)`——Template configuration occurs outline / detail After(PRD §2 Process)。
 
-**`DetailEditor` 完成态"下一步"按钮**(决策 1 / 决策 6 在此分支):
+**`DetailEditor` Completed state"Next"button**(Decision-making 1 / Decision-making 6 In this branch):
 ```ts
 project.template_mode === 'multi'
   ? navigate(`/project/${id}/template-setup`)
   : navigate(`/project/${id}/preview`)
 ```
 
-**`TemplateSetupPage` 路由守卫**(决策 6 配套):若 `project.template_mode === 'single'`,组件 mount 时 `navigate('/preview', { replace: true })`,防止用户手动输 URL 误入空页面。
+**`TemplateSetupPage` Road guards.**(Decision-making 6 Accompany):If `project.template_mode === 'single'`,Component mount Time `navigate('/preview', { replace: true })`,Prevent users from losing manually URL Empty page by error。
 
 ### 7.2 Store(`frontend/src/store/useProjectStore.ts`)
 
-#### 7.2.1 替换的 localStorage key
+#### 7.2.1 Replaced localStorage key
 
-旧原型用的 4 个 key(交接文档 §4.3)全部废弃,改为 API:
+For old prototypes. 4 individual key(Handover of documents §4.3)Discard All,was replaced by API:
 
-| 旧 key | 新数据源 |
+| Old key | New Data Source |
 |--------|---------|
-| `template_mode_${projectId}` | `project.template_mode`(后端字段) |
+| `template_mode_${projectId}` | `project.template_mode`(Backend Field) |
 | `template_assets_${projectId}` | `GET /api/projects/:id/template-assets` |
-| `page_template_assign_${projectId}` | `page.template_asset_id` / `template_style_text`(已在 page.to_dict) |
-| `page_fine_tune_drawer_width` | 保留 localStorage(纯 UI 偏好,与数据无关) |
+| `page_template_assign_${projectId}` | `page.template_asset_id` / `template_style_text`(Already page.to_dict) |
+| `page_fine_tune_drawer_width` | Reservations localStorage(Pure UI Preferences,It’s not about data.) |
 
-清理动作:Store 初始化时若检测到旧 localStorage key,直接删除(`removeItem`),不做迁移——交接文档 §3 已声明"旧 demo 数据不迁移"。
+Clear Action:Store If old detection occurs at initialization localStorage key,Remove Directly(`removeItem`),Do Not Move——Handover of documents §3 Declaration"Old demo Data does not migrate"。
 
-#### 7.2.2 新增 actions
+#### 7.2.2 Add actions
 
 ```ts
-// 模板资产
+// Template assets
 loadTemplateAssets(projectId): Promise<TemplateAsset[]>
 uploadTemplateAsset(projectId, file, opts?: { bindToPageId?: string }): Promise<TemplateAsset>
 uploadTemplatePdf(projectId, file): Promise<{ taskId: string }>
@@ -512,30 +512,30 @@ updateTemplateAsset(projectId, assetId, patch): Promise<TemplateAsset>
 deleteTemplateAsset(projectId, assetId): Promise<{ clearedPageIds: string[] }>
 reanalyzeTemplateAsset(projectId, assetId): Promise<{ taskId: string }>
 
-// 页级模板
+// Page-level template
 updatePageTemplate(projectId, pageId, patch): Promise<Page>
 
-// 模式切换
+// Mode Switch
 switchTemplateMode(projectId, payload: SwitchModePayload): Promise<Project>
 // SwitchModePayload:
 //   { mode: 'multi' }
 //   | { mode: 'single', unifiedAssetId?: string, unifiedStyleText?: string }
-//   | { mode: 'single', uploadFile: File }  // 走 multipart 子端点
+//   | { mode: 'single', uploadFile: File }  // Come on. multipart Subend
 
-// 自动匹配
+// Automatic Matching
 autoMatchAll(projectId, opts): Promise<{ taskId: string }>
 autoMatchPage(projectId, pageId): Promise<{ taskId: string }>
 ```
 
-#### 7.2.3 状态同步
+#### 7.2.3 StatusSync
 
-- 解析任务:轮询 `/api/tasks/:taskId`,完成后局部刷新该 asset(`loadTemplateAssets` 全量刷或 in-place 替换)
-- 自动匹配:任务完成后调一次 `loadProject(projectId)` 刷新所有 page
-- 删除资产:乐观更新,把 `clearedPageIds` 对应的 page 字段在本地置空
+- Parsing Tasks:Rotation `/api/tasks/:taskId`,Locally refreshed after completion asset(`loadTemplateAssets` Full brush or in-place Replace)
+- Automatic Matching:I’ll change it once we’re done with the mission. `loadProject(projectId)` Refresh All page
+- Delete Assets:Optimistic Update,Take it. `clearedPageIds` Corresponding page Fields left empty locally
 
-### 7.3 类型(`frontend/src/types/index.ts`)
+### 7.3 Type(`frontend/src/types/index.ts`)
 
-`feat/per-page-template` 已预留的类型沿用,补全:
+`feat/per-page-template` Retentioned type to follow,Completion:
 
 ```ts
 export interface TemplateAsset {
@@ -565,10 +565,10 @@ export interface TemplateAnalysis {
   notes: string;
 }
 
-// Project 加
+// Project Add
 template_mode: 'single' | 'multi';
 
-// Page 加
+// Page Add
 template_asset_id: string | null;
 template_style_text: string | null;
 template_selection_source: 'manual' | 'auto' | 'batch_apply' | null;
@@ -576,215 +576,215 @@ template_match_reason: string | null;
 template_match_confidence: number | null;
 ```
 
-### 7.4 组件改造与新建
+### 7.4 Component adaptation and new
 
-#### 7.4.1 新建 `TemplateSetupPage.tsx`(PRD §7)
+#### 7.4.1 New `TemplateSetupPage.tsx`(PRD §7)
 
-主要区块:
-- 顶部:模板模式控制条(`转为单模板` 按钮,对称于 DetailEditor 的"转为多模板")+ `一键自动匹配` 按钮
-- 左栏:**项目模板库**——网格展示所有 TemplateAsset 卡片
-  - 缩略图 / 用户标记输入框(inline 编辑)/ 解析状态徽标 / 解析摘要(可展开编辑 9 字段)
-  - 卡片底部:`删除` / `重新解析`(失败时显眼)
-  - 顶部:`上传图片` + `上传 PDF` 双按钮,PDF 上传后进度条显示
-- 右栏:**页面列表**——每页一行,显示
-  - 序号 + 标题 + 内容密度 chip
-  - 当前模板缩略图(若有)/ 当前文字模板预览(若有)/ 未确认 chip
-  - 按钮:`选择模板`(开手动选择弹层)/ `单页自动匹配` / `编辑文字模板`
-- 自动匹配前置校验:缺描述时按钮 disabled + tooltip(PRD §8.3)
+Main blocks:
+- Top:Template Mode Control Bar(`Convert to Single Template` button,Symmetrical DetailEditor It’s..."Convert to Multiple Templates")+ `One-click automatic match` button
+- Left Bar:**Project Template Library**——Grid displays all TemplateAsset Card
+  - Thumbnail / User Tag Input Box(inline Edit)/ Parsing status logo / Parsing Summary(Expand Editable 9 Field)
+  - Bottom of the card:`Delete` / `Resolve`(When you fail, you show your face.)
+  - Top:`Upload pictures` + `Upload PDF` Double Button,PDF Show progress bar after uploading
+- Right Bar:**Page List**——Lines per page,Show
+  - Serial number + Title + Content density chip
+  - Current Template Thumbnail(If there is.)/ Preview of the current text template(If there is.)/ Not confirmed chip
+  - button:`Select Template`(Manually select a layer.)/ `Auto Matching One Page` / `Edit Text Templates`
+- Automatically match prevalidation:Missing Description Button disabled + tooltip(PRD §8.3)
 
-#### 7.4.2 改造 `Home.tsx`(决策 7)
+#### 7.4.2 Adaptation `Home.tsx`(Decision-making 7)
 
-沿用 `feat/per-page-template` 分支的"单/多模板按钮"原型,但 `initializeProject` 改调真实 API:
-- 单模板:先创建项目(`POST /api/projects` 带 `template_mode='single'` + `template_image_path` / `template_style`)→ 后端在创建项目时把上传的模板写入一条 `project_template_assets`,但**此时 pages 尚未生成**——同步动作发生在两个时间点:
-  1. **大纲生成创建 pages 时**:后端 `task_manager` 在 outline 任务里 commit pages 时,根据 `project.template_mode='single'` 把统一 asset 和 style_text 同步写入每页
-  2. **后续单模板模式下用户改模板**:任何修改项目级模板的操作触发 `PATCH /template-mode`(模式不变,语义为"重新统一"),后端批量覆盖所有页
-- 多模板:先创建项目(`template_mode='multi'`,无模板字段)→ 直接进 outline,模板留到 TemplateSetupPage 处理
+Continue `feat/per-page-template` Branch."Single/Multiple Template Buttons"Prototype,But... `initializeProject` Change the truth. API:
+- Single Template:Create items first(`POST /api/projects` The tape. `template_mode='single'` + `template_image_path` / `template_style`)→ Write an upload template to the backend when creating the item `project_template_assets`,But...**At this point, pages Not yet generated**——Synchronization takes place at two time points:
+  1. **Outline Generation Creation pages Time**:Backend `task_manager` Yes. outline In the mission. commit pages Time,Based on `project.template_mode='single'` Reunify. asset and style_text Synchronise Write Every Page
+  2. **User change template in follow-up template mode**:Activate any changes to the project-level template `PATCH /template-mode`(The pattern is the same.,Semantic As"Reunification"),Backend overwrites all pages
+- Multiple Templates:Create items first(`template_mode='multi'`,No Template Fields)→ Straight ahead. outline,Template to TemplateSetupPage Processing
 
-#### 7.4.3 改造 `DetailEditor.tsx`
+#### 7.4.3 Adaptation `DetailEditor.tsx`
 
-顶部加"模板模式控制区":
-- 当前 `single`:显示 `转为多模板` 按钮,点击 `switchTemplateMode({ mode: 'multi' })` → `template-setup`
-- 当前 `multi`:显示"当前为多模板模式,前往模板配置"链接
+Top plus"Template Mode Control Area":
+- Current `single`:Show `Convert to Multiple Templates` button,Click `switchTemplateMode({ mode: 'multi' })` → `template-setup`
+- Current `multi`:Show"Current as Multi Template Mode,Go to Template Configuration"Link
 
-#### 7.4.4 改造 `SlidePreview.tsx`
+#### 7.4.4 Adaptation `SlidePreview.tsx`
 
-保留 `feat/per-page-template` 原型的右侧"页面精调"抽屉(`PageFineTuneDrawer.tsx`),但:
-- 数据源从 localStorage 切到 store
-- 单模板模式:隐藏抽屉里的"项目模板库"区块,只保留页面描述编辑(决策 6 配套)
-- 多模板模式:抽屉里完整展示模板库 + 当前页模板选择 + 单页自动匹配按钮
-- 顶部模板控制条根据 `project.template_mode` 二选一显示一个按钮:
-  - `single` 时显示 `转为多模板`,点击 `switchTemplateMode({ mode: 'multi' })` → 留在 SlidePreview(用户也可手动跳 template-setup)
-  - `multi` 时显示 `转为单模板`,点击打开 `SwitchToSingleModeDialog`
-- 多→单切换走"选择统一模板弹层":列出当前模板库 + `上传新模板` + 文字风格 textarea,提交时:
-  - 选已有 asset / 仅文字 → `PATCH /template-mode`(JSON 路径)
-  - 上传新图 → `POST /template-mode/single-with-upload`(multipart 路径)
+Reservations `feat/per-page-template` Right side of the prototype"Page Precise"The drawer.(`PageFineTuneDrawer.tsx`),But...:
+- Data source from localStorage Cut store
+- Single Template Mode:Hide the drawers."Project Template Library"Blocks,Only keep page description editing(Decision-making 6 Accompany)
+- Multiple Template Modes:Full display of template library in drawers + Current Page Template Selection + One Page Automatic Match Button
+- Top Template Control Bar Based on `project.template_mode` Select one to show a button:
+  - `single` Show time `Convert to Multiple Templates`,Click `switchTemplateMode({ mode: 'multi' })` → Stay SlidePreview(Users can also jump manually template-setup)
+  - `multi` Show time `Convert to Single Template`,Click to open `SwitchToSingleModeDialog`
+- More→Switch away."Select a unified template bomb layer":List the current template library + `Upload New Templates` + Text Style textarea,When submitting:
+  - Selected asset / Text Only → `PATCH /template-mode`(JSON Path)
+  - Upload New Map → `POST /template-mode/single-with-upload`(multipart Path)
 
-#### 7.4.5 新建组件
+#### 7.4.5 New Component
 
-- `TemplatePickerModal.tsx`:带缩略图的模板选择弹层(PRD §10.2),含"上传新模板"内嵌入口,选中即调 `updatePageTemplate`
-- `TemplateAnalysisEditor.tsx`:9 字段表单组件,在 TemplateSetupPage 卡片展开时使用;失败状态下变红框 + 重新解析按钮
-- `SwitchToSingleModeDialog.tsx`:多→单切换时的统一模板选择弹层
-- `TemplateMatchProgress.tsx`:自动匹配任务的进度条与结果摘要
+- `TemplatePickerModal.tsx`:Templates with Thumbnails to select ballistic layers(PRD §10.2),Ham"Upload New Templates"Embedded Entry,Check Assemble `updatePageTemplate`
+- `TemplateAnalysisEditor.tsx`:9 Field Form Component,Yes. TemplateSetupPage Use of cards to expand;Red box under failed status + Resolve button
+- `SwitchToSingleModeDialog.tsx`:More→Unified template selection for single toggle
+- `TemplateMatchProgress.tsx`:A summary of progress and results of automatically matching tasks
 
 ### 7.5 i18n
 
-按项目惯例(CLAUDE.md "Component-level `useT()` hook with inline zh/en translations"),所有新文案在组件内 inline,不进全局 i18n 文件。
+By project practice(CLAUDE.md "Component-level `useT()` hook with inline zh/en translations"),All new files are in the components. inline,Not Global i18n Documentation。
 
 ---
 
-## 8. 测试与验收
+## 8. Testing and acceptance
 
-### 8.1 后端单元/集成测试(`backend/tests/`)
+### 8.1 Backend Unit/Integrated testing(`backend/tests/`)
 
-按现有 pytest 结构,新增:
+Based on existing pytest Structure,Add:
 
 **`test_template_assets_api.py`**
-- POST/GET/PATCH/DELETE asset 全 CRUD
-- 上传后 `analysis_status='pending'`,模拟任务完成后变 `completed`
-- DELETE 后引用页字段被置 NULL(`SET NULL` 约束验证)
-- 跨项目访问拒绝(asset belongs to other project)
+- POST/GET/PATCH/DELETE asset All CRUD
+- After uploading `analysis_status='pending'`,Simulation changes after completion of the task `completed`
+- DELETE Post-referenced page field set NULL(`SET NULL` Binding Authentication)
+- Cross-project visit denied(asset belongs to other project)
 
 **`test_template_pdf_split.py`**
-- 真实 PDF 上传(测试 fixture 放 3 页样本 PDF)
-- 验证 N 张 asset 创建 + 子解析任务触发
-- 超 50 页返回 400
-- 单页渲染失败时其他页仍成功(`failed` 计数正确)
+- Real. PDF Upload(Test fixture Fire! 3 Sample Page PDF)
+- Authentication N Chang! asset Create + Sub-resolution task trigger
+- Super. 50 Back to Page 400
+- Other pages were successful when single page rendering failed(`failed` Count correct.)
 
 **`test_template_analysis.py`**
-- Mock `ai_service.analyze_template` 返回固定 9 字段,验证写库
-- AI 返回 `{"error": "not_a_slide"}` 时 `analysis_status='failed'` + `analysis_error` 填充
-- 重新解析端点把 status 重置回 pending
+- Mock `ai_service.analyze_template` Return to Fixed 9 Field,Validate Writing Library
+- AI Back `{"error": "not_a_slide"}` Time `analysis_status='failed'` + `analysis_error` Fill
+- Parse Peers status Reset pending
 
 **`test_template_auto_match.py`**
-- Mock LLM 返回固定匹配数组,验证页字段写入
-- `preserve_non_empty=true` 时跳过已有 asset_id 的页
-- `undecided` 状态把页字段置 NULL(PRD §8.4)
-- 缺描述时返回 missing_descriptions 错误
-- 阈值切换:51 页项目走分批路径,验证调用次数
+- Mock LLM Returns fixed matching arrays,Authenticate page field writing
+- `preserve_non_empty=true` Skipped already asset_id Page
+- `undecided` Status Places Page Fields NULL(PRD §8.4)
+- Return when description is missing missing_descriptions Error
+- Threshold Switch:51 Page items take batch paths,Validate number of calls
 
 **`test_template_mode_switch.py`**
-- 单→多:仅 mode 改,页级字段不动
-- 多→单 + `unified_asset_id`:所有页被批量覆盖,事务原子性(中途异常回滚)
-- 多→单 + `unified_upload`:multipart 端点先建 asset 再覆盖
-- 切换后 `generated_image_url` 保留不变(决策 7)
+- Single→More:Only mode Change,Do not move the page level field
+- More→Single + `unified_asset_id`:All pages overwhelmed in bulk,Atomity of the transaction(It’s going back and forth.)
+- More→Single + `unified_upload`:multipart End first asset Overwrite
+- Switch After `generated_image_url` Reservations remain unchanged(Decision-making 7)
 
-**`test_image_generation_template_priority.py`**(关键真实测试)
-- 创建 3 页项目,page1 设页级 asset,page2 只设 style_text,page3 全空(走项目级 fallback)
-- 触发图片生成,**用真实 AI provider**(沿 CLAUDE.md "不在意测试成本"要求)
-- 验证三页生成时 prompt 与 ref_image 各自来源正确(用 task_manager 的 log 校验或在 provider mock 一层抓 prompt)
+**`test_image_generation_template_priority.py`**(Key Real Tests)
+- Create 3 Page items,page1 Page Level asset,page2 Set Only style_text,page3 All empty(Take Project Level fallback)
+- Trigger image generation,**With the truth. AI provider**(Along CLAUDE.md "I don’t care about the cost of testing."Request)
+- On Validation of Three Pages Generation prompt and ref_image They’re from the right source.(Use it. task_manager It’s... log Verify or provider mock First-level scratch. prompt)
 
-### 8.2 前端单元测试(Vitest)
+### 8.2 Front-end unit testing(Vitest)
 
-- `TemplatePickerModal`:渲染所有 asset、选中触发回调、"上传新模板"打开 input、上传成功自动选中
-- `TemplateAnalysisEditor`:9 字段编辑、保存调 `updateTemplateAsset`、失败态展示
-- `SwitchToSingleModeDialog`:列出模板、文字风格、上传三选项校验
-- `useProjectStore`:模式切换 / asset 增删 / 解析任务轮询的 action 单测
+- `TemplatePickerModal`:Render All asset、Select to trigger the echo、"Upload New Templates"Open input、Autocheck successfully uploaded
+- `TemplateAnalysisEditor`:9 Field editing, saving tunes `updateTemplateAsset`、Failed Presentation
+- `SwitchToSingleModeDialog`:List template, text style, upload three options to verify
+- `useProjectStore`:Mode Switch / asset Add & Delete / parse task polling action Monometric
 
 ### 8.3 E2E(Playwright,`frontend/e2e/`)
 
-复用现有 `e2e/helpers/seed-project.ts` 的快速种子工具,新增:
+Reuse Existing `e2e/helpers/seed-project.ts` Quick Seed Tool,Add:
 
-**`template-mode-creation.spec.ts`(mock + 集成两层,见 CLAUDE.md)**
-- Home 选单模板上传 → outline → detail → preview,验证 preview 所有页使用同一模板
-- Home 选多模板 → outline → detail → template-setup → 上传 2 张图 → 给页面分别绑定 → preview,验证刷新后绑定仍在
+**`template-mode-creation.spec.ts`(mock + Two layers.,See CLAUDE.md)**
+- Home Checklist Template Upload → outline → detail → preview,Authentication preview Use the same template for all pages
+- Home Select Multiple Templates → outline → detail → template-setup → Upload 2 Chart → Bind the page separately → preview,Validate refreshing and binding still
 
 **`template-pdf-split.spec.ts`**
-- 上传 3 页样本 PDF → 等任务完成 → 模板库出现 3 张 → 每张 analysis 状态推进到 completed
+- Upload 3 Sample Page PDF → When the job is done. → Template library appearance 3 Chang! → Each analysis State advanced to completed
 
 **`template-auto-match.spec.ts`**
-- 多模板项目,模板库 ≥2 张 → 点一键自动匹配 → 等任务完成 → 每页都有 asset_id 或 undecided 标记 → 验证 reason/confidence 写入
+- Multiple Template Items,Template Library ≥2 Chang! → One-click automatic match → When the job is done. → It’s on every page. asset_id or undecided Tags → Authentication reason/confidence Writing
 
 **`template-delete-cascade.spec.ts`**
-- 多模板项目,模板库 1 张被 N 页引用 → 删除模板 → 引用页全部变"未确认" → toast 显示影响页数 → 刷新后仍清空
+- Multiple Template Items,Template Library 1 Zhang Yu. N Page citation → Remove Template → Quote Page All Change"Not confirmed" → toast Displays the number of affected pages → It’s still empty after refreshing.
 
-**`template-mode-switch.spec.ts`(决策 7 关键)**
-- 单→多:DetailEditor 点"转为多模板" → 路由跳 template-setup → 模板库已有创建项目时的那张
-- 多→单:SlidePreview 顶部点"转为单模板" → 弹层选模板 → 所有页统一 → 刷新后仍统一
-- 多→单切换不影响已生成图片:先生成 page1 图,再切换,page1 图保留
+**`template-mode-switch.spec.ts`(Decision-making 7 Chile)**
+- Single→More:DetailEditor Points"Convert to Multiple Templates" → Road jump. template-setup → The one that was created in the template library
+- More→Single:SlidePreview Top Point"Convert to Single Template" → Bounce Selection Template → All pages are uniform → It’s still uniform when it’s refreshed
+- More→Single toggle does not affect the image generated:Mr. Cheng page1 Figure,Switch,page1 Figure retention
 
-**`template-fine-tune-drawer.spec.ts`(继承原 `fine-tune-drawer.spec.ts`)**
-- 单模板模式下抽屉无模板库区
-- 多模板模式下抽屉完整功能,上传/绑定/删除全跑
+**`template-fine-tune-drawer.spec.ts`(Inheritance `fine-tune-drawer.spec.ts`)**
+- Single template drawer with no template library area
+- Full function of the bottom drawer in multiple templates mode,Upload/Tie/Remove All Runs
 
-**`template-route-guard.spec.ts`(决策 6 守卫)**
-- 单模板项目手动访问 `/project/:id/template-setup`,验证 `replace` 跳转到 `/preview`,浏览器历史栈中无 `template-setup` 条目(按浏览器后退应回到 detail,而非 template-setup)
-- 多模板项目访问 `/template-setup` 正常渲染,不跳转
+**`template-route-guard.spec.ts`(Decision-making 6 Guards.)**
+- Single Template Item Manual Access `/project/:id/template-setup`,Authentication `replace` Jump to `/preview`,None in browser history stack `template-setup` Entry(Press the browser back to return. detail,Not template-setup)
+- Multi Template Project Access `/template-setup` Normal rendering,Do Not Jump
 
-### 8.4 真实生成链路验证(CLAUDE.md 强制要求)
+### 8.4 Real Generating Chain Validation(CLAUDE.md Mandatory requirements)
 
-至少一次端到端真实 AI 调用(成本由项目接受):
-1. 创建 3 页多模板项目
-2. 上传 2 张模板图(等真实解析完成)
-3. 一键自动匹配(等真实 LLM 完成)
-4. 生成所有页图片(等真实图生 API 完成)
-5. 人工检查:每页生成图片的风格与该页绑定模板一致
+At least once to the end. AI Call(Cost accepted by project):
+1. Create 3 Multi-page Template Items
+2. Upload 2 A template diagram(When the real resolution is complete.)
+3. One-click automatic match(Wait for the truth. LLM Completed)
+4. Generate all pages(Wait for the real picture. API Completed)
+5. Manual inspection:The style of each page generating pictures corresponds to the template of the page bound
 
 ---
 
-## 9. 实施顺序与里程碑
+## 9. Implementation sequence and milestones
 
-按依赖拓扑排,每步内部可并行,步与步之间串行:
+By relying on the cappuccino,Each step of the inside can go in parallel.,Serials between steps:
 
-### 阶段 A:基础数据层(预计 1 天)
-1. 新建分支 `feat/per-page-template-v2`(从最新 `main`,不复用旧 `feat/per-page-template`)
-2. 写 SQLAlchemy model:`ProjectTemplateAsset` + `Project.template_mode` + `Page` 5 列
-3. 写 Alembic migration 含 backfill
-4. 后端 model 单测(空对象到 to_dict、relationship 级联)
+### Phase A:Basic Data Layer(Projected 1 Jesus.)
+1. New Branch `feat/per-page-template-v2`(From the latest `main`,Do Not Reuse Old `feat/per-page-template`)
+2. Write SQLAlchemy model:`ProjectTemplateAsset` + `Project.template_mode` + `Page` 5 Columns
+3. Write Alembic migration Ham backfill
+4. Backend model Monometric(Empty object to to_dict、relationship Cascade)
 
-### 阶段 B:文件与 PDF(预计 1 天)
-5. `FileService` 新方法 + `file_controller` 路径放行
-6. 新建 `pdf_image_service.py`
-7. `test_template_pdf_split.py` 通过(不含 AI)
+### Phase B:Documentation and PDF(Projected 1 Jesus.)
+5. `FileService` New methodology + `file_controller` Path Release
+6. New `pdf_image_service.py`
+7. `test_template_pdf_split.py` Pass.(does not contain AI)
 
-### 阶段 C:Asset CRUD + 模式切换 API(预计 1.5 天)
-8. `template_controller.py` 新 endpoints(本节 §3.2 / §3.3 全部)
-9. `task_manager` 加 `SPLIT_TEMPLATE_PDF` task type
-10. `test_template_assets_api.py` + `test_template_mode_switch.py` 通过
+### Phase C:Asset CRUD + Mode Switch API(Projected 1.5 Jesus.)
+8. `template_controller.py` New endpoints(This section §3.2 / §3.3 All)
+9. `task_manager` Add `SPLIT_TEMPLATE_PDF` task type
+10. `test_template_assets_api.py` + `test_template_mode_switch.py` Pass.
 
-### 阶段 D:AI 解析与自动匹配(预计 1.5 天)
-11. `prompts.py` 加两个新 prompt
-12. `ai_service.py` 加 `analyze_template` / `auto_match_templates`
-13. `task_manager` 加 `ANALYZE_TEMPLATE` / `AUTO_MATCH_TEMPLATES` task type
-14. `test_template_analysis.py` + `test_template_auto_match.py` 通过(LLM 部分 mock)
+### Phase D:AI Parsing & Automatic Matching(Projected 1.5 Jesus.)
+11. `prompts.py` Two new ones. prompt
+12. `ai_service.py` Add `analyze_template` / `auto_match_templates`
+13. `task_manager` Add `ANALYZE_TEMPLATE` / `AUTO_MATCH_TEMPLATES` task type
+14. `test_template_analysis.py` + `test_template_auto_match.py` Pass.(LLM Part mock)
 
-### 阶段 E:图片生成链路(预计 1 天)
-15. `resolve_page_template` 抽函数 + `task_manager:645-668` 改造
-16. `generate_image_prompt` 签名扩展
-17. `test_image_generation_template_priority.py` 通过(**真实 AI**)
+### Phase E:Image Generation Link(Projected 1 Jesus.)
+15. `resolve_page_template` Draw Functions + `task_manager:645-668` Adaptation
+16. `generate_image_prompt` Sign Extension
+17. `test_image_generation_template_priority.py` Pass.(**Real. AI**)
 
-### 阶段 F:前端(预计 3 天)
-18. 路由 + 类型 + store 全量替换
-19. 新建 `TemplateSetupPage` + 4 个新组件
-20. 改造 `Home` / `DetailEditor` / `SlidePreview`
-21. 抽屉接 store
-22. 前端 Vitest 通过
+### Phase F:Frontend(Projected 3 Jesus.)
+18. Route + Type + store Full replacement
+19. New `TemplateSetupPage` + 4 New component
+20. Adaptation `Home` / `DetailEditor` / `SlidePreview`
+21. Pick up the drawer. store
+22. Frontend Vitest Pass.
 
-### 阶段 G:E2E + 真实链路(预计 1 天)
-23. 6 个 Playwright 用例
-24. 真实生成链路验证一次
-25. 文档更新(`docs/zh/` + README 模板模块)
+### Phase G:E2E + Real link.(Projected 1 Jesus.)
+23. 6 individual Playwright Example
+24. The real generation of links once.
+25. Document Update(`docs/zh/` + README Template module)
 
-### 阶段 H:PR(预计 0.5 天)
-26. 拆 commit:数据层 / 文件 / Asset API / AI / 图生 / 前端 / E2E / 文档
-27. 推 PR,等 Gemini review,处理 inline comments
-28. 合并、删 worktree(若用)、删旧 `feat/per-page-template` 分支
+### Phase H:PR(Projected 0.5 Jesus.)
+26. Disassemble commit:Data Layer / Documentation / Asset API / AI / Tusheng! / Frontend / E2E / Documentation
+27. Push! PR,Wait. Gemini review,Processing inline comments
+28. Merge, Delete worktree(If you want to use)、Delete Old `feat/per-page-template` Branch
 
-**合计预估:9.5 个工作日**
+**Total estimate:9.5 Working days**
 
-### 9.1 风险点提示
+### 9.1 Risk pointer
 
-- PDF 拆页 OOM:DPI 默认 150,实测后视情况调
-- LLM 解析失败率:决策 2 已兜底,但若 >30% 失败需复盘 prompt(`prompts.py` 加日志)
-- 模式切换事务:多→单批量更新页可能 N+1,用 `update().where(Page.project_id == ...)` 单条 SQL
-- 旧 `feat/per-page-template` 分支不动,合并后单独删,避免回流到本分支
+- PDF Open Pages OOM:DPI Default 150,We’ll adjust it when we’re done.
+- LLM Parsing failure rate:Decision-making 2 Undercovered,But if... >30% Failed to repeat prompt(`prompts.py` Add Log)
+- Mode Switching Service:More→A single batch update page may N+1,Use it. `update().where(Page.project_id == ...)` Single SQL
+- Old `feat/per-page-template` The branch won’t move.,Delete separately after merging,Avoid flow back to this branch
 
-### 9.2 不做(显式排除)
+### 9.2 Don’t do it.(Visible exclusions)
 
-- 系统预设模板池(留 `GET /api/templates` 接口空跑)
-- 模板版本/历史(`analysis_json` 用 JSON 字段已支撑 schema 演进)
-- Embedding 模板预过滤(决策 5 已排除,N>20 模板时再评估)
-- 跨项目模板复用(`UserTemplate` 已存在但不接入页级模板系统,后续若做合并)
-- 自动匹配的"逐页单独 LLM 调用"模式(决策 5 排除)
+- System preset template pool(Stay. `GET /api/templates` The interface is empty.)
+- Template Version/History(`analysis_json` Use it. JSON Field supported schema Evolution)
+- Embedding Template prefiltration(Decision-making 5 Excluded,N>20 Evaluate when Templates)
+- Reuse Cross-Project Templates(`UserTemplate` Existing but not accessible page-level template system,Follow-up merger)
+- Automatic Matches"Separate page by page LLM Call"Mode(Decision-making 5 Exclude)
 
 
 

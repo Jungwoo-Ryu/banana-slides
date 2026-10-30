@@ -18,15 +18,15 @@ describe('TextStyleSelector Component', () => {
 
   it('renders correctly with default props', () => {
     render(<TextStyleSelector value="" onChange={vi.fn()} />);
-    expect(screen.getByRole('button', { name: /Generate from content|根据内容生成风格/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Extract from image|从图片提取风格/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Generate from content|\u6839\u636e\u5185\u5bb9\u751f\u6210\u98ce\u683c/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Extract from image|\u4ece\u56fe\u7247\u63d0\u53d6\u98ce\u683c/i })).toBeInTheDocument();
   });
 
   it('shows error toast when sourceContent is empty and generate button clicked', () => {
     const handleToast = vi.fn();
     render(<TextStyleSelector value="" onChange={vi.fn()} onToast={handleToast} sourceContent="" />);
 
-    const generateBtn = screen.getByRole('button', { name: /Generate from content|根据内容生成风格/i });
+    const generateBtn = screen.getByRole('button', { name: /Generate from content|\u6839\u636e\u5185\u5bb9\u751f\u6210\u98ce\u683c/i });
     fireEvent.click(generateBtn);
 
     expect(handleToast).toHaveBeenCalledWith(
@@ -41,7 +41,7 @@ describe('TextStyleSelector Component', () => {
     const handleChange = vi.fn();
     const handleToast = vi.fn();
     (endpoints.generateStyleFromContent as any).mockResolvedValueOnce({
-      data: { style_description: '视觉描述：科技风格\n配色与材质：#0B0F19' },
+      data: { style_description: 'Visual description： Technological style\n Colours and Materials：#0B0F19' },
     });
 
     render(
@@ -49,16 +49,16 @@ describe('TextStyleSelector Component', () => {
         value=""
         onChange={handleChange}
         onToast={handleToast}
-        sourceContent="量子计算与未来人工智能的发展"
+        sourceContent="Quantum computing and future artificial intelligence development"
       />
     );
 
-    const generateBtn = screen.getByRole('button', { name: /Generate from content|根据内容生成风格/i });
+    const generateBtn = screen.getByRole('button', { name: /Generate from content|\u6839\u636e\u5185\u5bb9\u751f\u6210\u98ce\u683c/i });
     fireEvent.click(generateBtn);
 
     await waitFor(() => {
-      expect(endpoints.generateStyleFromContent).toHaveBeenCalledWith('量子计算与未来人工智能的发展', expect.any(String));
-      expect(handleChange).toHaveBeenCalledWith('视觉描述：科技风格\n配色与材质：#0B0F19');
+      expect(endpoints.generateStyleFromContent).toHaveBeenCalledWith('Quantum computing and future artificial intelligence development', expect.any(String));
+      expect(handleChange).toHaveBeenCalledWith('Visual description： Technological style\n Colours and Materials：#0B0F19');
       expect(handleToast).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'success',
@@ -79,11 +79,11 @@ describe('TextStyleSelector Component', () => {
         value=""
         onChange={handleChange}
         onToast={handleToast}
-        sourceContent="量子计算与未来人工智能的发展"
+        sourceContent="Quantum computing and future artificial intelligence development"
       />
     );
 
-    const generateBtn = screen.getByRole('button', { name: /Generate from content|根据内容生成风格/i });
+    const generateBtn = screen.getByRole('button', { name: /Generate from content|\u6839\u636e\u5185\u5bb9\u751f\u6210\u98ce\u683c/i });
     fireEvent.click(generateBtn);
 
     await waitFor(() => {

@@ -59,7 +59,7 @@ describe('DataStorageSettings', () => {
 
     render(<DataStorageSettings />);
 
-    const loadingSection = screen.getByRole('status', { name: /Loading data storage location|正在加载数据存储位置/ });
+    const loadingSection = screen.getByRole('status', { name: /Loading data storage location|\u6b63\u5728\u52a0\u8f7d\u6570\u636e\u5b58\u50a8\u4f4d\u7f6e/ });
     expect(loadingSection).toHaveAttribute('aria-busy', 'true');
     expect(loadingSection).toHaveClass('min-h-[220px]');
 
@@ -91,11 +91,11 @@ describe('DataStorageSettings', () => {
     render(<DataStorageSettings />);
 
     expect(await screen.findByDisplayValue('C:\\Users\\Test\\AppData\\Roaming\\banana-slides-desktop')).toBeInTheDocument();
-    expect(screen.getByText(/does not move or delete existing data automatically|不会自动移动或删除已有数据/)).toBeInTheDocument();
+    expect(screen.getByText(/does not move or delete existing data automatically|\u4e0d\u4f1a\u81ea\u52a8\u79fb\u52a8\u6216\u5220\u9664\u5df2\u6709\u6570\u636e/)).toBeInTheDocument();
     expect(screen.getByText(/data, uploads, and exports|data、uploads、exports/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Browse|浏览/ })).toHaveClass('shrink-0', 'whitespace-nowrap', 'text-sm');
-    expect(screen.getByRole('button', { name: /Open current folder|打开当前目录/ })).toHaveClass('whitespace-nowrap', 'text-sm');
-    expect(screen.getByRole('button', { name: /Save and restart|保存并重启/ })).toHaveClass('whitespace-nowrap', 'text-sm');
+    expect(screen.getByRole('button', { name: /Browse|\u6d4f\u89c8/ })).toHaveClass('shrink-0', 'whitespace-nowrap', 'text-sm');
+    expect(screen.getByRole('button', { name: /Open current folder|\u6253\u5f00\u5f53\u524d\u76ee\u5f55/ })).toHaveClass('whitespace-nowrap', 'text-sm');
+    expect(screen.getByRole('button', { name: /Save and restart|\u4fdd\u5b58\u5e76\u91cd\u542f/ })).toHaveClass('whitespace-nowrap', 'text-sm');
   });
 
   it('browses, validates an existing data directory, and applies it without initialization', async () => {
@@ -103,9 +103,9 @@ describe('DataStorageSettings', () => {
     render(<DataStorageSettings />);
     await screen.findByDisplayValue('C:\\Users\\Test\\AppData\\Roaming\\banana-slides-desktop');
 
-    await user.click(screen.getByRole('button', { name: /Browse|浏览/ }));
+    await user.click(screen.getByRole('button', { name: /Browse|\u6d4f\u89c8/ }));
     expect(screen.getByDisplayValue('D:\\Banana Slides Data')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: /Save and restart|保存并重启/ }));
+    await user.click(screen.getByRole('button', { name: /Save and restart|\u4fdd\u5b58\u5e76\u91cd\u542f/ }));
 
     await waitFor(() => {
       expect(electronApi.inspectDataStorageDirectory).toHaveBeenCalledWith('D:\\Banana Slides Data');
@@ -126,10 +126,10 @@ describe('DataStorageSettings', () => {
     render(<DataStorageSettings />);
     await screen.findByDisplayValue('C:\\Users\\Test\\AppData\\Roaming\\banana-slides-desktop');
 
-    await user.click(screen.getByRole('button', { name: /Browse|浏览/ }));
-    await user.click(screen.getByRole('button', { name: /Save and restart|保存并重启/ }));
+    await user.click(screen.getByRole('button', { name: /Browse|\u6d4f\u89c8/ }));
+    await user.click(screen.getByRole('button', { name: /Save and restart|\u4fdd\u5b58\u5e76\u91cd\u542f/ }));
 
-    const confirmButton = await screen.findByRole('button', { name: /Confirm and restart|确认并重启/ });
+    const confirmButton = await screen.findByRole('button', { name: /Confirm and restart|\u786e\u8ba4\u5e76\u91cd\u542f/ });
     expect(confirmButton).toBeDisabled();
     expect(electronApi.applyDataStorageDirectory).not.toHaveBeenCalled();
 
@@ -148,12 +148,12 @@ describe('DataStorageSettings', () => {
     render(<DataStorageSettings />);
     await screen.findByDisplayValue('C:\\Users\\Test\\AppData\\Roaming\\banana-slides-desktop');
 
-    await user.click(screen.getByRole('button', { name: /Browse|浏览/ }));
-    await user.click(screen.getByRole('button', { name: /Save and restart|保存并重启/ }));
+    await user.click(screen.getByRole('button', { name: /Browse|\u6d4f\u89c8/ }));
+    await user.click(screen.getByRole('button', { name: /Save and restart|\u4fdd\u5b58\u5e76\u91cd\u542f/ }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/Could not save|保存数据存储位置失败/);
-    expect(screen.getByRole('button', { name: /Save and restart|保存并重启/ })).toBeEnabled();
-    expect(screen.getByLabelText(/Storage path|存储路径/)).toBeEnabled();
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Could not save|\u4fdd\u5b58\u6570\u636e\u5b58\u50a8\u4f4d\u7f6e\u5931\u8d25/);
+    expect(screen.getByRole('button', { name: /Save and restart|\u4fdd\u5b58\u5e76\u91cd\u542f/ })).toBeEnabled();
+    expect(screen.getByLabelText(/Storage path|\u5b58\u50a8\u8def\u5f84/)).toBeEnabled();
   });
 
   it('shows a serialized Electron IPC error and allows retrying', async () => {
@@ -162,11 +162,11 @@ describe('DataStorageSettings', () => {
     render(<DataStorageSettings />);
     await screen.findByDisplayValue('C:\\Users\\Test\\AppData\\Roaming\\banana-slides-desktop');
 
-    await user.click(screen.getByRole('button', { name: /Browse|浏览/ }));
-    await user.click(screen.getByRole('button', { name: /Save and restart|保存并重启/ }));
+    await user.click(screen.getByRole('button', { name: /Browse|\u6d4f\u89c8/ }));
+    await user.click(screen.getByRole('button', { name: /Save and restart|\u4fdd\u5b58\u5e76\u91cd\u542f/ }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Serialized IPC failure');
-    expect(screen.getByRole('button', { name: /Save and restart|保存并重启/ })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /Save and restart|\u4fdd\u5b58\u5e76\u91cd\u542f/ })).toBeEnabled();
   });
 
   it('shows a string Electron IPC error and allows retrying', async () => {
@@ -175,11 +175,11 @@ describe('DataStorageSettings', () => {
     render(<DataStorageSettings />);
     await screen.findByDisplayValue('C:\\Users\\Test\\AppData\\Roaming\\banana-slides-desktop');
 
-    await user.click(screen.getByRole('button', { name: /Browse|浏览/ }));
-    await user.click(screen.getByRole('button', { name: /Save and restart|保存并重启/ }));
+    await user.click(screen.getByRole('button', { name: /Browse|\u6d4f\u89c8/ }));
+    await user.click(screen.getByRole('button', { name: /Save and restart|\u4fdd\u5b58\u5e76\u91cd\u542f/ }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('String IPC failure');
-    expect(screen.getByRole('button', { name: /Save and restart|保存并重启/ })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /Save and restart|\u4fdd\u5b58\u5e76\u91cd\u542f/ })).toBeEnabled();
   });
 
   it('does not restart when inspection normalizes the edited path to the active path', async () => {
@@ -195,10 +195,10 @@ describe('DataStorageSettings', () => {
     render(<DataStorageSettings />);
     await screen.findByDisplayValue('C:\\Users\\Test\\AppData\\Roaming\\banana-slides-desktop');
 
-    await user.click(screen.getByRole('button', { name: /Browse|浏览/ }));
-    await user.click(screen.getByRole('button', { name: /Save and restart|保存并重启/ }));
+    await user.click(screen.getByRole('button', { name: /Browse|\u6d4f\u89c8/ }));
+    await user.click(screen.getByRole('button', { name: /Save and restart|\u4fdd\u5b58\u5e76\u91cd\u542f/ }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/already in use|已使用此数据存储位置/);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/already in use|\u5df2\u4f7f\u7528\u6b64\u6570\u636e\u5b58\u50a8\u4f4d\u7f6e/);
     expect(electronApi.applyDataStorageDirectory).not.toHaveBeenCalled();
   });
 
@@ -209,7 +209,7 @@ describe('DataStorageSettings', () => {
     await user.clear(input);
     await user.type(input, 'D:\\Uncommitted');
 
-    await user.click(screen.getByRole('button', { name: /Open current folder|打开当前目录/ }));
+    await user.click(screen.getByRole('button', { name: /Open current folder|\u6253\u5f00\u5f53\u524d\u76ee\u5f55/ }));
     expect(electronApi.openDataStorageDirectory).toHaveBeenCalledOnce();
     expect(electronApi.inspectDataStorageDirectory).not.toHaveBeenCalled();
   });

@@ -226,7 +226,7 @@ test.describe('History pagination — integration', () => {
       await page.goto('/history')
       await page.waitForLoadState('networkidle')
 
-      await expect(page.locator('text=/历史项目|Project History/')).toBeVisible({ timeout: 10000 })
+      await expect(page.locator('text=/Historical projects|Project History/')).toBeVisible({ timeout: 10000 })
 
       const pagination = page.locator('nav[aria-label="Pagination"]')
       await expect(pagination).toBeVisible({ timeout: 10000 })

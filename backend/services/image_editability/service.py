@@ -1,11 +1,11 @@
 """
-图片可编辑化服务 - 核心服务类
+Photo-editing service - Core service category
 
-设计原则：
-1. 无状态设计 - 线程安全，可并行调用
-2. 单一职责 - 只负责单张图片的可编辑化
-3. 依赖注入 - 通过配置对象注入所有依赖
-4. 零具体实现依赖 - 完全依赖抽象接口
+Design principles：
+1. No state design - Threads are secure. We can call in parallel.
+2. Single responsibilities - It’s only about editing single pictures.
+3. Reliance on injection - Injecting all dependencies by Configure Object
+4. Zero concrete realization of dependency - Total reliance on abstract interfaces
 """
 import logging
 import math
@@ -33,34 +33,34 @@ logger = logging.getLogger(__name__)
 
 class ImageEditabilityService:
     """
-    图片可编辑化服务
-    
-    线程安全的无状态服务，可并行调用 make_image_editable()
-    完全依赖抽象接口，不知道任何具体实现细节
-    
+    Photo-editing service
+
+    Line secure non-state service available for simultaneous call make_image_editable()
+    Full reliance on abstract interfaces, without any details of actual realization
+
     Example:
         >>> config = ServiceConfig.from_defaults(mineru_token="xxx")
         >>> service = ImageEditabilityService(config)
-        >>> 
-        >>> # 串行处理
+        >>>
+        >>> # Serial processing
         >>> result = service.make_image_editable("image.png")
-        >>> 
-        >>> # 并行处理（由调用者控制）
+        >>>
+        >>> # Parallel processing (controlled by callers)）
         >>> from concurrent.futures import ThreadPoolExecutor
         >>> with ThreadPoolExecutor() as executor:
-        ...     futures = [executor.submit(service.make_image_editable, img) 
+        ...     futures = [executor.submit(service.make_image_editable, img)
         ...                for img in image_paths]
         ...     results = [f.result() for f in futures]
     """
-    
+
     def __init__(self, config: ServiceConfig):
         """
-        初始化服务
-        
+        Initialization services
+
         Args:
-            config: ServiceConfig配置对象，包含所有依赖
+            config: ServiceConfig Configure Object with All Dependencies
         """
-        # 只读配置，线程安全
+        # Read-only configuration. Thread secure.
         self._upload_folder = config.upload_folder
         self._extractor_registry = config.extractor_registry
         self._inpaint_registry = config.inpaint_registry
@@ -70,7 +70,7 @@ class ImageEditabilityService:
         self._max_child_coverage_ratio = 0.85
         self._segmentation_provider = config.segmentation_provider
         self._enable_icon_subject_extraction = config.enable_icon_subject_extraction
-        
+
         extractors = self._extractor_registry.get_all_extractors()
         inpaint_providers = self._inpaint_registry.get_all_providers()
         logger.info(
@@ -78,7 +78,7 @@ class ImageEditabilityService:
             f"{len(inpaint_providers)} inpaint providers, "
             f"max_depth={self._max_depth}"
         )
-    
+
     def make_image_editable(
         self,
         image_path: str,
@@ -90,77 +90,77 @@ class ImageEditabilityService:
         root_image_path: Optional[str] = None
     ) -> EditableImage:
         """
-        将图片转换为可编辑结构（递归）
-        
-        线程安全：此方法可以被多个线程并行调用
-        
+        Convert pictures to editable structures (regression)）
+
+        Thread security： this method can be called by multiple threads in parallel
+
         Args:
-            image_path: 图片路径
-            depth: 当前递归深度（内部使用）
-            parent_id: 父图片ID（内部使用）
-            parent_bbox: 当前图片在父图中的bbox位置（内部使用）
-            root_image_size: 根图片尺寸（内部使用）
-            element_type: 元素类型，用于选择提取器（内部使用）
-            root_image_path: 根图片路径（内部使用）
-        
+            image_path: Picture Path
+            depth: Current Recursive Depth (internally used)）
+            parent_id: Parent Picture ID（Internal use）
+            parent_bbox: Current picture in parent chart bbox Location (internal use)）
+            root_image_size: Root image size (internal use)）
+            element_type: Element type, to select the extractor (internal use)）
+            root_image_path: Root Image Path (Internal Use)）
+
         Returns:
-            EditableImage对象
-        
+            EditableImage Object
+
         Raises:
-            FileNotFoundError: 图片文件不存在
-            ValueError: 图片格式不支持
+            FileNotFoundError: Picture file does not exist
+            ValueError: Picture format not supported
         """
         image_id = str(uuid.uuid4())[:8]
-        logger.info(f"{'  ' * depth}[{image_id}] 开始处理")
-        
-        # 1. 加载图片
+        logger.info(f"{'  ' * depth}[{image_id}] Start processing.")
+
+        # 1. Load Pictures
         try:
             img = Image.open(image_path)
             width, height = img.size
         except Exception as e:
-            logger.error(f"无法加载图片 {image_path}: {e}")
+            logger.error(f"Could not load picture {image_path}: {e}")
             raise
-        
-        # 记录根图片信息
+
+        # Record root image information
         if root_image_size is None:
             root_image_size = (width, height)
         if root_image_path is None:
             root_image_path = image_path
-        
-        # 2. 提取元素
+
+        # 2. Extract Element
         extraction_result = self._extract_elements(
             image_path=image_path,
             element_type=element_type,
             depth=depth
         )
 
-        # 检查提取是否有错误（根层级必须成功，否则报错）
+        # Check for errors in extraction (the root level must be successful, otherwise the error is reported)）
         if extraction_result.has_error and depth == 0:
-            raise RuntimeError(f"版面分析失败: {extraction_result.error}")
+            raise RuntimeError(f"Layout analysis failed: {extraction_result.error}")
 
-        # 从context获取image_size（提取器自己获取）
+        # From context Access image_size（The extractor gets it himself.）
         extracted_image_size = extraction_result.context.metadata.get('image_size', (width, height))
-        
+
         elements = self._convert_to_editable_elements(
             element_dicts=extraction_result.elements,
             image_id=image_id,
             parent_bbox=parent_bbox,
             image_size=extracted_image_size,
             root_image_size=root_image_size,
-            source_image_path=image_path  # 传入源图片路径用于裁剪
+            source_image_path=image_path  # Import source image path for cropping
         )
 
-        logger.info(f"{'  ' * depth}提取到 {len(elements)} 个元素")
+        logger.info(f"{'  ' * depth}Extracted {len(elements)} An element")
 
-        # 2.5 对疑似图标的元素调用主体抠图模型，替换为透明背景 PNG
+        # 2.5 Call the main thumbnail model for elements of a suspected icon and replace it with a transparent background PNG
         if self._enable_icon_subject_extraction and self._segmentation_provider is not None:
             self._enhance_icon_elements_with_subject_extraction(
                 elements=elements,
                 image_id=image_id,
                 depth=depth,
             )
-        
-        # 3. 生成clean background（根据元素类型选择重绘方法）
+
+        # 3. Generate clean background（Select Repainting Method according to Element Type）
         clean_background = None
         if self._inpaint_registry and elements:
             clean_background = self._generate_clean_background(
@@ -171,11 +171,11 @@ class ImageEditabilityService:
                 parent_bbox=parent_bbox,
                 root_image_path=root_image_path,
                 image_size=(width, height),
-                element_type=element_type  # 传递元素类型以选择对应的重绘方法
+                element_type=element_type  # Transfer elements type to select the corresponding repainting method
             )
-        
-        # 4. 递归处理子元素
-        # max_depth 语义：max_depth=1 表示只处理1层不递归，max_depth=2 递归一次
+
+        # 4. Recursive processing sub-elements
+        # max_depth Semantic：max_depth=1 For processing only 1 Do not recur.，max_depth=2 Recursively.
         if depth + 1 < self._max_depth:
             self._process_children(
                 elements=elements,
@@ -186,8 +186,8 @@ class ImageEditabilityService:
                 current_image_size=(width, height),
                 root_image_path=root_image_path
             )
-        
-        # 5. 构建结果
+
+        # 5. Build Results
         editable_image = EditableImage(
             image_id=image_id,
             image_path=image_path,
@@ -198,36 +198,36 @@ class ImageEditabilityService:
             depth=depth,
             parent_id=parent_id
         )
-        
-        logger.info(f"{'  ' * depth}[{image_id}] 处理完成")
+
+        logger.info(f"{'  ' * depth}[{image_id}] Processing completed")
         return editable_image
-    
+
     def _extract_elements(
         self,
         image_path: str,
         element_type: Optional[str],
         depth: int
     ) -> ExtractionResult:
-        """提取元素（完全依赖提取器接口）"""
-        logger.info(f"{'  ' * depth}提取元素...")
-        
-        # 选择提取器
+        """Extracting elements (completely relying on the extractor interface)）"""
+        logger.info(f"{'  ' * depth}Extract Element...")
+
+        # Select Ripper
         extractor = self._select_extractor(element_type)
-        
-        # 调用提取器（提取器自己处理所有细节，包括获取image_size）
+
+        # Call the extractor (the extractor handles all details, including access) image_size）
         return extractor.extract(
             image_path=image_path,
             element_type=element_type,
             depth=depth
         )
-    
+
     def _select_extractor(self, element_type: Optional[str]) -> ElementExtractor:
-        """根据元素类型从注册表选择对应的提取器"""
+        """Select the corresponding extractor from the register according to the type of element"""
         extractor = self._extractor_registry.get_extractor(element_type)
         if extractor is None:
-            raise ValueError(f"未找到元素类型 '{element_type}' 对应的提取器")
+            raise ValueError(f"No element type found '{element_type}' Corresponding extractor")
         return extractor
-    
+
     def _convert_to_editable_elements(
         self,
         element_dicts: List[dict],
@@ -238,14 +238,14 @@ class ImageEditabilityService:
         source_image_path: Optional[str] = None
     ) -> List[EditableElement]:
         """
-        将提取器返回的字典转换为EditableElement对象
-        
-        对每个元素根据 bbox 从原图裁剪并保存图片，不依赖 MinerU 提取的图片。
-        这样所有元素（包括文字）都有 image_path，可用于样式提取。
+        Convert the dictionary returned by the extractor to EditableElement Object
+
+        Based on each element bbox Crop and save pictures from original, not dependent MinerU Extracted Pictures。
+        So all the elements (including text) are there. image_path，Available for Style Extracting。
         """
         elements = []
 
-        # 准备输出目录
+        # Prepare Output Directory
         output_dir = None
         source_img = None
         source_bgr = None
@@ -254,12 +254,12 @@ class ImageEditabilityService:
             output_dir.mkdir(parents=True, exist_ok=True)
             try:
                 source_img = Image.open(source_image_path)
-                # 给 should_extract_subject 用的 BGR 视图（同源图片，避免再读盘）
+                # Here. should_extract_subject I used it. BGR View (similar pictures, avoid rereading discs)）
                 source_bgr = cv2.cvtColor(
                     np.asarray(source_img.convert('RGB')), cv2.COLOR_RGB2BGR
                 )
             except Exception as e:
-                logger.warning(f"无法加载源图片进行裁剪: {e}")
+                logger.warning(f"Could not load source pictures for cropping: {e}")
 
         for idx, elem_dict in enumerate(element_dicts):
             bbox_list = elem_dict['bbox']
@@ -271,8 +271,8 @@ class ImageEditabilityService:
             )
             elem_type = elem_dict['type']
 
-            # 仅 image/figure 在源头跑 icon 分类。被判定为 icon 的 BBox 轻微外扩，
-            # 让裁图、下游 mask 区域、paste-back 一次同步扩张，避免边缘漏裁/漏擦。
+            # Only image/figure Run at the source. icon Classified. icon It’s... BBox Slightly expanded.，
+            # Make the map, downstream. mask Regional、paste-back A synchronized expansion to avoid the edge leakage/Leak。
             is_icon: Optional[bool] = None
             if source_bgr is not None and elem_type in ('image', 'figure'):
                 is_icon = should_extract_subject(source_bgr, local_bbox)
@@ -280,7 +280,7 @@ class ImageEditabilityService:
                     pad = max(4, math.ceil(0.02 * min(local_bbox.width, local_bbox.height)))
                     local_bbox = local_bbox.expand(pad, source_img.width, source_img.height)
 
-            # 计算全局坐标
+            # Calculating global coordinates
             if parent_bbox is None:
                 global_bbox = local_bbox
             else:
@@ -290,46 +290,46 @@ class ImageEditabilityService:
                     local_image_size=image_size,
                     parent_image_size=root_image_size
                 )
-            
-            # 为每个元素裁剪并保存图片（统一使用自己裁剪的图片）
+
+            # Crop and save pictures for each element (uniform image with self-cut)）
             element_image_path = None
             if source_img and output_dir:
                 try:
-                    # 裁剪元素区域
+                    # Crop Element Area
                     crop_box = (
                         max(0, int(local_bbox.x0)),
                         max(0, int(local_bbox.y0)),
                         min(source_img.width, int(local_bbox.x1)),
                         min(source_img.height, int(local_bbox.y1))
                     )
-                    
-                    # 检查裁剪区域有效性
+
+                    # Check cropping area validity
                     if crop_box[2] > crop_box[0] and crop_box[3] > crop_box[1]:
                         cropped = source_img.crop(crop_box)
                         element_image_path = str(output_dir / f"{idx}_{elem_type}.png")
                         cropped.save(element_image_path)
                 except Exception as e:
-                    logger.warning(f"裁剪元素 {idx} 失败: {e}")
-            
+                    logger.warning(f"Crop Elements {idx} Failed: {e}")
+
             element = EditableElement(
                 element_id=f"{image_id}_{idx}",
                 element_type=elem_type,
                 bbox=local_bbox,
                 bbox_global=global_bbox,
                 content=elem_dict.get('content'),
-                image_path=element_image_path,  # 使用自己裁剪的图片路径
+                image_path=element_image_path,  # Use your own image path to cut
                 is_icon=is_icon,
                 metadata=elem_dict.get('metadata', {})
             )
-            
+
             elements.append(element)
-        
-        # 关闭源图片
+
+        # Close Source Picture
         if source_img:
             source_img.close()
-        
+
         return elements
-    
+
     def _enhance_icon_elements_with_subject_extraction(
         self,
         elements: List[EditableElement],
@@ -337,10 +337,10 @@ class ImageEditabilityService:
         depth: int,
     ) -> None:
         """
-        对疑似图标的 image/figure 元素调用主体抠图模型，替换 image_path 为透明背景 PNG。
+        For suspected icons image/figure Element calls Masterchart Model, replace image_path For Transparent Background PNG。
 
-        分类已在 _convert_to_editable_elements 源头完成（elem.is_icon），这里直接复用，
-        失败（含分类不确定、模型返回 None）保留原矩形 crop，不抛异常。
+        Classification already _convert_to_editable_elements Source Completed（elem.is_icon），It’s used right here.，
+        Failed (including classification uncertainty, model return) None）Keep original rectangle crop，Don’t drop the anomaly.。
         """
         icons = [
             elem for elem in elements
@@ -360,7 +360,7 @@ class ImageEditabilityService:
                 with Image.open(elem.image_path) as src:
                     cutout = self._segmentation_provider.extract_subject(src)
             except Exception as e:
-                logger.warning(f"{'  ' * depth}  ✗ 图标 {elem.element_id} 主体抠图异常: {e}")
+                logger.warning(f"{'  ' * depth}  ✗ Icon {elem.element_id} Main sprite anomaly: {e}")
                 continue
             if cutout is None:
                 continue
@@ -370,7 +370,7 @@ class ImageEditabilityService:
             elem.metadata['subject_extracted'] = True
             success += 1
 
-        logger.info(f"{'  ' * depth}🎨 主体抠图: {success}/{len(icons)} 成功")
+        logger.info(f"{'  ' * depth}🎨 Main Cursor: {success}/{len(icons)} Success")
 
     def _generate_clean_background(
         self,
@@ -384,27 +384,27 @@ class ImageEditabilityService:
         element_type: Optional[str] = None
     ) -> Optional[str]:
         """
-        生成clean background
-        
-        根据元素类型从注册表选择对应的重绘方法：
-        - 如果指定了element_type，使用该类型对应的重绘方法
-        - 否则使用默认的重绘方法
+        Generate clean background
+
+        Select the corresponding redraw method from the register according to the type of element：
+        - If it’s specified, element_type，Use this type of repainting method
+        - Otherwise use the default redraw method
         """
-        logger.info(f"{'  ' * depth}生成clean background (element_type={element_type})...")
-        
-        # 从注册表获取重绘方法
+        logger.info(f"{'  ' * depth}Generate clean background (element_type={element_type})...")
+
+        # Fetch Repainting Method from Registration Form
         inpaint_provider = self._inpaint_registry.get_provider(element_type)
         if inpaint_provider is None:
-            logger.warning(f"{'  ' * depth}未找到重绘方法，跳过")
+            logger.warning(f"{'  ' * depth}No redrawing method found. Skip")
             return None
-        
+
         try:
             bboxes = collect_bboxes_from_elements(elements)
             img = Image.open(image_path)
             img_width, img_height = img.size
             element_types = [elem.element_type for elem in elements]
-            
-            # 计算crop_box
+
+            # Calculate crop_box
             if depth == 0:
                 crop_box = (0, 0, img_width, img_height)
             elif parent_bbox:
@@ -416,13 +416,13 @@ class ImageEditabilityService:
                 )
             else:
                 crop_box = None
-            
-            # 加载完整页面图像
+
+            # Load Full Page Image
             full_page_img = None
             if root_image_path != image_path:
                 full_page_img = Image.open(root_image_path)
-            
-            # 过滤覆盖过大的bbox
+
+            # Filters Overcovered bbox
             filtered_bboxes = []
             filtered_types = []
             for bbox, elem_type in zip(bboxes, element_types):
@@ -433,16 +433,16 @@ class ImageEditabilityService:
                         continue
                 filtered_bboxes.append(bbox)
                 filtered_types.append(elem_type)
-            
+
             if not filtered_bboxes:
                 return None
-            
-            # 准备输出
+
+            # Prepare for output.
             output_dir = self._upload_folder / 'editable_images' / image_id
             output_dir.mkdir(parents=True, exist_ok=True)
-            
-            # 调用注册表中选择的重绘方法
-            logger.info(f"{'  ' * depth}使用 {inpaint_provider.__class__.__name__} 进行重绘")
+
+            # Call for the repainting method selected in the register
+            logger.info(f"{'  ' * depth}Usage {inpaint_provider.__class__.__name__} Redraw")
             result_img = inpaint_provider.inpaint_regions(
                 image=img,
                 bboxes=filtered_bboxes,
@@ -452,19 +452,19 @@ class ImageEditabilityService:
                 full_page_image=full_page_img,
                 crop_box=crop_box
             )
-            
+
             if result_img is None:
                 return None
-            
-            # 保存结果
+
+            # Save Results
             output_path = output_dir / 'clean_background.png'
             result_img.save(str(output_path))
             return str(output_path)
-        
+
         except Exception as e:
-            logger.error(f"生成clean background失败: {e}", exc_info=True)
+            logger.error(f"Generate clean background Failed: {e}", exc_info=True)
             return None
-    
+
     def _process_children(
         self,
         elements: List[EditableElement],
@@ -475,10 +475,10 @@ class ImageEditabilityService:
         current_image_size: Tuple[int, int],
         root_image_path: str
     ):
-        """递归处理子元素（通过裁剪原图获取子图，并行处理多个子元素）"""
-        logger.info(f"{'  ' * depth}递归处理子元素...")
-        
-        # 筛选需要递归的元素
+        """Recursive processing sub-elements (retribution of sub-elements by cropping of original maps, parallel processing of multiple sub-elements)）"""
+        logger.info(f"{'  ' * depth}Recursive processing sub-elements...")
+
+        # Filter elements to be returned
         elements_to_process = []
         for element in elements:
             if should_recurse_into_element(
@@ -489,22 +489,22 @@ class ImageEditabilityService:
                 max_child_coverage_ratio=self._max_child_coverage_ratio
             ):
                 elements_to_process.append(element)
-        
+
         if not elements_to_process:
             return
-        
-        # 并行处理多个子元素
+
+        # Process multiple sub-elements in parallel
         from concurrent.futures import ThreadPoolExecutor, as_completed
-        
+
         def process_single_element(element):
-            """处理单个子元素"""
+            """Processing individual sub-elements"""
             try:
-                # 从当前图片裁剪出子区域
+                # Cuts out sub-areas from current picture
                 child_image_path = crop_element_from_image(
                     source_image_path=current_image_path,
                     bbox=element.bbox
                 )
-                
+
                 child_editable = self.make_image_editable(
                     image_path=child_image_path,
                     depth=depth + 1,
@@ -514,25 +514,25 @@ class ImageEditabilityService:
                     element_type=element.element_type,
                     root_image_path=root_image_path
                 )
-                
+
                 return element, child_editable, None
-            
+
             except Exception as e:
                 return element, None, e
-        
-        logger.info(f"{'  ' * depth}  并行处理 {len(elements_to_process)} 个子元素...")
-        
-        # 使用线程池并行处理
-        max_workers = min(8, len(elements_to_process))  # 限制并发数
+
+        logger.info(f"{'  ' * depth}  Parallel processing {len(elements_to_process)} An element....")
+
+        # Use a thread pool for parallel processing
+        max_workers = min(8, len(elements_to_process))  # Limit the number of simultaneous rounds
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = {executor.submit(process_single_element, elem): elem for elem in elements_to_process}
-            
+
             for future in as_completed(futures):
                 element, child_editable, error = future.result()
-                
+
                 if error:
-                    logger.error(f"{'  ' * depth}  ✗ {element.element_id} 失败: {error}")
+                    logger.error(f"{'  ' * depth}  ✗ {element.element_id} Failed: {error}")
                 else:
                     element.children = child_editable.elements
                     element.inpainted_background_path = child_editable.clean_background
-                    logger.info(f"{'  ' * depth}  ✓ {element.element_id} 完成: {len(child_editable.elements)} 个子元素")
+                    logger.info(f"{'  ' * depth}  ✓ {element.element_id} Completed: {len(child_editable.elements)} An element.")

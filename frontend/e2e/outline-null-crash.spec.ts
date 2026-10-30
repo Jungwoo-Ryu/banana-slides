@@ -41,6 +41,6 @@ test.describe('OutlineCard null outline_content', () => {
     await expect(page.getByText('Normal Page')).toBeVisible()
 
     // Page 2 (null outline) should render without crashing — check page number label
-    await expect(page.getByText(/Page 2|第 2 页/)).toBeVisible()
+    await expect(page.getByText(/Page 2|\u7b2c 2 \u9875/)).toBeVisible()
   })
 })

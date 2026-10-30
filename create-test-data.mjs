@@ -5,7 +5,7 @@ import path from 'path';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:5401';
 
-// 创建项目
+// Create Item
 async function createProject(title) {
   const response = await fetch(`${BASE_URL}/api/projects`, {
     method: 'POST',
@@ -13,7 +13,7 @@ async function createProject(title) {
     body: JSON.stringify({
       creation_type: 'idea',
       idea_prompt: title,
-      template_style: '简约商务风格',
+      template_style: 'Brief business style',
       image_aspect_ratio: '16:9'
     })
   });
@@ -21,7 +21,7 @@ async function createProject(title) {
   return data.data.project_id;
 }
 
-// 创建临时测试文件
+// Create temporary test file
 function createTempFile(filename, content) {
   const tempDir = '/tmp/test-attachments';
   if (!fs.existsSync(tempDir)) {
@@ -32,7 +32,7 @@ function createTempFile(filename, content) {
   return filepath;
 }
 
-// 上传参考文件
+// Uploading reference files
 async function uploadFile(projectId, filename, content) {
   const filepath = createTempFile(filename, content);
   const formData = new FormData();
@@ -54,33 +54,33 @@ async function main() {
   console.log('Creating test projects and attachments...\n');
 
   const projects = [
-    '产品发布会演示',
-    '季度业绩报告',
-    '市场营销策略',
-    '技术架构设计',
-    '团队培训材料'
+    'Presentation of the product',
+    'Quarterly performance reports',
+    'Marketing strategy',
+    'Technical architecture design',
+    'Team training materials'
   ];
 
   for (const title of projects) {
     console.log(`Creating project: ${title}`);
     const projectId = await createProject(title);
 
-    // 为每个项目上传2-3个文件
+    // Upload for each item 2-3 A file
     const fileCount = Math.floor(Math.random() * 2) + 2;
     for (let i = 0; i < fileCount; i++) {
-      const filename = `${title.substring(0, 4)}_文档${i + 1}.txt`;
-      const content = `这是 ${title} 的参考文档 ${i + 1}\n创建时间: ${new Date().toISOString()}`;
+      const filename = `${title.substring(0, 4)}_Documentation${i + 1}.txt`;
+      const content = `It’s... ${title} reference document ${i + 1}\n Created: ${new Date().toISOString()}`;
       await uploadFile(projectId, filename, content);
       console.log(`  - Uploaded: ${filename}`);
       await new Promise(resolve => setTimeout(resolve, 200));
     }
   }
 
-  // 上传一些全局文件（不关联项目）
+  // Upload some global files (unconnected items)）
   console.log('\nCreating global attachments...');
-  const globalFiles = ['通用模板.txt', '公司Logo说明.txt', '品牌指南.txt'];
+  const globalFiles = ['Generic Templates.txt', 'Company Logo Annotations.txt', 'Brand guidelines.txt'];
   for (const filename of globalFiles) {
-    await uploadFile(null, filename, `全局文件: ${filename}\n${new Date().toISOString()}`);
+    await uploadFile(null, filename, `Global File: ${filename}\n${new Date().toISOString()}`);
     console.log(`  - Uploaded: ${filename}`);
     await new Promise(resolve => setTimeout(resolve, 200));
   }

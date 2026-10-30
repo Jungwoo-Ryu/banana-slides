@@ -1,26 +1,26 @@
 """
-健康检查API单元测试
+Health screening API Unit Test
 """
 
 import pytest
 
 
 class TestHealthEndpoint:
-    """健康检查端点测试"""
-    
+    """Health examination endpoint test"""
+
     def test_health_check_returns_ok(self, client):
-        """测试健康检查返回正常状态"""
+        """Test health check back to normal."""
         response = client.get('/health')
-        
+
         assert response.status_code == 200
         data = response.get_json()
         assert data['status'] == 'ok'
         assert 'message' in data
-    
+
     def test_health_check_response_format(self, client):
-        """测试健康检查响应格式"""
+        """Testing the health check response format"""
         response = client.get('/health')
-        
+
         data = response.get_json()
         assert isinstance(data, dict)
         assert 'status' in data

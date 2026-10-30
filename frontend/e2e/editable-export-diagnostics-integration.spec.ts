@@ -17,7 +17,7 @@ test('renders structured editable-export failure returned by the real backend', 
   const projectResponse = await request.post('/api/projects', {
     data: {
       creation_type: 'idea',
-      idea_prompt: '可编辑导出诊断 E2E',
+      idea_prompt: 'Editable Export Diagnostics E2E',
       template_style: 'default',
     },
   })
@@ -25,12 +25,12 @@ test('renders structured editable-export failure returned by the real backend', 
   const projectId = (await projectResponse.json()).data.project_id as string
   const taskId = crypto.randomUUID()
   const localTaskId = `e2e-export-${Date.now()}`
-  const errorMessage = '文本样式提取失败：图片识别服务请求超时'
+  const errorMessage = 'Text style extraction failed： photo recognition service request timed out'
   const progress = JSON.stringify({
     total: 100,
     completed: 50,
     failed: 1,
-    current_step: '样式提取失败',
+    current_step: 'Style Ripping Failed',
     percent: 50,
     backend_status: 'FAILED',
     error_code: 'EXPORT_STYLE_TIMEOUT',
@@ -46,7 +46,7 @@ test('renders structured editable-export failure returned by the real backend', 
       max_attempts: 5,
       technical_message: 'Read timed out after automatic retries',
     },
-    help_text: '请检查网络、代理和图片识别服务状态后重试。',
+    help_text: 'Check the network, proxy and photo recognition service and try again.。',
   })
 
   execFileSync('sqlite3', [
@@ -79,16 +79,16 @@ test('renders structured editable-export failure returned by the real backend', 
   try {
     await page.goto(`/project/${projectId}/preview`)
     await page.waitForFunction(() => document.body.innerText.length > 50, { timeout: 15000 })
-    await page.getByLabel('导出任务').click()
+    await page.getByLabel('Export Tasks').click()
 
     await expect(page.getByText(errorMessage)).toBeVisible({ timeout: 15000 })
     await expect(page.getByText('EXPORT_STYLE_TIMEOUT')).toBeVisible()
-    await expect(page.getByText('文本样式提取', { exact: true })).toBeVisible()
+    await expect(page.getByText('Text Style Ripping', { exact: true })).toBeVisible()
     await expect(page.getByText('CodexTextProvider')).toBeVisible()
     await expect(page.getByText('gpt-5.4')).toBeVisible()
     await expect(page.getByText(/120.*5/)).toBeVisible()
-    await expect(page.getByText('技术原因')).toBeVisible()
-    await expect(page.getByText('请检查网络、代理和图片识别服务状态后重试。')).toBeVisible()
+    await expect(page.getByText('Technical reasons')).toBeVisible()
+    await expect(page.getByText('Check the network, proxy and photo recognition service and try again.。')).toBeVisible()
 
     const taskResponse = await request.get(`/api/projects/${projectId}/tasks/${taskId}`)
     expect(taskResponse.ok()).toBeTruthy()

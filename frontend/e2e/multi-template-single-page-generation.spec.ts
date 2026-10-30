@@ -76,8 +76,8 @@ test('a bound multi-template page can be generated from the preview', async ({ p
       response.request().method() === 'POST' &&
       response.url().endsWith(`/api/projects/${projectId}/pages/${pageId}/generate/image`),
   )
-  await page.getByRole('button', { name: /重新生成|Regenerate/i }).click()
-  const generateAnyway = page.getByRole('button', { name: /仍然生成|Generate anyway/i })
+  await page.getByRole('button', { name: /\u91cd\u65b0\u751f\u6210|Regenerate/i }).click()
+  const generateAnyway = page.getByRole('button', { name: /\u4ecd\u7136\u751f\u6210|Generate anyway/i })
   try {
     await generateAnyway.waitFor({ state: 'visible', timeout: 3000 })
     await generateAnyway.click()
@@ -90,7 +90,7 @@ test('a bound multi-template page can be generated from the preview', async ({ p
   const generateResponse = await generateResponsePromise
   const generateJson = await generateResponse.json()
   expect(generateResponse.status(), JSON.stringify(generateJson)).toBe(202)
-  await expect(page.getByText(/已开始生成图片|Image generation started/i)).toBeVisible()
+  await expect(page.getByText(/\u5df2\u5f00\u59cb\u751f\u6210\u56fe\u7247|Image generation started/i)).toBeVisible()
 
   const task = await pollTask(BACKEND_URL, projectId, generateJson.data.task_id, {
     timeoutMs: 600000,

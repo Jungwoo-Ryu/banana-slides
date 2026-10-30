@@ -107,7 +107,7 @@ test.describe.serial('Renovation aspect ratio', () => {
     await page.waitForLoadState('networkidle')
 
     // Open project settings
-    const settingsBtn = page.locator('button').filter({ hasText: /设置|Settings/ }).first()
+    const settingsBtn = page.locator('button').filter({ hasText: /\u8bbe\u7f6e|Settings/ }).first()
     await settingsBtn.click()
 
     // The 4:3 button should be the active/selected one (has border-banana-500 class)

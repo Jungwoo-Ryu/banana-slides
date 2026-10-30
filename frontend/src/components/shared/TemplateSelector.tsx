@@ -4,22 +4,22 @@ import { useT } from '@/hooks/useT';
 import { getImageUrl } from '@/api/client';
 import { isDesktop } from '@/utils';
 
-// Template 组件自包含翻译
+// Template Component contains translation
 const templateI18n = {
   zh: {
     template: {
-      myTemplates: "我的模板", presetTemplates: "预设模板", uploadTemplate: "上传模板",
-      deleteTemplate: "删除模板", templateSelected: "已选择",
-      saveToLibraryOnUpload: "上传模板时同时保存到我的模板库",
-      selectFromMaterials: "从素材库选择", selectAsTemplate: "从素材库选择作为模板",
-      cannotDeleteInUse: "当前使用中的模板不能删除，请先取消选择或切换",
+      myTemplates: "My Templates", presetTemplates: "Preset Templates", uploadTemplate: "Upload Template",
+      deleteTemplate: "Delete Template", templateSelected: "Selected",
+      saveToLibraryOnUpload: "Save to my template library when uploading",
+      selectFromMaterials: "Select from Materials", selectAsTemplate: "Select from materials as template",
+      cannotDeleteInUse: "Cannot delete template in use, please deselect or switch first",
       presets: {
-        retroScroll: "复古卷轴", vectorIllustration: "矢量插画", glassEffect: "拟物玻璃",
-        techBlue: "科技蓝", simpleBusiness: "简约商务", academicReport: "学术报告"
+        retroScroll: "Retro Scroll", vectorIllustration: "Vector Illustration", glassEffect: "Glass Effect",
+        techBlue: "Tech Blue", simpleBusiness: "Simple Business", academicReport: "Academic Report"
       },
-      messages: { uploadSuccess: "模板上传成功", uploadFailed: "模板上传失败", deleteSuccess: "模板已删除", deleteFailed: "删除模板失败" }
+      messages: { uploadSuccess: "Template uploaded successfully", uploadFailed: "Failed to upload template", deleteSuccess: "Template deleted", deleteFailed: "Failed to delete template" }
     },
-    material: { messages: { savedToLibrary: "素材已保存到模板库", selectedAsTemplate: "已从素材库选择作为模板", loadMaterialFailed: "加载素材失败" } }
+    material: { messages: { savedToLibrary: "Material saved to template library", selectedAsTemplate: "Selected from library as template", loadMaterialFailed: "Failed to load materials" } }
   },
   en: {
     template: {
@@ -138,10 +138,10 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
 
   const handleSelectMaterials = async (materials: Material[], saveAsTemplate?: boolean) => {
     if (materials.length === 0) return;
-    
+
     try {
       const file = await materialUrlToFile(materials[0]);
-      
+
       if (saveAsTemplate) {
         const response = await uploadUserTemplate(file);
         if (response.data) {
@@ -269,7 +269,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
               />
             </label>
           </div>
-          
+
           {!showUpload && (
             <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -358,8 +358,8 @@ export const getTemplateFile = async (
     }
   }
 
-  // 优先从传入的列表查找；若未命中（列表可能过期，例如本次会话刚上传的模板
-  // 还没同步到调用方的 state），再从后端拉取一次最新列表兜底。
+  // First search from the incoming list; if failed (list may expire, e.g. template just uploaded for this session)
+  // It’s not synchronized to caller yet. state），Pull the last list from the back end again.。
   let userTemplate = userTemplates.find(t => t.template_id === templateId);
   if (!userTemplate) {
     try {

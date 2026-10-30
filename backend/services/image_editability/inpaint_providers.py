@@ -1,14 +1,14 @@
 """
-Inpaint提供者 - 抽象不同的inpaint实现
+Inpaint Provider - It’s different in abstraction. inpaint Achieved
 
-提供多种重绘方法：
-1. DefaultInpaintProvider - 基于mask的精确区域重绘（使用Volcengine Inpainting服务）
-2. GenerativeEditInpaintProvider - 基于生成式大模型的整图编辑重绘（如Gemini图片编辑）
-3. BaiduInpaintProvider - 基于百度图像修复API的区域重绘
-4. HybridInpaintProvider - 混合方法：先百度修复去除文字，再生成式提升画质
+Provide multiple redrawing methods：
+1. DefaultInpaintProvider - Based on mask Accurate area redrawing (use) Volcengine Inpainting Services）
+2. GenerativeEditInpaintProvider - Edit repainting based on an integer based on a large generating model (e.g., Gemini Picture Editor）
+3. BaiduInpaintProvider - 100 Degree Image Restoration API Redraw the area
+4. HybridInpaintProvider - Mixing method： 100 degrees of text removal first, followed by the generation of paint upgrades
 
-以及注册表：
-- InpaintProviderRegistry - 元素类型到重绘方法的映射注册表
+and the registration form：
+- InpaintProviderRegistry - Map Registration Table for Element Type to Redraw Method
 """
 import logging
 import tempfile
@@ -23,15 +23,15 @@ logger = logging.getLogger(__name__)
 
 class InpaintProvider(ABC):
     """
-    Inpaint提供者抽象接口
-    
-    用于抽象不同的inpaint方法，支持接入多种实现：
-    - 基于InpaintingService的实现（当前默认）
-    - Gemini API实现
-    - SD/SDXL等其他模型实现
-    - 第三方API实现
+    Inpaint Provider ’s Abstract Interface
+
+    It’s used in abstraction. inpaint Methodologies to support multiple access realization：
+    - Based on InpaintingService Achieved (current default)）
+    - Gemini API Achieved
+    - SD/SDXL Other models achieved
+    - Third parties API Achieved
     """
-    
+
     @abstractmethod
     def inpaint_regions(
         self,
@@ -41,36 +41,36 @@ class InpaintProvider(ABC):
         **kwargs
     ) -> Optional[Image.Image]:
         """
-        对图像中指定区域进行inpaint处理
-        
+        Initiating the specified area in the image inpaint Processing
+
         Args:
-            image: 原始PIL图像对象
-            bboxes: 边界框列表，每个bbox格式为 (x0, y0, x1, y1)
-            types: 可选的元素类型列表，与bboxes一一对应（如 'text', 'image', 'table'等）
-            **kwargs: 其他由具体实现自定义的参数
-        
+            image: Original PIL Image Object
+            bboxes: List of Boundary Boxes, Each bbox Format As (x0, y0, x1, y1)
+            types: List of optional elements, with bboxes One-on-one (e.g., 'text', 'image', 'table'Wait.）
+            **kwargs: Other self-defined parameters by concrete achievement
+
         Returns:
-            处理后的PIL图像对象，失败返回None
+            Processed PIL Image Object, Failed to Return None
         """
         pass
 
 
 class DefaultInpaintProvider(InpaintProvider):
     """
-    基于InpaintingService的默认Inpaint提供者
-    
-    这是当前系统使用的实现，调用已有的InpaintingService
+    Based on InpaintingService Default Inpaint Provider
+
+    This is what the current system uses. Call what’s available. InpaintingService
     """
-    
+
     def __init__(self, inpainting_service):
         """
-        初始化默认Inpaint提供者
-        
+        Initialize Default Inpaint Provider
+
         Args:
-            inpainting_service: InpaintingService实例
+            inpainting_service: InpaintingService Examples
         """
         self.inpainting_service = inpainting_service
-    
+
     def inpaint_regions(
         self,
         image: Image.Image,
@@ -79,15 +79,15 @@ class DefaultInpaintProvider(InpaintProvider):
         **kwargs
     ) -> Optional[Image.Image]:
         """
-        使用InpaintingService处理inpaint
-        
-        支持的kwargs参数：
-        - expand_pixels: int, 扩展像素数，默认10
-        - merge_bboxes: bool, 是否合并bbox，默认False
-        - merge_threshold: int, 合并阈值，默认20
-        - save_mask_path: str, mask保存路径，可选
-        - full_page_image: Image.Image, 完整页面图像（用于Gemini），可选
-        - crop_box: tuple, 裁剪框 (x0, y0, x1, y1)，可选
+        Usage InpaintingService Processing inpaint
+
+        Supported kwargs Parameters：
+        - expand_pixels: int, Expand pixels, default 10
+        - merge_bboxes: bool, Merge or not bbox，Default False
+        - merge_threshold: int, Merge threshold, default 20
+        - save_mask_path: str, mask Save Path, Optional
+        - full_page_image: Image.Image, Full Page Image (for Gemini），Optional
+        - crop_box: tuple, Crop Box (x0, y0, x1, y1)，Optional
         """
         expand_pixels = kwargs.get('expand_pixels', 10)
         merge_bboxes = kwargs.get('merge_bboxes', False)
@@ -95,7 +95,7 @@ class DefaultInpaintProvider(InpaintProvider):
         save_mask_path = kwargs.get('save_mask_path')
         full_page_image = kwargs.get('full_page_image')
         crop_box = kwargs.get('crop_box')
-        
+
         try:
             result_img = self.inpainting_service.remove_regions_by_bboxes(
                 image=image,
@@ -109,37 +109,37 @@ class DefaultInpaintProvider(InpaintProvider):
             )
             return result_img
         except Exception as e:
-            logger.error(f"DefaultInpaintProvider处理失败: {e}", exc_info=True)
+            logger.error(f"DefaultInpaintProvider Process failed: {e}", exc_info=True)
             return None
 
 
 class GenerativeEditInpaintProvider(InpaintProvider):
     """
-    基于生成式大模型图片编辑的Inpaint提供者
-    
-    使用生成式大模型（如Gemini的图片编辑功能）通过自然语言指令移除图片中的文字、图标等元素。
-    
-    与DefaultInpaintProvider的区别：
-    - DefaultInpaintProvider: 基于mask的精确区域重绘（需要准确的bbox）
-    - GenerativeEditInpaintProvider: 整图生成式编辑（通过prompt描述要移除的内容）
-    
-    优点：不依赖 mask，可结合 bbox 提示让大模型更准确地移除相关元素
-    缺点：可能改变背景细节，生成速度较慢，消耗更多token
-    
-    适用场景：
-    - bbox不够精确时
-    - 需要移除复杂或分散的元素时
-    - 作为mask-based方法的备选方案
+    Edited on the basis of a large, generating model image Inpaint Provider
+
+    Use a large generating model (e.g. Gemini to remove text, icons, etc. from pictures by natural language command。
+
+    and DefaultInpaintProvider The difference.：
+    - DefaultInpaintProvider: Based on mask Accurate area redrawing (required for accuracy) bbox）
+    - GenerativeEditInpaintProvider: Edit wholechart-generated (through prompt Describe what to remove）
+
+    Advantages： Not dependent mask，Combinable bbox A hint to get larger models to more accurately remove associated elements
+    Disadvantages： Possible change in background detail, slower generation, more consumption token
+
+    Apply scene：
+    - bbox When not precise enough
+    - When complex or dispersed elements need to be removed
+    - As mask-based Options for a methodology
     """
-    
+
     def __init__(self, ai_service, aspect_ratio: str = "16:9", resolution: str = "2K"):
         """
-        初始化生成式编辑Inpaint提供者
-        
+        Initializing Generous Edition Inpaint Provider
+
         Args:
-            ai_service: AIService实例（需要支持edit_image方法）
-            aspect_ratio: 目标宽高比
-            resolution: 目标分辨率
+            ai_service: AIService Examples (support required) edit_image Methodology）
+            aspect_ratio: Target width ratio
+            resolution: Target Resolution
         """
         self.ai_service = ai_service
         self.aspect_ratio = aspect_ratio
@@ -151,7 +151,7 @@ class GenerativeEditInpaintProvider(InpaintProvider):
         bboxes: List[tuple],
         types: Optional[List[str]] = None,
     ) -> List[Dict]:
-        """把像素 bbox 转成 0-1 归一化 JSON，供 prompt 明确指定待移除区域。"""
+        """Put pixels in bbox Convert 0-1 Normalization JSON，For prompt Specify areas to be removed。"""
         image_width, image_height = image_size
         if image_width <= 0 or image_height <= 0:
             return []
@@ -187,7 +187,7 @@ class GenerativeEditInpaintProvider(InpaintProvider):
             })
 
         return removal_regions
-    
+
     def inpaint_regions(
         self,
         image: Image.Image,
@@ -196,17 +196,17 @@ class GenerativeEditInpaintProvider(InpaintProvider):
         **kwargs
     ) -> Optional[Image.Image]:
         """
-        使用生成式大模型编辑生成干净背景
-        
-        注意：此方法不会直接用 bbox 做 mask，但会把 bbox 转成 0-1 归一化 JSON 写进 prompt，提示大模型重点移除这些区域
-        
-        支持的kwargs参数：
-        - aspect_ratio: str, 宽高比，默认使用初始化时的值
-        - resolution: str, 分辨率，默认使用初始化时的值
+        Generate a clean background using a large, generating model
+
+        Note： This method will not be used directly bbox Do it. mask，But it will. bbox Convert 0-1 Normalization JSON Write prompt，Reminds big models to focus on removing these areas
+
+        Supported kwargs Parameters：
+        - aspect_ratio: str, width ratio, default value when initialised
+        - resolution: str, Resolution, default value at initialization
         """
         aspect_ratio = kwargs.get('aspect_ratio', self.aspect_ratio)
         resolution = kwargs.get('resolution', self.resolution)
-        
+
         try:
             from services.prompts import get_clean_background_prompt
 
@@ -216,17 +216,17 @@ class GenerativeEditInpaintProvider(InpaintProvider):
                 types,
             )
 
-            # 获取清理背景的prompt
+            # Retrieving background prompt
             edit_instruction = get_clean_background_prompt(normalized_regions)
-            
-            # 保存临时图片文件（AI服务需要文件路径）
+
+            # Save temporary photo files（AI Service requires file path）
             with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp_file:
                 tmp_path = tmp_file.name
                 image.save(tmp_path)
-            
-            logger.info("GenerativeEditInpaintProvider: 开始生成式编辑重绘...")
-            
-            # 调用AI服务编辑图片
+
+            logger.info("GenerativeEditInpaintProvider: Start Generating Edit Repainting...")
+
+            # Call AI Service Edit Pictures
             clean_bg_image = self.ai_service.edit_image(
                 prompt=edit_instruction,
                 current_image_path=tmp_path,
@@ -235,134 +235,134 @@ class GenerativeEditInpaintProvider(InpaintProvider):
                 original_description=None,
                 additional_ref_images=None
             )
-            
+
             if not clean_bg_image:
-                logger.error("GenerativeEditInpaintProvider: 生成式编辑返回空结果")
+                logger.error("GenerativeEditInpaintProvider: Generating Edit returns empty result")
                 return None
-            
-            # 转换为PIL Image
+
+            # Convert to PIL Image
             if not isinstance(clean_bg_image, Image.Image):
-                # Google GenAI返回自己的Image类型，需要提取_pil_image
+                # Google GenAI Go back to yourself. Image Type, to extract_pil_image
                 if hasattr(clean_bg_image, '_pil_image'):
                     clean_bg_image = clean_bg_image._pil_image
                 else:
-                    logger.error(f"GenerativeEditInpaintProvider: 未知的图片类型: {type(clean_bg_image)}")
+                    logger.error(f"GenerativeEditInpaintProvider: Unknown picture type: {type(clean_bg_image)}")
                     return None
-            
-            logger.info("GenerativeEditInpaintProvider: 重绘完成")
+
+            logger.info("GenerativeEditInpaintProvider: Redraw complete.")
             return clean_bg_image
-        
+
         except Exception as e:
-            logger.error(f"GenerativeEditInpaintProvider处理失败: {e}", exc_info=True)
+            logger.error(f"GenerativeEditInpaintProvider Process failed: {e}", exc_info=True)
             return None
 
 
 class InpaintProviderRegistry:
     """
-    元素类型到重绘方法的映射注册表
-    
-    根据元素类型选择合适的重绘方法：
-    - 文本元素 → DefaultInpaintProvider（mask-based精确移除）
-    - 表格元素 → DefaultInpaintProvider（保持表格框架）
-    - 图片/图表元素 → GenerativeEditInpaintProvider（整图重绘）
-    - 其他类型 → 默认提供者
-    
-    使用方式：
+    Map Registration Table for Element Type to Redraw Method
+
+    Select the appropriate redraw method according to the type of element：
+    - Text Elements → DefaultInpaintProvider（mask-based Exact Remove）
+    - Table Elements → DefaultInpaintProvider（Keep Table Frames）
+    - Image/Chart Elements → GenerativeEditInpaintProvider（Reshaping the whole picture）
+    - Other types → Default Provider
+
+    Usage：
         >>> registry = InpaintProviderRegistry()
         >>> registry.register('text', mask_provider)
         >>> registry.register('image', generative_provider)
         >>> registry.register_default(mask_provider)
-        >>> 
-        >>> provider = registry.get_provider('text')  # 返回 mask_provider
-        >>> provider = registry.get_provider('chart')  # 返回 generative_provider
+        >>>
+        >>> provider = registry.get_provider('text')  # Back mask_provider
+        >>> provider = registry.get_provider('chart')  # Back generative_provider
     """
-    
-    # 预定义的元素类型分组
+
+    # Predefined Element Type Grouping
     TEXT_TYPES = {'text', 'title', 'paragraph', 'header', 'footer', 'list'}
     TABLE_TYPES = {'table', 'table_cell'}
     IMAGE_TYPES = {'image', 'figure', 'chart', 'diagram'}
-    
+
     def __init__(self):
-        """初始化注册表"""
+        """Initialization of the registration form"""
         self._type_mapping: Dict[str, InpaintProvider] = {}
         self._default_provider: Optional[InpaintProvider] = None
-    
+
     def register(self, element_type: str, provider: InpaintProvider) -> 'InpaintProviderRegistry':
         """
-        注册元素类型到重绘方法的映射
-        
+        Map of Registered Element Type to Redraw Method
+
         Args:
-            element_type: 元素类型（如 'text', 'image' 等）
-            provider: 对应的重绘提供者实例
-        
+            element_type: Type of element (e.g. 'text', 'image' Wait.）
+            provider: Examples of counterpart redrawing providers
+
         Returns:
-            self，支持链式调用
+            self，Support chain call
         """
         self._type_mapping[element_type] = provider
-        logger.debug(f"注册重绘提供者: {element_type} -> {provider.__class__.__name__}")
+        logger.debug(f"Registered redrawer: {element_type} -> {provider.__class__.__name__}")
         return self
-    
+
     def register_types(self, element_types: List[str], provider: InpaintProvider) -> 'InpaintProviderRegistry':
         """
-        批量注册多个元素类型到同一个重绘方法
-        
+        Batch registration of multiple element types to the same redraw method
+
         Args:
-            element_types: 元素类型列表
-            provider: 对应的重绘提供者实例
-        
+            element_types: List of Elements Type
+            provider: Examples of counterpart redrawing providers
+
         Returns:
-            self，支持链式调用
+            self，Support chain call
         """
         for t in element_types:
             self.register(t, provider)
         return self
-    
+
     def register_default(self, provider: InpaintProvider) -> 'InpaintProviderRegistry':
         """
-        注册默认重绘方法（当没有特定类型映射时使用）
-        
+        Register the default redraw method (use when no specific type map is available)）
+
         Args:
-            provider: 默认重绘提供者实例
-        
+            provider: Examples of default redraw providers
+
         Returns:
-            self，支持链式调用
+            self，Support chain call
         """
         self._default_provider = provider
-        logger.debug(f"注册默认重绘提供者: {provider.__class__.__name__}")
+        logger.debug(f"Register the default repainting provider: {provider.__class__.__name__}")
         return self
-    
+
     def get_provider(self, element_type: Optional[str]) -> Optional[InpaintProvider]:
         """
-        根据元素类型获取对应的重绘方法
-        
+        Get the corresponding repainting method according to the type of element
+
         Args:
-            element_type: 元素类型，None表示使用默认提供者
-        
+            element_type: Element Type，None Indicates the use of default providers
+
         Returns:
-            对应的重绘提供者，如果没有注册则返回默认提供者
+            Corresponding repainting provider, return default provider if not registered
         """
         if element_type is None:
             return self._default_provider
-        
-        # 先查找精确匹配
+
+        # Find exact matches first.
         if element_type in self._type_mapping:
             return self._type_mapping[element_type]
-        
-        # 返回默认提供者
+
+        # Return to Default Provider
         return self._default_provider
-    
+
     def get_all_providers(self) -> List[InpaintProvider]:
         """
-        获取所有已注册的重绘提供者（去重）
-        
+        Acquisition of all registered redraw providers (weighted)）
+
         Returns:
-            重绘提供者列表
+            Repaint provider list
         """
         providers = list(set(self._type_mapping.values()))
         if self._default_provider and self._default_provider not in providers:
             providers.append(self._default_provider)
         return providers
-    
+
     @classmethod
     def create_default(
         cls,
@@ -370,44 +370,44 @@ class InpaintProviderRegistry:
         generative_provider: Optional[InpaintProvider] = None
     ) -> 'InpaintProviderRegistry':
         """
-        创建默认配置的注册表
-        
-        默认配置：
-        - 文本类型 → mask-based（精确移除文字区域）
-        - 表格类型 → mask-based（保持表格框架，只移除单元格内容）
-        - 图片/图表类型 → generative（整图重绘，处理复杂图形）
-        - 其他类型 → mask-based（默认）
-        
+        Creates a registry for the default configuration
+
+        Default Configuration：
+        - Text Type → mask-based（Exactly remove text area）
+        - Table Type → mask-based（Keep table frames and only remove cell contents）
+        - Image/Chart Type → generative（Redraw the whole chart, handle complex graphics）
+        - Other types → mask-based（Default）
+
         Args:
-            mask_provider: 基于mask的重绘提供者（DefaultInpaintProvider）
-            generative_provider: 生成式重绘提供者（GenerativeEditInpaintProvider）
-        
+            mask_provider: Based on mask Re-painting provider（DefaultInpaintProvider）
+            generative_provider: Generating Repainting Provider（GenerativeEditInpaintProvider）
+
         Returns:
-            配置好的注册表实例
+            configured registry instance
         """
         registry = cls()
-        
-        # 如果没有提供任何provider，返回空注册表
+
+        # If nothing is provided provider，Return empty registration form
         if not mask_provider and not generative_provider:
-            logger.warning("创建InpaintProviderRegistry时未提供任何provider")
+            logger.warning("Create InpaintProviderRegistry No information provided provider")
             return registry
-        
-        # 设置默认提供者（优先使用mask_provider）
+
+        # Set Default Provider (Priority) mask_provider）
         default_provider = mask_provider or generative_provider
         registry.register_default(default_provider)
-        
-        # 文本类型使用mask-based
+
+        # Use text type mask-based
         if mask_provider:
             registry.register_types(list(cls.TEXT_TYPES), mask_provider)
             registry.register_types(list(cls.TABLE_TYPES), mask_provider)
-        
-        # 图片类型使用generative（如果可用），否则使用mask-based
+
+        # Use picture type generative（if available) mask-based
         image_provider = generative_provider or mask_provider
         if image_provider:
             registry.register_types(list(cls.IMAGE_TYPES), image_provider)
-        
-        logger.info(f"创建默认InpaintProviderRegistry: "
-                   f"文本/表格->{mask_provider.__class__.__name__ if mask_provider else 'None'}, "
-                   f"图片->{image_provider.__class__.__name__ if image_provider else 'None'}")
-        
+
+        logger.info(f"Create Default InpaintProviderRegistry: "
+                   f"Text/Table->{mask_provider.__class__.__name__ if mask_provider else 'None'}, "
+                   f"Image->{image_provider.__class__.__name__ if image_provider else 'None'}")
+
         return registry

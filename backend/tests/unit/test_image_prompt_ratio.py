@@ -9,7 +9,7 @@ class TestImagePromptAspectRatio:
             outline_text="Test outline",
             current_section="Section 1",
         )
-        assert "16:9比例" in prompt
+        assert "16:9 aspect ratio" in prompt
 
     def test_custom_ratio_4_3(self):
         prompt = get_image_generation_prompt(
@@ -18,8 +18,8 @@ class TestImagePromptAspectRatio:
             current_section="Section 1",
             aspect_ratio="4:3",
         )
-        assert "4:3比例" in prompt
-        assert "16:9比例" not in prompt
+        assert "4:3 aspect ratio" in prompt
+        assert "16:9 aspect ratio" not in prompt
 
     def test_custom_ratio_1_1(self):
         prompt = get_image_generation_prompt(
@@ -28,5 +28,5 @@ class TestImagePromptAspectRatio:
             current_section="Section 1",
             aspect_ratio="1:1",
         )
-        assert "1:1比例" in prompt
-        assert "16:9比例" not in prompt
+        assert "1:1 aspect ratio" in prompt
+        assert "16:9 aspect ratio" not in prompt

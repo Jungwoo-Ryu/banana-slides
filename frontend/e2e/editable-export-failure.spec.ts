@@ -135,21 +135,21 @@ test.describe('Editable export failure UI', () => {
     await page.goto(`/project/${projectId}/preview`);
     await page.waitForFunction(() => document.body.innerText.length > 50, { timeout: 15000 });
 
-    await page.locator('button:has-text("导出")').first().click();
-    await page.getByRole('button', { name: /导出可编辑 PPTX/ }).click();
-    await page.getByRole('button', { name: '开始导出' }).click();
+    await page.locator('button:has-text("Export")').first().click();
+    await page.getByRole('button', { name: /\u5bfc\u51fa\u53ef\u7f16\u8f91 PPTX/ }).click();
+    await page.getByRole('button', { name: 'Start Export' }).click();
 
-    await page.getByLabel('导出任务').click();
-    await expect(page.getByText('这不代表后台导出失败')).toBeVisible({ timeout: 10000 });
+    await page.getByLabel('Export Tasks').click();
+    await expect(page.getByText('This doesn’t mean the backstage exit failed.')).toBeVisible({ timeout: 10000 });
     await expect(page.getByText(/HTTP 502/)).toBeVisible();
-    await expect(page.getByText(/^导出失败$/)).toHaveCount(0);
+    await expect(page.getByText(/^\u5bfc\u51fa\u5931\u8d25$/)).toHaveCount(0);
 
     await expect
       .poll(() => pollCount, { timeout: 15000 })
       .toBe(2);
 
-    await expect(page.getByRole('button', { name: '下载' })).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText(/^导出失败$/)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/^\u5bfc\u51fa\u5931\u8d25$/)).toHaveCount(0);
   });
 
   test('recovers with the reserved task id when the create response is interrupted', async ({ page }) => {
@@ -265,18 +265,18 @@ test.describe('Editable export failure UI', () => {
     await page.goto(`/project/${projectId}/preview`);
     await page.waitForFunction(() => document.body.innerText.length > 50, { timeout: 15000 });
 
-    await page.locator('button:has-text("导出")').first().click();
-    await page.getByRole('button', { name: /导出可编辑 PPTX/ }).click();
-    await page.getByRole('button', { name: '开始导出' }).click();
+    await page.locator('button:has-text("Export")').first().click();
+    await page.getByRole('button', { name: /\u5bfc\u51fa\u53ef\u7f16\u8f91 PPTX/ }).click();
+    await page.getByRole('button', { name: 'Start Export' }).click();
 
-    await expect(page.getByText(/创建导出任务的响应中断/).first()).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText(/^导出失败$/)).toHaveCount(0);
+    await expect(page.getByText(/\u521b\u5efa\u5bfc\u51fa\u4efb\u52a1\u7684\u54cd\u5e94\u4e2d\u65ad/).first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/^\u5bfc\u51fa\u5931\u8d25$/)).toHaveCount(0);
     await expect.poll(() => reservedTaskId).toMatch(/^[0-9a-f-]{36}$/);
     await expect.poll(() => pollCount, { timeout: 15000 }).toBe(2);
 
-    await page.getByRole('button', { name: '导出任务' }).click();
-    await expect(page.getByRole('button', { name: '下载' })).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText(/^导出失败$/)).toHaveCount(0);
+    await page.getByRole('button', { name: 'Export Tasks' }).click();
+    await expect(page.getByRole('button', { name: 'Download' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/^\u5bfc\u51fa\u5931\u8d25$/)).toHaveCount(0);
   });
 
   test('shows normalized task panel error when style extraction fails', async ({ page }) => {
@@ -352,7 +352,7 @@ test.describe('Editable export failure UI', () => {
               task_id: 'editable-export-task-1',
               task_type: 'EXPORT_EDITABLE_PPTX',
               status: 'FAILED',
-              error_message: '文本样式提取失败：图片识别模型不支持图片输入',
+              error_message: 'Text style extraction failed： Picture recognition model does not support image input',
               progress: {
                 total: 100,
                 completed: 50,
@@ -369,9 +369,9 @@ test.describe('Editable export failure UI', () => {
                   model: 'gpt-5.4',
                   request_timeout_seconds: 120,
                   max_attempts: 5,
-                  technical_message: 'caption_provider 不支持图片输入',
+                  technical_message: 'caption_provider Image input is not supported',
                 },
-                help_text: '当前用于图片样式提取的 caption/image_caption 模型不支持图片输入。',
+                help_text: 'Current Image Style Extracts caption/image_caption Model does not support image input。',
               },
             },
           }),
@@ -424,22 +424,22 @@ test.describe('Editable export failure UI', () => {
     await page.goto(`/project/${projectId}/preview`);
     await page.waitForFunction(() => document.body.innerText.length > 50, { timeout: 15000 });
 
-    await page.locator('button:has-text("导出")').first().click();
-    await page.getByRole('button', { name: /导出可编辑 PPTX/ }).click();
-    await page.getByRole('button', { name: '开始导出' }).click();
+    await page.locator('button:has-text("Export")').first().click();
+    await page.getByRole('button', { name: /\u5bfc\u51fa\u53ef\u7f16\u8f91 PPTX/ }).click();
+    await page.getByRole('button', { name: 'Start Export' }).click();
 
     await expect
       .poll(() => pollCount, { timeout: 10000 })
       .toBeGreaterThan(0);
 
-    await page.getByLabel('导出任务').click();
-    await expect(page.getByText('文本样式提取失败：图片识别模型不支持图片输入')).toBeVisible({ timeout: 10000 });
+    await page.getByLabel('Export Tasks').click();
+    await expect(page.getByText('Text style extraction failed： Picture recognition model does not support image input')).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('EXPORT_STYLE_MODEL_UNSUPPORTED')).toBeVisible();
     await expect(page.getByText('CodexTextProvider')).toBeVisible();
     await expect(page.getByText('gpt-5.4')).toBeVisible();
     await expect(page.getByText(/120.*5/)).toBeVisible();
-    await expect(page.getByText('技术原因')).toBeVisible();
-    await expect(page.getByLabel('导出任务')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Technical reasons')).toBeVisible();
+    await expect(page.getByLabel('Export Tasks')).toBeVisible({ timeout: 10000 });
   });
 
   test('shows codex relogin toast for oauth 401 failures and keeps it visible for 5s', async ({ page }) => {
@@ -543,11 +543,11 @@ test.describe('Editable export failure UI', () => {
     await page.goto(`/project/${projectId}/preview`);
     await page.waitForFunction(() => document.body.innerText.length > 50, { timeout: 15000 });
 
-    await page.locator('button:has-text("导出")').first().click();
-    await page.getByRole('button', { name: /导出可编辑 PPTX/ }).click();
-    await page.getByRole('button', { name: '开始导出' }).click();
+    await page.locator('button:has-text("Export")').first().click();
+    await page.getByRole('button', { name: /\u5bfc\u51fa\u53ef\u7f16\u8f91 PPTX/ }).click();
+    await page.getByRole('button', { name: 'Start Export' }).click();
 
-    const reloginToast = page.getByText('Codex 登录已过期或未连接，请前往设置重新登录 OpenAI 账号后再试。');
+    const reloginToast = page.getByText('Codex Login expired or unconnected, please go to settings for re-entry OpenAI Try again after the account number.。');
     await expect(reloginToast).toBeVisible({ timeout: 10000 });
 
     await page.waitForTimeout(3500);

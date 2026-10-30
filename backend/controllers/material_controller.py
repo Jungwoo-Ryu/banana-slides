@@ -80,10 +80,10 @@ def _get_materials_list(filter_project_id: str):
     query, error = _build_material_query(filter_project_id)
     if error:
         return None, error
-    
+
     materials = query.order_by(Material.created_at.desc()).all()
     materials_list = [material.to_dict() for material in materials]
-    
+
     return materials_list, None
 
 
@@ -275,18 +275,18 @@ def generate_material_image(project_id):
     - prompt: Text-to-image prompt (passed directly to the model without modification)
     - ref_image: Main reference image (optional)
     - extra_images: Additional reference images (multiple files, optional)
-    
+
     Note: project_id can be 'none' to generate global materials (not associated with any project)
     """
     try:
-        # 支持 'none' 作为特殊值，表示生成全局素材
+        # Support 'none' As a special value, means generating global material
         if project_id != 'none':
             project = Project.query.get(project_id)
             if not project:
                 return not_found('Project')
         else:
             project = None
-            project_id = None  # 设置为None表示全局素材
+            project_id = None  # Set As None Means global material
 
         # Parse request data (prioritize multipart for file uploads)
         if request.is_json:
@@ -307,11 +307,11 @@ def generate_material_image(project_id):
         if not prompt:
             return bad_request("prompt is required")
 
-        # 处理project_id：对于全局素材，使用'global'作为Task的project_id
-        # Task模型要求project_id不能为null，但Material可以
+        # Processing project_id：For global material, use'global'As Task It’s... project_id
+        # Task Model requirements project_id I can’t do that. null，But... Material Yeah.
         task_project_id = project_id if project_id is not None else 'global'
-        
-        # 验证project_id（如果不是'global'）
+
+        # Authentication project_id（If it wasn’t,'global'）
         if task_project_id != 'global':
             project = Project.query.get(task_project_id)
             if not project:
@@ -321,7 +321,7 @@ def generate_material_image(project_id):
         ai_service = get_ai_service()
         file_service = FileService(current_app.config['UPLOAD_FOLDER'])
 
-        # 创建临时目录保存参考图片（后台任务会清理）
+        # Create a temporary directory to save reference pictures (backstage tasks will be cleared)）
         temp_dir = Path(tempfile.mkdtemp(dir=current_app.config['UPLOAD_FOLDER']))
         temp_dir_str = str(temp_dir)
 
@@ -367,7 +367,7 @@ def generate_material_image(project_id):
             task_manager.submit_task(
                 task.id,
                 generate_material_image_task,
-                task_project_id,  # 传递给任务函数，它会处理'global'的情况
+                task_project_id,  # Passes to task function, it handles'global'Situation
                 prompt,
                 ai_service,
                 file_service,
@@ -379,12 +379,12 @@ def generate_material_image(project_id):
                 app
             )
 
-            # Return task_id immediately (不再清理temp_dir，由后台任务清理)
+            # Return task_id immediately (No more cleaning. temp_dir，Clean up from backstage.)
             return success_response({
                 'task_id': task.id,
                 'status': 'PENDING'
             }, status_code=202)
-        
+
         except Exception as e:
             # Clean up temp directory on error
             if temp_dir.exists():
@@ -545,7 +545,7 @@ def process_material_image(project_id):
 def list_materials(project_id):
     """
     GET /api/projects/{project_id}/materials - List materials for a specific project
-    
+
     Returns:
         List of material images with filename, url, and metadata for the specified project
     """
@@ -553,12 +553,12 @@ def list_materials(project_id):
         materials_list, error = _get_materials_list(project_id)
         if error:
             return error
-        
+
         return success_response({
             "materials": materials_list,
             "count": len(materials_list)
         })
-    
+
     except Exception as e:
         return error_response('SERVER_ERROR', str(e), 500)
 
@@ -567,11 +567,11 @@ def list_materials(project_id):
 def upload_material(project_id):
     """
     POST /api/projects/{project_id}/materials/upload - Upload a material image
-    
+
     Supports multipart/form-data:
     - file: Image file (required)
     - project_id: Optional query parameter, defaults to path parameter if not provided
-    
+
     Returns:
         Material info with filename, url, and metadata
     """
@@ -582,13 +582,13 @@ def upload_material(project_id):
 def list_all_materials():
     """
     GET /api/materials - Global materials endpoint for complex queries
-    
+
     Query params:
         - project_id: Filter by project_id
           * 'all' (default): Get all materials regardless of project
           * 'none': Get only materials without a project (global materials)
           * <project_id>: Get materials for specific project
-    
+
     Returns:
         List of material images with filename, url, and metadata
     """
@@ -597,12 +597,12 @@ def list_all_materials():
         materials_list, error = _get_materials_list(filter_project_id)
         if error:
             return error
-        
+
         return success_response({
             "materials": materials_list,
             "count": len(materials_list)
         })
-    
+
     except Exception as e:
         return error_response('SERVER_ERROR', str(e), 500)
 
@@ -611,11 +611,11 @@ def list_all_materials():
 def upload_material_global():
     """
     POST /api/materials/upload - Upload a material image (global, not bound to a project)
-    
+
     Supports multipart/form-data:
     - file: Image file (required)
     - project_id: Optional query parameter to associate with a project
-    
+
     Returns:
         Material info with filename, url, and metadata
     """

@@ -15,10 +15,10 @@ def no_retry_delay(monkeypatch):
 
 class FailingExtractor:
     def extract_batch_with_full_image(self, full_image, text_elements, **kwargs):
-        raise RuntimeError("caption_provider 不支持图片输入")
+        raise RuntimeError("caption_provider Image input is not supported")
 
     def extract(self, image, text_content=None, **kwargs):
-        return TextStyleResult(confidence=0.0, metadata={"error": "caption_provider 不支持图片输入"})
+        return TextStyleResult(confidence=0.0, metadata={"error": "caption_provider Image input is not supported"})
 
 
 class EmptyGlobalExtractor:
@@ -157,7 +157,7 @@ def test_hybrid_style_extraction_fails_fast_when_provider_has_no_image_input(tmp
         assert exc.error_type == "style_extraction"
         assert exc.error_code == "EXPORT_STYLE_MODEL_UNSUPPORTED"
         assert exc.details["reason"] == "unsupported_model"
-        assert "不支持图片输入" in exc.message
+        assert "Image input is not supported" in exc.message
         assert "image caption" in exc.help_text
 
 
@@ -172,7 +172,7 @@ def test_hybrid_style_extraction_reports_missing_global_results_when_not_fail_fa
     )
 
     assert "text_0" in results
-    assert failures == [("text_0", "全局识别未返回完整结果")]
+    assert failures == [("text_0", "Global recognition did not return the full result")]
 
 
 def test_hybrid_style_extraction_filters_null_global_results(tmp_path):
@@ -188,7 +188,7 @@ def test_hybrid_style_extraction_filters_null_global_results(tmp_path):
 
     assert extractor.calls == 3
     assert "text_0" in results
-    assert failures == [("text_0", "全局识别未返回完整结果")]
+    assert failures == [("text_0", "Global recognition did not return the full result")]
 
 
 def test_hybrid_style_extraction_retries_non_dict_global_results(tmp_path):
@@ -224,7 +224,7 @@ def test_hybrid_style_extraction_reports_only_missing_global_results(tmp_path):
     assert extractor.calls == 3
     assert "text_0" in results
     assert "text_1" in results
-    assert failures == [("text_1", "全局识别未返回完整结果")]
+    assert failures == [("text_1", "Global recognition did not return the full result")]
 
 
 def test_hybrid_style_extraction_preserves_best_partial_global_results_after_later_errors(tmp_path):
@@ -241,7 +241,7 @@ def test_hybrid_style_extraction_preserves_best_partial_global_results_after_lat
     assert extractor.calls == 3
     assert results["text_0"].is_bold is True
     assert "text_1" in results
-    assert failures == [("text_1", "全局识别未返回完整结果")]
+    assert failures == [("text_1", "Global recognition did not return the full result")]
 
 
 def test_hybrid_style_extraction_keeps_last_error_when_no_global_results(tmp_path):
@@ -315,7 +315,7 @@ def test_hybrid_style_extraction_fails_after_global_result_retries_are_exhausted
         assert extractor.calls == 3
         assert exc.error_type == "style_extraction"
         assert exc.error_code == "EXPORT_STYLE_INCOMPLETE_RESPONSE"
-        assert "全局识别未返回完整结果" in exc.details["technical_message"]
+        assert "Global recognition did not return the full result" in exc.details["technical_message"]
 
 
 def test_style_extraction_error_includes_safe_provider_context():
@@ -354,12 +354,12 @@ def test_style_extraction_error_includes_safe_provider_context():
 def test_unexpected_export_error_preserves_stage_and_classifies_rate_limit():
     error = ExportService._build_unexpected_export_error(
         "HTTP 429 Too Many Requests",
-        "背景修复",
+        "Background fixes",
     )
 
     assert error.error_code == "EXPORT_RATE_LIMIT"
     assert error.error_type == "service"
-    assert error.stage == "背景修复"
+    assert error.stage == "Background fixes"
     assert error.details["reason"] == "rate_limit"
     assert error.details["retryable"] is True
 
@@ -367,7 +367,7 @@ def test_unexpected_export_error_preserves_stage_and_classifies_rate_limit():
 def test_unexpected_export_error_classifies_missing_provider_configuration():
     error = ExportService._build_unexpected_export_error(
         "GOOGLE_API_KEY (from database settings or environment) is required",
-        "准备",
+        "Ready.",
     )
 
     assert error.error_code == "EXPORT_CONFIGURATION_MISSING"
@@ -382,12 +382,12 @@ def test_text_render_error_is_structured_and_redacts_credentials():
         "font lookup failed with api_key=secret-value",
         text="hello",
         bbox=[1, 2, 3, 4],
-        element_kind="文本元素",
+        element_kind="Text Elements",
     )
 
     assert error.error_code == "EXPORT_TEXT_RENDER_FAILED"
     assert error.stage == "text_render"
-    assert error.details["element_kind"] == "文本元素"
+    assert error.details["element_kind"] == "Text Elements"
     assert error.details["bbox"] == [1, 2, 3, 4]
     assert error.details["retryable"] is False
     assert "secret-value" not in error.details["technical_message"]

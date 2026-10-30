@@ -37,7 +37,7 @@ def test_reference_markdown_parse_does_not_fetch_remote_images(client):
     server_thread.start()
 
     provider = MagicMock()
-    provider.generate_with_image.return_value = '远程图片'
+    provider.generate_with_image.return_value = 'Remote Pictures'
     remote_url = f'http://127.0.0.1:{server.server_port}/metadata'
     markdown = f'# Report\n\n![]({remote_url})\n'
 

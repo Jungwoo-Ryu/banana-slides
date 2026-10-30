@@ -1,8 +1,8 @@
 """
-TTS Video Service 单元测试
+TTS Video Service Unit Test
 
-纯单元测试部分（不需要 Flask app 或完整依赖链）直接导入模块；
-需要 app context 的集成测试使用 conftest 提供的 fixtures。
+Pure unit test component (not required) Flask app or complete dependencies) directly import modules；
+Yes. app context Use of integration testing conftest Provided fixtures。
 """
 import os
 import sys
@@ -16,17 +16,17 @@ import importlib
 import importlib.util
 from unittest.mock import patch, MagicMock
 
-# 确保 backend 目录在路径中
+# Ensure backend Directory in Path
 _backend_dir = os.path.join(os.path.dirname(__file__), '..', '..')
 sys.path.insert(0, os.path.abspath(_backend_dir))
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 直接加载 tts_video_service 模块（绕过 services/__init__.py）
+# Direct Loading tts_video_service Module (Backing) services/__init__.py）
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def _load_module_directly(module_name: str, file_path: str):
-    """从文件直接加载模块，避免触发 __init__.py 的级联导入"""
+    """Load module directly from file to avoid trigger __init__.py Cascade Import"""
     spec = importlib.util.spec_from_file_location(module_name, file_path)
     mod = importlib.util.module_from_spec(spec)
     sys.modules[module_name] = mod
@@ -69,12 +69,12 @@ parse_narration_generation_result = _prompts_mod.parse_narration_generation_resu
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 纯单元测试（无外部依赖）
+# Pure unit testing (no external dependence)）
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
 class TestModuleConstants:
-    """测试模块级常量"""
+    """Test module level constants"""
 
     def test_max_subtitle_segment_length(self):
         assert _MAX_SUBTITLE_SEGMENT_LENGTH == 30
@@ -95,7 +95,7 @@ class TestModuleConstants:
 
 
 class TestGetDefaultVoice:
-    """测试语音映射"""
+    """Test voice map"""
 
     def test_zh_voice(self):
         assert get_default_voice('zh') == 'zh-CN-XiaoxiaoNeural'
@@ -120,7 +120,7 @@ class TestGetDefaultVoice:
 
 
 class TestCheckFfmpegAvailable:
-    """测试 FFmpeg 可用性检查"""
+    """Test FFmpeg Availability check"""
 
     @patch.object(_tts_mod.subprocess, 'run')
     def test_ffmpeg_available(self, mock_run):
@@ -137,7 +137,7 @@ class TestCheckFfmpegAvailable:
 
 
 class TestCheckFfmpegAssFilterAvailable:
-    """测试 ASS 字幕滤镜可用性检查"""
+    """Test ASS Subtitle filter usability check"""
 
     @patch.object(_tts_mod.subprocess, 'run')
     def test_ass_filter_available(self, mock_run):
@@ -161,7 +161,7 @@ class TestCheckFfmpegAssFilterAvailable:
 
 
 class TestGetAudioDuration:
-    """测试音频时长获取"""
+    """Test audio acquisition time"""
 
     @pytest.mark.parametrize(
         ('ffmpeg_path', 'expected'),
@@ -204,7 +204,7 @@ class TestGetAudioDuration:
 
 
 class TestKenBurnsEffects:
-    """测试 Ken Burns 效果轮转"""
+    """Test Ken Burns Effect Rotation"""
 
     def test_effect_cycling(self):
         assert len(KEN_BURNS_EFFECTS) == 4
@@ -225,7 +225,7 @@ class TestKenBurnsEffects:
         ],
     )
     def test_zoom_effect_keeps_slide_corners_visible_with_real_ffmpeg(self, effect_type, frame_index):
-        """真实 FFmpeg/OpenCV 验证：缩放动效不能把整张 slide 的四角裁掉。"""
+        """Real. FFmpeg/OpenCV Authentication： Zooming does not allow the whole picture slide The four corners are cut.。"""
         if not check_ffmpeg_available():
             pytest.skip("ffmpeg not available")
 
@@ -300,11 +300,11 @@ class TestKenBurnsEffects:
 
 
 class TestCompositeVideoConcatFile:
-    """测试 concat 列表生成"""
+    """Test concat List Generation"""
 
     @patch.object(_tts_mod, '_run_ffmpeg_command')
     def test_single_clip_copies(self, mock_run_ffmpeg):
-        """单片段直接复制，不调用 ffmpeg"""
+        """One-part direct copy, no call ffmpeg"""
         with tempfile.NamedTemporaryFile(suffix='.mp4', delete=False) as src:
             src.write(b'fake video data')
             src_path = src.name
@@ -321,7 +321,7 @@ class TestCompositeVideoConcatFile:
 
     @patch.object(_tts_mod, '_run_ffmpeg_command')
     def test_multiple_clips_concat(self, mock_run_ffmpeg):
-        """多片段使用 concat demuxer"""
+        """Multisession concat demuxer"""
         clips = ['/fake/clip1.mp4', '/fake/clip2.mp4']
         out_path = '/tmp/test_concat_output.mp4'
 
@@ -335,7 +335,7 @@ class TestCompositeVideoConcatFile:
 
 
 class _FakeProcess:
-    """最小化的 Popen 替身，用于验证 idle watchdog。"""
+    """Minimised Popen Substitutes, for verification. idle watchdog。"""
 
     def __init__(self):
         read_fd, write_fd = os.pipe()
@@ -405,13 +405,13 @@ class TestIdleWatchdog:
         assert proc.returncode == -9
 
     def test_concat_rejects_newline_in_path(self):
-        """路径含换行符时应抛出 ValueError（防止 concat 注入）"""
+        """The path contains line breaks to throw out ValueError（Prevention concat Injection）"""
         clips = ['/fake/clip1.mp4', '/fake/clip\n2.mp4']
         with pytest.raises(ValueError, match="newline"):
             composite_video(clips, '/tmp/test_output.mp4')
 
     def test_multiple_clips_concat_with_real_ffmpeg(self):
-        """真实 FFmpeg 校验：长任务 watchdog 不影响正常 concat 完成。"""
+        """Real. FFmpeg Validation： Long mission watchdog It’s not normal. concat Completed。"""
         if not check_ffmpeg_available():
             pytest.skip("ffmpeg not available")
 
@@ -445,43 +445,43 @@ class TestIdleWatchdog:
 
 
 class TestSubtitleSplitting:
-    """测试字幕拆分与时间分配"""
+    """Test subtitle split and time allocation"""
 
     def test_short_text_single_sentence(self):
-        sentences = _split_narration_to_sentences('大家好。')
-        assert sentences == ['大家好。']
+        sentences = _split_narration_to_sentences('Hello, everyone.。')
+        assert sentences == ['Hello, everyone.。']
 
     def test_split_by_period(self):
-        text = '第一句话。第二句话。第三句话。'
+        text = 'First sentence. Second sentence. Third sentence.。'
         sentences = _split_narration_to_sentences(text)
         assert len(sentences) == 3
-        assert sentences[0] == '第一句话。'
-        assert sentences[1] == '第二句话。'
+        assert sentences[0] == 'First sentence。'
+        assert sentences[1] == 'Second sentence：。'
 
     def test_split_long_sentence_by_comma(self):
-        text = '这是一个很长很长很长很长很长很长很长很长的句子，用逗号来分隔一下后面的部分。'
+        text = 'It’s a long, long, long, long, long sentence.。'
         sentences = _split_narration_to_sentences(text)
         assert len(sentences) >= 2
         for s in sentences:
-            assert len(s) <= 35  # 允许一点超出
+            assert len(s) <= 35  # Allow a little more than that.
 
     def test_timed_entries_cover_duration(self):
-        entries = _build_timed_subtitle_entries('第一句。第二句。第三句。', 10.0, 6.0)
+        entries = _build_timed_subtitle_entries('First sentence, second sentence, third sentence。', 10.0, 6.0)
         assert len(entries) == 3
         assert abs(entries[0]['start'] - 10.0) < 0.01
         assert abs(entries[-1]['end'] - 16.0) < 0.01
 
     def test_timed_entries_proportional(self):
-        entries = _build_timed_subtitle_entries('短。这是一个长一些的句子。', 0.0, 10.0)
+        entries = _build_timed_subtitle_entries('Short. It’s a long sentence.。', 0.0, 10.0)
         assert len(entries) == 2
-        # 长句应该分配更多时间
+        # Long sentences should be allocated more time.
         short_dur = entries[0]['end'] - entries[0]['start']
         long_dur = entries[1]['end'] - entries[1]['start']
         assert long_dur > short_dur
 
     def test_ass_file_generation(self):
         entries = [
-            {'start': 0.0, 'end': 2.0, 'text': '你好世界'},
+            {'start': 0.0, 'end': 2.0, 'text': 'Good day to you.'},
             {'start': 2.0, 'end': 5.0, 'text': 'Hello World'},
         ]
         import tempfile
@@ -493,7 +493,7 @@ class TestSubtitleSplitting:
                 content = f.read()
             assert 'Noto Sans CJK' in content or 'Fontname' in content
             assert 'Dialogue:' in content
-            assert '你好世界' in content
+            assert 'Good day to you.' in content
             assert 'Hello World' in content
             assert 'BorderStyle' in content
         finally:
@@ -501,7 +501,7 @@ class TestSubtitleSplitting:
 
 
 class TestBurnSubtitles:
-    """测试字幕烧录命令构造"""
+    """Test Subtitle Burn Command Structure"""
 
     @patch.object(_tts_mod, '_run_ffmpeg_command')
     @patch.object(_tts_mod, '_detect_cjk_font_dir', return_value=None)
@@ -529,16 +529,16 @@ class TestBurnSubtitles:
 
 
 class TestGenerateNarrationVideoPrerequisites:
-    """测试视频导出前置依赖检查"""
+    """Test video export pre-dependent check"""
 
     @patch.object(_tts_mod, 'check_ffmpeg_ass_filter_available', return_value=False)
     @patch.object(_tts_mod, 'check_ffmpeg_available', return_value=True)
     def test_fails_early_when_subtitles_required_but_ass_filter_missing(self, mock_ffmpeg, mock_ass):
-        with pytest.raises(RuntimeError, match='ASS 字幕烧录'):
+        with pytest.raises(RuntimeError, match='ASS Subtitle Burning'):
             _tts_mod.generate_narration_video(
                 pages_data=[{
                     'image_path': '/tmp/fake.png',
-                    'narration_text': '有旁白就需要字幕',
+                    'narration_text': 'You need subtitles for citation.',
                     'page_index': 0,
                 }],
                 output_path='/tmp/out.mp4',
@@ -546,23 +546,23 @@ class TestGenerateNarrationVideoPrerequisites:
 
 
 class TestNarrationPrompt:
-    """测试旁白 prompt 构建"""
+    """Test Narrator prompt Build"""
 
     def test_prompt_contains_required_fields(self):
         prompt = get_narration_generation_prompt(
             pages=[{
                 'page_index': 2,
-                'title': 'AI 发展历程',
-                'points': ['深度学习', '大语言模型'],
-                'description_text': '这是一个关于人工智能发展的介绍页面',
+                'title': 'AI Development experience',
+                'points': ['In-depth learning', 'Large Language Model'],
+                'description_text': 'This is an introduction page on artificial intelligence development.',
             }],
             language='zh',
         )
-        assert 'AI 发展历程' in prompt
-        assert '深度学习' in prompt
-        assert '大语言模型' in prompt
+        assert 'AI Development experience' in prompt
+        assert 'In-depth learning' in prompt
+        assert 'Large Language Model' in prompt
         assert '2' in prompt
-        assert '中文' in prompt or '全中文' in prompt
+        assert 'Chinese' in prompt or 'All Chinese' in prompt
         assert '<slide_description>' in prompt
         assert '</slide_description>' in prompt
         assert '<slide_title>' in prompt
@@ -624,8 +624,8 @@ class TestNarrationPrompt:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 以下测试需要 Flask app context（使用 conftest 的 app/client fixtures）
-# 在 CI/CD 环境中通过 `uv run pytest` 运行
+# The following test requirements Flask app context（Usage conftest It’s... app/client fixtures）
+# Yes. CI/CD Through the environment `uv run pytest` Run
 # ═══════════════════════════════════════════════════════════════════════════════
 
 needs_app = pytest.mark.skipif(
@@ -636,7 +636,7 @@ needs_app = pytest.mark.skipif(
 
 @needs_app
 class TestPageNarrationModel:
-    """测试 Page 模型的 narration 字段"""
+    """Test Page Model narration Field"""
 
     def test_narration_text_in_to_dict(self, app):
         with app.app_context():
@@ -644,10 +644,10 @@ class TestPageNarrationModel:
             page = Page(
                 project_id='test-project',
                 order_index=0,
-                narration_text='这是旁白文本',
+                narration_text='It’s lingo.',
             )
             d = page.to_dict()
-            assert d['narration_text'] == '这是旁白文本'
+            assert d['narration_text'] == 'It’s lingo.'
 
     def test_set_narration_text(self, app):
         with app.app_context():
@@ -672,14 +672,14 @@ class TestPageNarrationModel:
 
 @needs_app
 class TestExportVideoRoute:
-    """测试视频导出 API 路由"""
+    """Test Video Export API Route"""
 
     def _create_project_with_image_page(self, app, allow_partial: bool):
         from PIL import Image
         from models import db, Project, Page
 
         project = Project(
-            idea_prompt='视频导出测试',
+            idea_prompt='Video Export Test',
             creation_type='idea',
             export_allow_partial=allow_partial,
             status='COMPLETED',
@@ -698,8 +698,8 @@ class TestExportVideoRoute:
             project_id=project.id,
             order_index=0,
             generated_image_path=f'{project.id}/pages/{filename}',
-            outline_content='{"title": "测试页", "points": ["要点 1"]}',
-            description_content='{"text": "测试描述"}',
+            outline_content='{"title": "Test Page", "points": ["Key points 1"]}',
+            description_content='{"text": "Test Description"}',
             narration_text=None,
             status='COMPLETED',
         )
@@ -772,8 +772,8 @@ class TestExportVideoRoute:
 
         task_payload = self._wait_for_task(client, project_id, task_id)
         assert task_payload['status'] == 'FAILED'
-        assert '未开启“允许返回半成品”' in task_payload['error_message']
-        assert '缺少旁白文本' in task_payload['error_message']
+        assert 'Unopened ”Enable to return semi-finished goods”' in task_payload['error_message']
+        assert 'Missing narration text' in task_payload['error_message']
 
     @needs_app
     def test_export_video_with_partial_allows_silent_result(self, client, app):
@@ -804,7 +804,7 @@ class TestExportVideoRoute:
 
 @needs_app
 class TestNarrationCRUD:
-    """测试旁白 CRUD 接口"""
+    """Test Narrator CRUD Interface"""
 
     def test_update_narration_page_not_found(self, client):
         response = client.put(

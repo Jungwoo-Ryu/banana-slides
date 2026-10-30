@@ -62,7 +62,7 @@ test.describe('Settings backfill - Mock tests', () => {
     const imageModel = page.locator('input[value="gemini-2.0-flash-preview-image-generation"]')
     await expect(imageModel).toBeVisible()
 
-    // API key placeholder should show length > 0 (已设置（长度: 39）)
+    // API key placeholder should show length > 0 (Set (long): 39）)
     const apiKeyInput = page.locator('input[type="password"]').first()
     const placeholder = await apiKeyInput.getAttribute('placeholder')
     expect(placeholder).toContain('39')
@@ -114,8 +114,8 @@ test.describe('Settings backfill - Mock tests', () => {
     // API key placeholder should NOT contain a non-zero length
     const apiKeyInput = page.locator('input[type="password"]').first()
     const placeholder = await apiKeyInput.getAttribute('placeholder')
-    // After frontend fix: when length is 0, should show default placeholder, not "已设置（长度: 0）"
-    expect(placeholder).not.toContain('已设置')
+    // After frontend fix: when length is 0, should show default placeholder, not "Set (long): 0）"
+    expect(placeholder).not.toContain('Set')
   })
 })
 
@@ -149,11 +149,11 @@ test.describe('Settings backfill - Integration tests', () => {
 
     // The page should load without errors - check that the settings form is visible
     // Look for the save button as indicator the page loaded
-    const saveButton = page.getByRole('button', { name: /保存|Save/ })
+    const saveButton = page.getByRole('button', { name: /\u4fdd\u5b58|Save/ })
     await expect(saveButton).toBeVisible()
 
     // Verify the reset button exists
-    const resetButton = page.getByRole('button', { name: /重置|Reset/ })
+    const resetButton = page.getByRole('button', { name: /\u91cd\u7f6e|Reset/ })
     await expect(resetButton).toBeVisible()
   })
 })

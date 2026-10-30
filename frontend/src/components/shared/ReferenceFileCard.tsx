@@ -3,14 +3,14 @@ import { FileText, Loader2, CheckCircle2, XCircle, X, RefreshCw, AlertTriangle }
 import { getReferenceFile, deleteReferenceFile, dissociateFileFromProject, triggerFileParse, type ReferenceFile } from '@/api/endpoints';
 import { useT } from '@/hooks/useT';
 
-// ReferenceFileCard 组件自包含翻译
+// ReferenceFileCard Component contains translation
 const referenceFileCardI18n = {
   zh: {
     referenceFile: {
-      parseStatus: { pending: "等待解析", parsing: "解析中...", completed: "解析完成", failed: "解析失败" },
-      reparse: "重新解析", removeFromProject: "从项目中移除", deleteFile: "删除文件",
-      imageCaptionFailed: "{{count}} 张图片未能生成描述",
-      previewAfterParse: "解析完成后可预览"
+      parseStatus: { pending: "Pending", parsing: "Parsing...", completed: "Completed", failed: "Failed" },
+      reparse: "Reparse", removeFromProject: "Remove from Project", deleteFile: "Delete File",
+      imageCaptionFailed: "{{count}} images failed to generate captions",
+      previewAfterParse: "Preview available after parsing"
     }
   },
   en: {
@@ -53,11 +53,11 @@ export const ReferenceFileCard: React.FC<ReferenceFileCardProps> = ({
           if (response.data?.file) {
             const updatedFile = response.data.file;
             setFile(updatedFile);
-            
+
             if (onStatusChange) {
               onStatusChange(updatedFile);
             }
-            
+
             if (updatedFile.parse_status === 'completed' || updatedFile.parse_status === 'failed') {
               clearInterval(intervalId);
             }
@@ -75,7 +75,7 @@ export const ReferenceFileCard: React.FC<ReferenceFileCardProps> = ({
 
   const handleDelete = async () => {
     if (isDeleting) return;
-    
+
     setIsDeleting(true);
     try {
       if (deleteMode === 'remove') {
@@ -92,14 +92,14 @@ export const ReferenceFileCard: React.FC<ReferenceFileCardProps> = ({
 
   const handleReparse = async () => {
     if (isReparsing || file.parse_status === 'parsing' || file.parse_status === 'pending') return;
-    
+
     setIsReparsing(true);
     try {
       const response = await triggerFileParse(file.id);
       if (response.data?.file) {
         const updatedFile = response.data.file;
         setFile(updatedFile);
-        
+
         if (onStatusChange) {
           onStatusChange(updatedFile);
         }
@@ -189,7 +189,7 @@ export const ReferenceFileCard: React.FC<ReferenceFileCardProps> = ({
             {formatFileSize(file.file_size)}
           </span>
         </div>
-        
+
         <div className="flex items-center gap-1.5 mt-1">
           {getStatusIcon()}
           <p className={`text-xs ${getStatusColor()}`}>
@@ -197,8 +197,8 @@ export const ReferenceFileCard: React.FC<ReferenceFileCardProps> = ({
           </p>
         </div>
 
-        {file.parse_status === 'completed' && 
-         typeof file.image_caption_failed_count === 'number' && 
+        {file.parse_status === 'completed' &&
+         typeof file.image_caption_failed_count === 'number' &&
          file.image_caption_failed_count > 0 && (
           <p className="text-xs text-orange-500 mt-1 flex items-center gap-1">
             <AlertTriangle size={12} className="flex-shrink-0" />
@@ -231,7 +231,7 @@ export const ReferenceFileCard: React.FC<ReferenceFileCardProps> = ({
             )}
           </button>
         )}
-        
+
         <button
           onClick={(e) => {
             e.stopPropagation();

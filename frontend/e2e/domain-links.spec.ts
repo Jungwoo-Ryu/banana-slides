@@ -14,7 +14,7 @@ test.describe('Banana Slides official domains', () => {
     await expect(footerDocsLink).toBeVisible();
     await expect(footerDocsLink).toHaveAttribute('target', '_blank');
 
-    await page.getByRole('button', { name: /帮助|Help/, exact: true }).click();
+    await page.getByRole('button', { name: /\u5e2e\u52a9|Help/, exact: true }).click();
     await expect(page.locator('a[href="https://docs.bananaslides.online/zh/features/overview"], a[href="https://docs.bananaslides.online/features/overview"]')).toBeVisible();
     await expect(page.locator('a[href="https://docs.bananaslides.online/zh/faq"], a[href="https://docs.bananaslides.online/faq"]')).toBeVisible();
     await expect(page.locator(`a[href*="${thirdPartyHost}"]`)).toHaveCount(0);

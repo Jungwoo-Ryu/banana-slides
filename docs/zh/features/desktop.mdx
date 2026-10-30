@@ -1,71 +1,71 @@
 ---
-title: "桌面版"
-description: "安装桌面应用、本地打包和发布验证"
+title: "Desktop App"
+description: "Install the desktop app, package locally, and verify releases"
 ---
 
-桌面版使用 Electron 承载前端，并通过 PyInstaller 打包后的内置后端提供 API。它适合本地使用场景：不需要手动启动浏览器端前后端服务，也不依赖 Docker 容器运行。
+The desktop app uses Electron for the frontend shell and a PyInstaller-packaged backend for local APIs. It is intended for local use: you do not need to start browser-mode frontend/backend services manually, and you do not need Docker at runtime.
 
 <Note>
-  桌面版仍然需要配置可用的模型服务密钥。首次启动后进入「设置」填写 provider、模型和 API Key；配置会写入本机应用数据目录。
+  The desktop app still requires valid model provider credentials. On first launch, open **Settings** and configure the provider, models, and API key. The settings are stored in the local app data directory.
 </Note>
 
-## 安装已发布版本
+## Install a Released Build
 
-从 [GitHub Releases](https://github.com/Anionex/banana-slides/releases) 下载与系统匹配的安装包。
+Download the installer for your platform from [GitHub Releases](https://github.com/Anionex/banana-slides/releases).
 
-| 系统 | 产物 | 安装方式 |
-|------|------|----------|
-| Windows | `BananaSlides-<version>-Setup.exe` | 双击 NSIS 安装包，按向导安装 |
-| macOS | `BananaSlides-<version>.dmg` | 打开 DMG，将 Banana Slides 拖入 Applications |
-| Linux | `BananaSlides-<version>.AppImage` / `BananaSlides-<version>.deb` | AppImage 赋予执行权限后运行，或用系统包管理器安装 deb |
+| System | Artifact | Installation |
+|--------|----------|--------------|
+| Windows | `BananaSlides-<version>-Setup.exe` | Run the NSIS installer and follow the setup wizard |
+| macOS | `BananaSlides-<version>.dmg` | Open the DMG and drag Banana Slides into Applications |
+| Linux | `BananaSlides-<version>.AppImage` / `BananaSlides-<version>.deb` | Make the AppImage executable, or install the deb with your package manager |
 
-桌面版会把数据库、上传文件、素材和导出文件放在用户可写的数据存储目录，而不是安装包资源目录。升级应用前仍建议备份重要项目数据。
+The desktop app stores its database, uploads, materials, and exports in a user-writable data storage directory rather than in packaged resource directories. Back up important local projects before upgrading.
 
-## 数据存储位置
+## Data Storage Location
 
-Windows 首次安装时，安装向导会分别显示“程序安装位置”和“数据存储位置”。程序安装位置只保存应用本身；数据存储位置保存项目数据库、生成图片、上传素材和导出缓存。macOS 和 Linux 首次启动时使用系统默认应用数据目录。
+On Windows, the setup wizard shows separate **Application installation location** and **Data storage location** fields during the first installation. The application location contains only the app itself. The data storage location contains the project database, generated images, uploaded assets, and export cache. macOS and Linux use the system's default app data directory on first launch.
 
-所有桌面平台都可以在完整的「系统设置」页面查看和修改数据存储位置。新路径通过校验后，点击“保存并重启”才会生效。浏览器版和项目内的“全局设置”弹窗不显示此选项。
+On every desktop platform, you can view and change the data storage location from the full **Settings** page. After the new path passes validation, click **Save and restart** to apply it. This option is not shown in the browser version or in the in-project **Global Settings** dialog.
 
 <Warning>
-  Banana Slides 只负责校验和切换路径，不会自动复制或删除数据。选择不包含现有数据库的目录时，应用会明确提示该位置将作为全新数据目录使用。
+  Banana Slides only validates and switches the path. It does not copy or delete data automatically. If you select a directory that does not contain an existing database, the app clearly warns that the location will be used as a new data directory.
 </Warning>
 
-### 手动迁移到其他磁盘
+### Move Data to Another Drive Manually
 
-1. 在「设置 → 数据存储位置」点击“打开当前目录”，记下旧路径。
-2. 从系统托盘菜单选择“退出”。只关闭窗口会将应用隐藏到托盘，后端仍可能写入数据库。
-3. 将旧目录中的 `data/`、`uploads/`、`exports/` 完整复制到新目录；先复制，不要直接剪切或删除旧数据。
-4. 重新打开 Banana Slides，在系统设置中填写或选择新目录，然后点击“保存并重启”。
-5. 确认历史项目、图片和素材均可正常打开后，再自行删除旧目录中的副本。
+1. Go to **Settings → Data storage location**, click **Open current folder**, and note the old path.
+2. Select **Quit** from the system tray menu. Closing the window only hides the app in the tray, so the backend may still be writing to the database.
+3. Copy the complete `data/`, `uploads/`, and `exports/` directories from the old location to the new one. Copy them first; do not move them directly or delete the old data yet.
+4. Reopen Banana Slides, enter or select the new directory in Settings, and click **Save and restart**.
+5. After confirming that your project history, images, and assets all open correctly, you may delete the old copies yourself.
 
-数据存储位置不包含 Chromium 缓存、应用日志及少量启动配置，因此修改后系统默认应用数据目录仍会保留少量文件。v1 仅支持本地文件系统目录，不支持 Windows UNC 或其他网络共享路径。如果自定义磁盘在启动时不可访问，应用会要求选择其他目录或退出，不会静默切回默认目录。
+The data storage location does not include the Chromium cache, application logs, or a small amount of startup configuration, so a few files remain in the system's default app data directory after the change. Version 1 supports local filesystem directories only, not Windows UNC paths or other network shares. If a custom drive is unavailable at startup, the app asks you to choose another directory or quit instead of silently falling back to the default directory.
 
-桌面安装包没有源码部署中的项目根目录 `.env`。请在应用内「设置」页面填写 API Provider、Base URL、模型和 API Key；这些配置会持久化到应用数据目录的本地数据库。模型配置中的 Provider 优先于上方「默认 API 配置」；下拉框选择「默认配置」时会使用上方配置。如果服务测试显示了意外的 Provider（例如配置 Gemini 却提示 MiniMax），请将对应模型的 Provider 改为「默认配置」，保存后再测试。
+Desktop installers do not include the project-root `.env` used by source deployments. Configure the API provider, base URL, models, and API key on the in-app **Settings** page instead; these settings persist in the local database under the app data directory. A provider selected for a model takes precedence over the **Default API Configuration** above it; choose **Default configuration** in the provider dropdown to use the settings above. If a service test shows an unexpected provider (for example, MiniMax after you configured Gemini), change that model's provider to **Default configuration**, save, and test again.
 
-连接 OpenAI/Codex 账号时，桌面版会在系统浏览器打开 OAuth 登录页。浏览器回调页显示 `Connected` 后，应用会自动轮询本地后端并更新为「已连接」，不需要手动刷新。应用重新获得焦点时也会立即补查。Web 回调失败或 popup 提前关闭时会结束「连接中」状态；任一模式等待超过两分钟也会结束并给出提示。Web 部署仍使用 popup 的 `postMessage` 回调，浏览器拦截弹窗时会直接提示用户允许弹窗。
+When connecting an OpenAI/Codex account, the desktop app opens the OAuth login in the system browser. After the callback page shows `Connected`, the app polls its local backend and updates to **Connected** automatically; no manual refresh is required. It also checks immediately when the app regains focus. In web mode, a failed callback or an early popup close ends the connecting state. Either mode ends with an actionable message after a two-minute timeout. Web deployments continue to use the popup `postMessage` callback and report a blocked popup immediately.
 
-桌面端导出会打开系统保存对话框。选择目标位置后，应用会等待文件实际写入并校验文件非空，再判定下载成功；若下载被中断、超时或目标文件没有写入，会显示包含目标路径的错误提示。预览页「导出任务」面板中的任务文件和历史导出文件也会经过同一套桌面保存流程。
+Desktop exports open the system save dialog. After you choose a destination, the app waits for the file to be written and verifies that it is not empty before reporting success. If the download is interrupted, times out, or does not write the destination file, the app displays an error that includes the selected path. Task files and historical exports in the preview page's **Export Tasks** panel use the same desktop save flow.
 
-## 本地运行与打包前置条件
+## Local Packaging Requirements
 
-本地打包需要同时准备前端、后端和 Electron 依赖：
+Local packaging needs frontend, backend, and Electron dependencies:
 
 - Node.js 20+
 - Python 3.11
 - uv
 - PyInstaller
-- Electron 依赖（在 `desktop/` 下安装）
-- macOS / Linux 默认使用 `desktop` npm 依赖提供的平台 FFmpeg/FFprobe；也可以通过 `FFMPEG_BIN` / `FFPROBE_BIN` 指定可信本地二进制，或使用 `PATH` 中的兜底命令
-- Windows 默认下载固定版本的静态 FFmpeg 并校验 SHA256；也可以通过 `FFMPEG_BIN` / `FFPROBE_BIN` 指定可信本地二进制
+- Electron dependencies installed under `desktop/`
+- macOS / Linux use platform FFmpeg/FFprobe binaries from the `desktop` npm dependencies by default; you can also set trusted `FFMPEG_BIN` / `FFPROBE_BIN` paths, or fall back to commands in `PATH`
+- Windows downloads a pinned static FFmpeg archive and verifies its SHA256 by default; you can also point `FFMPEG_BIN` / `FFPROBE_BIN` at trusted local binaries
 
 <Note>
-  `desktop/electron-builder.yml` 当前配置 Windows x64 NSIS 安装包、macOS arm64 DMG，以及 Linux x64 AppImage/deb。跨平台打包建议优先使用对应系统或 GitHub Actions runner。
+  `desktop/electron-builder.yml` currently targets Windows x64 NSIS, macOS arm64 DMG, and Linux x64 AppImage/deb. Prefer packaging on the matching OS or through GitHub Actions runners.
 </Note>
 
-## 本地打包
+## Local Packaging
 
-从仓库根目录开始执行：
+Run these commands from the repository root:
 
 ```bash
 cd frontend
@@ -82,7 +82,7 @@ npm ci
 npm run build:mac
 ```
 
-Windows 打包在 Windows 环境中执行最后一步：
+For Windows packaging, run the final step in a Windows environment:
 
 ```powershell
 cd desktop
@@ -90,7 +90,7 @@ npm ci
 npm run build:win
 ```
 
-Linux 打包：
+For Linux packaging:
 
 ```bash
 cd desktop
@@ -98,95 +98,95 @@ npm ci
 npm run build:linux
 ```
 
-`npm run build:*` 会先运行 `desktop/scripts/prepare-artifacts.js` 和 `desktop/scripts/sync-build-meta.js`：
+`npm run build:*` first runs `desktop/scripts/prepare-artifacts.js` and `desktop/scripts/sync-build-meta.js`:
 
-- 将 `frontend/dist/` 复制到 `desktop/frontend/`
-- 将 `backend/dist/banana-backend/` 复制到 `desktop/backend/`
-- 复制或生成 FFmpeg、macOS 图标等资源
-- 生成 `desktop/build-meta.json`，供更新检测判断当前构建是否新于 GitHub Release
+- Copies `frontend/dist/` to `desktop/frontend/`
+- Copies `backend/dist/banana-backend/` to `desktop/backend/`
+- Copies or generates FFmpeg, macOS icon, and other packaging resources
+- Generates `desktop/build-meta.json`, which lets update checks compare the current build against GitHub Releases
 
-打包输出位于 `desktop/dist/`。
+Packaging output is written to `desktop/dist/`.
 
-## Release flow
+## Release Flow
 
-桌面版 release 由 `.github/workflows/release-desktop.yml` 驱动。推送 `v*` tag 后会触发：
+Desktop releases are driven by `.github/workflows/release-desktop.yml`. Pushing a `v*` tag triggers:
 
-1. 从 tag 同步 `desktop/package.json` 版本号。
-2. 构建前端静态文件。
-3. 使用 uv 安装后端依赖，并用 PyInstaller 打包 `backend/banana-slides.spec`。
-4. 安装 Electron 依赖。
-5. 在 Windows、macOS、Linux runner 上分别运行 `npm run build:win`、`npm run build:mac`、`npm run build:linux`。
-6. 将 `desktop/dist/*` 上传到 GitHub draft Release。
+1. Syncing the tag version into `desktop/package.json`.
+2. Building frontend static files.
+3. Installing backend dependencies with uv and packaging `backend/banana-slides.spec` with PyInstaller.
+4. Installing Electron dependencies.
+5. Running `npm run build:win`, `npm run build:mac`, and `npm run build:linux` on Windows, macOS, and Linux runners.
+6. Uploading `desktop/dist/*` to a GitHub draft Release.
 
-发布 draft Release 前需要人工检查产物命名、版本号、平台覆盖和 release notes。自动更新检测读取 `Anionex/banana-slides` 的最新 GitHub Release，并结合 `build-meta.json` 中的提交时间判断是否提示更新。
+Before publishing the draft Release, manually check artifact names, version numbers, platform coverage, and release notes. The desktop update check reads the latest GitHub Release from `Anionex/banana-slides` and uses `build-meta.json` commit timestamps to avoid showing older releases as updates.
 
-## 签名与分发限制
+## Signing and Distribution Limits
 
-当前配置可以生成安装包，但不等于已完成正式签名分发。
+The current configuration can generate installers, but that does not mean the app is fully signed for formal distribution.
 
-- Windows：未签名安装包可能触发 SmartScreen 或“未知发布者”提示。正式分发前应使用代码签名证书签名安装包和可执行文件。
-- macOS：未完成 Apple Developer ID 签名和 notarization 的 DMG / App 可能被 Gatekeeper 阻止。正式分发前应接入签名、notarization 和 stapling。
-- 自动更新：当前实现是检查 GitHub Releases 并提示下载新版本，不是静默增量更新。
-- 架构限制：当前 macOS 配置为 arm64，Windows 配置为 x64；如需 Intel Mac 或 Windows arm64，需要补充 electron-builder target。
+- Windows: unsigned installers can trigger SmartScreen or "unknown publisher" prompts. Formal distribution should sign both the installer and executables with a code-signing certificate.
+- macOS: a DMG / App without Apple Developer ID signing and notarization may be blocked by Gatekeeper. Formal distribution should add signing, notarization, and stapling.
+- Updates: the current implementation checks GitHub Releases and prompts users to download a new version; it is not silent delta auto-update.
+- Architecture limits: macOS is currently configured for arm64, and Windows for x64. Intel Mac or Windows arm64 support requires additional electron-builder targets.
 
 <Warning>
-  不要为了跳过系统安全提示而关闭用户机器的全局安全策略。验收未签名包时，只按 Windows/macOS 对单个应用提供的手动允许流程处理。
+  Do not disable global security settings on a user's machine just to bypass platform prompts. When validating unsigned packages, only use the per-app manual approval flow provided by Windows or macOS.
 </Warning>
 
-## Windows EXE 验证
+## Windows EXE Verification
 
-Windows 验证至少覆盖：
+Windows verification should cover at least:
 
-1. 使用 GitHub Actions Windows runner 或本机 Windows 环境生成 `BananaSlides-<version>-Setup.exe`。
-2. 安装包可打开，安装路径可选择，桌面/开始菜单快捷方式按配置创建。
-3. 启动应用后能看到桌面窗口和启动页，内置后端正常启动。
-4. 在应用内打开「设置」，保存一组模型配置后刷新仍能回显。
-5. 创建一个项目，执行一次预览页导出或下载动作，确认桌面下载路径可用。
-6. 退出应用后确认后端进程随桌面应用关闭。
+1. Generate `BananaSlides-<version>-Setup.exe` on a GitHub Actions Windows runner or a local Windows environment.
+2. Confirm the installer opens, the install path can be selected, and desktop/start-menu shortcuts are created as configured.
+3. Launch the app and confirm the desktop window, splash screen, and bundled backend startup.
+4. Open **Settings**, save a model configuration, refresh, and confirm it persists.
+5. Create a project and exercise one preview-page export or download action.
+6. Quit the app and confirm the bundled backend process exits with it.
 
-如使用 CI 作为 Windows 打包验证，需要在 PR 或 release 记录中附上成功的 workflow run 链接和产物名称。
+If CI is used for Windows packaging verification, record the successful workflow run link and artifact name in the PR or release notes.
 
-## macOS DMG 验证
+## macOS DMG Verification
 
-macOS 验证至少覆盖：
+macOS verification should cover at least:
 
-1. 在 macOS runner 或本机执行 `npm run build:mac`，生成 `BananaSlides-<version>.dmg`。
-2. 挂载 DMG 后应用图标和名称正确，可拖入 Applications。
-3. 从 Applications 启动应用；若系统提示未验证开发者，仅按单应用允许流程继续。
-4. 桌面窗口加载完成后，内置后端 `/health` 正常，前端请求使用桌面端实际后端端口。
-5. 图片 URL、长任务轮询或 SSE、导出/下载路径至少验证一个真实工作流。
-6. 在「设置」发起一次 OpenAI OAuth，确认系统浏览器回调成功后应用无需刷新即可显示已连接。
-7. 关闭窗口并退出应用后，确认无残留的打包后端进程。
+1. Run `npm run build:mac` on a macOS runner or local macOS machine and generate `BananaSlides-<version>.dmg`.
+2. Mount the DMG and confirm the app icon/name are correct and the app can be dragged into Applications.
+3. Launch the app from Applications; if macOS warns about an unidentified developer, continue only through the per-app approval flow.
+4. After the desktop window loads, confirm the bundled backend `/health` path is healthy and frontend requests use the actual desktop backend port.
+5. Verify at least one real workflow involving image URLs, long-running task polling or SSE, and export/download behavior.
+6. Start an OpenAI OAuth login from **Settings** and confirm the app shows the connected account after the system-browser callback without a refresh.
+7. Quit the app and confirm no packaged backend process remains.
 
-## 常见问题
+## Troubleshooting
 
-### 启动后提示后端不可用
+### The App Says the Backend Is Unavailable
 
-先确认安装包内包含 `desktop/backend/` 资源，以及系统没有安全软件阻止内置后端进程启动。开发或打包验证时也要确认 PyInstaller 已生成 `backend/dist/banana-backend/`。
+Confirm the installer includes `desktop/backend/`, and check whether security software blocked the bundled backend process. During development or packaging verification, also confirm PyInstaller generated `backend/dist/banana-backend/`.
 
-### 配置 Gemini 却提示其他 Provider
+### Gemini Is Configured but Another Provider Is Shown
 
-文本、图像生成和图片识别模型都可以设置自己的 Provider，并优先于默认 API。返回「设置 → 模型配置」，将出现意外 Provider 的模型改为「默认配置」，保存后重新运行服务测试。桌面版不需要也不会在安装目录中创建 `.env`。
+The text generation, image generation, and image captioning models can each use their own provider, which takes precedence over the default API. Return to **Settings → Model Configuration**, change the unexpected model provider to **Default configuration**, save, and rerun the service test. The desktop app does not need or create a `.env` file in its installation directory.
 
-### 浏览器显示 OpenAI 已连接，但应用仍在等待
+### The Browser Says OpenAI Is Connected but the App Is Still Waiting
 
-桌面版会每秒查询一次本地 OAuth 状态，并在应用重新获得焦点时立即补查，正常情况下无需刷新。若等待超过两分钟，应用会结束连接状态并提示重试；也可以展开「登录后连接失败？」并粘贴浏览器地址栏中的完整回调 URL。请同时确认内置后端仍在运行，且没有安全软件阻止本机请求。
+The desktop app checks local OAuth status every second and checks immediately when it regains focus, so a refresh should not be necessary. After two minutes it ends the connecting state and prompts you to retry. You can also expand **Connection failed after login?** and paste the complete callback URL from the browser address bar. Confirm that the bundled backend is still running and that security software is not blocking local requests.
 
-### 桌面端选择保存位置后没有文件
+### No File Appears After Choosing a Desktop Save Location
 
-桌面端会在文件真正写入目标位置后才返回成功。如果下载被中断、超时或写入后文件缺失/为空，应用会显示「文件没有保存成功」以及本次选择的目标路径；请按提示重新保存。也可以打开预览页「导出任务」面板，点击对应任务或历史文件的「下载」重新选择位置。
+The desktop app only reports success after the file has actually been written to the selected destination. If the download is interrupted, times out, or the written file is missing or empty, the app displays **File was not saved successfully** together with the selected path; follow the prompt and save again. You can also open the **Export Tasks** panel on the preview page and click **Download** for the relevant task or historical export to choose a new destination.
 
-### 打包时提示找不到 frontend 或 backend 资源
+### Packaging Cannot Find Frontend or Backend Resources
 
-先分别完成 `frontend/dist/` 和 `backend/dist/banana-backend/` 构建，再进入 `desktop/` 运行 `npm run build:*`。
+Build `frontend/dist/` and `backend/dist/banana-backend/` first, then run `npm run build:*` from `desktop/`.
 
-### macOS 打包时找不到 FFmpeg
+### macOS Packaging Cannot Find FFmpeg
 
-安装 FFmpeg，或设置：
+Install FFmpeg, or set:
 
 ```bash
 export FFMPEG_BIN=/absolute/path/to/ffmpeg
 export FFPROBE_BIN=/absolute/path/to/ffprobe
 ```
 
-然后重新运行 `npm run build:mac`。
+Then rerun `npm run build:mac`.

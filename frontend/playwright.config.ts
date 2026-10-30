@@ -1,75 +1,75 @@
 import { defineConfig, devices } from '@playwright/test'
 
 /**
- * Playwright E2E测试配置 - 前端 UI 测试
- * 
+ * Playwright E2E Test Configuration - Frontend UI Test
+ *
  * @see https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
-  // 测试目录
+  // Test Directory
   testDir: './e2e',
-  
-  // 测试文件匹配模式
+
+  // Test File Matching Mode
   testMatch: '**/*.spec.ts',
-  
-  // 并行运行测试
+
+  // Run parallel tests
   fullyParallel: true,
-  
-  // CI环境下失败立即停止
+
+  // CI Failures in the environment stop immediately
   forbidOnly: !!process.env.CI,
-  
-  // 失败不重试
+
+  // Failed not to try again
   retries: 0,
-  
-  // 并行worker数量
+
+  // Parallel worker Number
   workers: process.env.CI ? 1 : undefined,
-  
-  // 测试报告
+
+  // Test report
   reporter: [
     ['html', { outputFolder: 'playwright-report' }],
     ['list'],
     ...(process.env.CI ? [['github'] as const] : []),
   ],
-  
-  // 全局设置
+
+  // Global Settings
   use: {
-    // 基础URL
+    // Basis URL
     baseURL: process.env.BASE_URL || 'http://localhost:3011',
-    
-    // 截图设置
+
+    // Screenshot Settings
     screenshot: 'only-on-failure',
-    
-    // 视频设置
+
+    // Video Settings
     video: 'retain-on-failure',
-    
-    // 追踪设置
+
+    // Tracking Settings
     trace: 'retain-on-failure',
-    
-    // 浏览器语言设置（E2E测试使用中文，匹配选择器）
+
+    // Browser Language Settings（E2E Test in Chinese, match selector）
     locale: 'zh-CN',
 
-    // 超时设置
+    // Timeout Settings
     actionTimeout: 15000,
     navigationTimeout: 30000,
   },
-  
-  // 全局超时
+
+  // Global timeout
   timeout: 60000,
-  
-  // 预期超时
+
+  // Expected timeout
   expect: {
     timeout: 10000,
   },
-  
-  // 项目配置（多浏览器测试）
+
+  // Project Configuration (multi-browser testing)）
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  
-  // 本地开发时启动服务
+
+  // Start service on local development
   webServer: process.env.CI ? undefined : {
     command: 'cd .. && docker compose up -d && sleep 10',
     url: 'http://localhost:3011',

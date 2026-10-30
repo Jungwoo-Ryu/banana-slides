@@ -7,7 +7,7 @@ function mockProject() {
   return {
     id: PROJECT_ID,
     project_id: PROJECT_ID,
-    project_title: '上一步按钮测试项目',
+    project_title: 'Previous button test item',
     status: 'COMPLETED',
     template_mode: 'single',
     image_aspect_ratio: '16:9',
@@ -22,8 +22,8 @@ function mockProject() {
         status: 'COMPLETED',
         generated_image_path: `/files/mock/1.png`,
         generated_image_url: `/files/mock/1.png`,
-        outline_content: { title: '第一页标题', points: ['要点一'] },
-        description_content: { text: '第一页描述' },
+        outline_content: { title: 'Title of first page', points: ['Point one.'] },
+        description_content: { text: 'First Page Description' },
         created_at: '2026-08-01T10:00:00.000Z',
         updated_at: '2026-08-01T10:00:00.000Z',
       },
@@ -125,13 +125,13 @@ test.describe('SlidePreview previous-step navigation (mock)', () => {
 
     const previousStep = page.getByTestId('preview-previous-step')
     await expect(previousStep).toBeVisible()
-    await expect(previousStep).toContainText(/上一步|Previous/)
-    await expect(previousStep).toHaveAccessibleName(/上一步|Previous/)
-    await expect(page.getByRole('button', { name: /返回|Back/ })).toHaveAccessibleName(/返回|Back/)
+    await expect(previousStep).toContainText(/\u4e0a\u4e00\u6b65|Previous/)
+    await expect(previousStep).toHaveAccessibleName(/\u4e0a\u4e00\u6b65|Previous/)
+    await expect(page.getByRole('button', { name: /\u8fd4\u56de|Back/ })).toHaveAccessibleName(/\u8fd4\u56de|Back/)
 
     await previousStep.click()
     await expect(page).toHaveURL(new RegExp(`/project/${PROJECT_ID}/detail$`))
-    await expect(page.getByText('第一页描述')).toBeVisible()
+    await expect(page.getByText('First Page Description')).toBeVisible()
   })
 
   test('mobile: previous-step button stays reachable and returns to the description editor', async ({ page }) => {
@@ -145,7 +145,7 @@ test.describe('SlidePreview previous-step navigation (mock)', () => {
 
     await previousStep.click()
     await expect(page).toHaveURL(new RegExp(`/project/${PROJECT_ID}/detail$`))
-    await expect(page.getByText('第一页描述')).toBeVisible()
+    await expect(page.getByText('First Page Description')).toBeVisible()
   })
 
   test('regression: header back button still returns to the description editor from a direct visit', async ({ page }) => {
@@ -153,9 +153,9 @@ test.describe('SlidePreview previous-step navigation (mock)', () => {
     await page.goto(`/project/${PROJECT_ID}/preview`)
     await page.waitForLoadState('networkidle')
 
-    await page.getByRole('button', { name: /返回|Back/ }).click()
+    await page.getByRole('button', { name: /\u8fd4\u56de|Back/ }).click()
     await expect(page).toHaveURL(new RegExp(`/project/${PROJECT_ID}/detail$`))
-    await expect(page.getByText('第一页描述')).toBeVisible()
+    await expect(page.getByText('First Page Description')).toBeVisible()
   })
 
   test('history entry: back goes to history while previous-step goes to the description editor', async ({ page }) => {
@@ -164,13 +164,13 @@ test.describe('SlidePreview previous-step navigation (mock)', () => {
     await page.goto('/history')
     await page.waitForLoadState('networkidle')
 
-    const projectCard = page.locator('div.cursor-pointer', { hasText: '上一步按钮测试项目' }).first()
+    const projectCard = page.locator('div.cursor-pointer', { hasText: 'Previous button test item' }).first()
     await expect(projectCard).toBeVisible()
 
     await projectCard.click()
     await expect(page).toHaveURL(new RegExp(`/project/${PROJECT_ID}/preview$`))
 
-    await page.getByRole('button', { name: /返回|Back/ }).click()
+    await page.getByRole('button', { name: /\u8fd4\u56de|Back/ }).click()
     await expect(page).toHaveURL(/\/history$/)
 
     await projectCard.click()
@@ -213,7 +213,7 @@ test.describe('SlidePreview previous-step navigation (integration)', () => {
       await previousStep.click()
 
       await expect(page).toHaveURL(new RegExp(`/project/${projectId}/detail$`))
-      await expect(page.getByText('编辑页面描述')).toBeVisible()
+      await expect(page.getByText('Edit Page Description')).toBeVisible()
     } finally {
       await fetch(`${backendUrl}/api/projects/${projectId}`, { method: 'DELETE' })
     }

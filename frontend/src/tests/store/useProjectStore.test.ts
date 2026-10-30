@@ -1,14 +1,14 @@
 /**
- * Zustand Store 测试
- * 
- * 测试useProjectStore的核心状态管理功能
+ * Zustand Store Test
+ *
+ * Test useProjectStore Core state management function
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { act, renderHook } from '@testing-library/react'
 import { useProjectStore } from '@/store/useProjectStore'
 
-// Mock API模块
+// Mock API Module
 vi.mock('@/api/endpoints', () => ({
   createProject: vi.fn(),
   getProject: vi.fn(),
@@ -30,7 +30,7 @@ import { deleteTemplateAsset, uploadTemplateAsset, generateOutlineStream } from 
 
 describe('useProjectStore', () => {
   beforeEach(() => {
-    // 重置store状态
+    // Reset store Status
     const { result } = renderHook(() => useProjectStore())
     act(() => {
       result.current.setCurrentProject(null)
@@ -40,10 +40,10 @@ describe('useProjectStore', () => {
     })
   })
 
-  describe('初始状态', () => {
+  describe('Initial Status', () => {
     it('should initialize with default state', () => {
       const { result } = renderHook(() => useProjectStore())
-      
+
       expect(result.current.currentProject).toBeNull()
       expect(result.current.isGlobalLoading).toBe(false)
       expect(result.current.error).toBeNull()
@@ -51,61 +51,61 @@ describe('useProjectStore', () => {
     })
   })
 
-  describe('基础Setters', () => {
+  describe('Basis Setters', () => {
     it('should set current project correctly', () => {
       const { result } = renderHook(() => useProjectStore())
-      const mockProject = { 
-        id: '123', 
+      const mockProject = {
+        id: '123',
         status: 'DRAFT',
         pages: [],
         created_at: new Date().toISOString()
       }
-      
+
       act(() => {
         result.current.setCurrentProject(mockProject as any)
       })
-      
+
       expect(result.current.currentProject).toEqual(mockProject)
     })
 
     it('should set global loading state', () => {
       const { result } = renderHook(() => useProjectStore())
-      
+
       act(() => {
         result.current.setGlobalLoading(true)
       })
-      
+
       expect(result.current.isGlobalLoading).toBe(true)
-      
+
       act(() => {
         result.current.setGlobalLoading(false)
       })
-      
+
       expect(result.current.isGlobalLoading).toBe(false)
     })
 
     it('should set error correctly', () => {
       const { result } = renderHook(() => useProjectStore())
-      
+
       act(() => {
         result.current.setError('Test error')
       })
-      
+
       expect(result.current.error).toBe('Test error')
-      
+
       act(() => {
         result.current.setError(null)
       })
-      
+
       expect(result.current.error).toBeNull()
     })
   })
 
-  describe('本地页面更新', () => {
+  describe('Local Page Update', () => {
     it('should update page locally (optimistic update)', () => {
       const { result } = renderHook(() => useProjectStore())
-      
-      // 先设置项目
+
+      // Set items first
       const mockProject = {
         id: 'proj-123',
         status: 'DRAFT',
@@ -114,25 +114,25 @@ describe('useProjectStore', () => {
           { id: 'page-2', outline_content: { title: 'Page 2', points: [] } },
         ]
       }
-      
+
       act(() => {
         result.current.setCurrentProject(mockProject as any)
       })
-      
-      // 更新页面
+
+      // Update Page
       act(() => {
-        result.current.updatePageLocal('page-1', { 
+        result.current.updatePageLocal('page-1', {
           outline_content: { title: 'Updated Page 1', points: ['new point'] }
         })
       })
-      
-      // 验证乐观更新
+
+      // Validate optimistic updates
       const updatedPage = result.current.currentProject?.pages.find(p => p.id === 'page-1')
       expect(updatedPage?.outline_content?.title).toBe('Updated Page 1')
     })
   })
 
-  describe('模板资产删除', () => {
+  describe('Template asset deletion', () => {
     it('should bind uploaded template by page_id and clear stale match metadata', async () => {
       vi.mocked(uploadTemplateAsset).mockResolvedValue({
         data: {
@@ -220,28 +220,28 @@ describe('useProjectStore', () => {
     })
   })
 
-  describe('清除状态', () => {
+  describe('Clear Status', () => {
     it('should clear project by setting null', () => {
       const { result } = renderHook(() => useProjectStore())
-      
-      // 先设置项目
+
+      // Set items first
       act(() => {
         result.current.setCurrentProject({ id: '123', pages: [] } as any)
       })
-      
+
       expect(result.current.currentProject).not.toBeNull()
-      
-      // 清除
+
+      // Clear
       act(() => {
         result.current.setCurrentProject(null)
       })
-      
+
       expect(result.current.currentProject).toBeNull()
     })
   })
 })
 
-describe('useProjectStore 流式大纲项目隔离', () => {
+describe('useProjectStore Fluid outline item segregation', () => {
   const projectA = { id: 'proj-a', status: 'DRAFT', pages: [], created_at: '2026-01-01T00:00:00' }
   const projectB = { id: 'proj-b', status: 'DRAFT', pages: [], created_at: '2026-01-01T00:00:00' }
 
@@ -255,7 +255,7 @@ describe('useProjectStore 流式大纲项目隔离', () => {
     })
   })
 
-  it('离开项目后，该项目的流式失败不设置错误、不抛出并返回 active=false', async () => {
+  it('After leaving the project, the project’s flow failure does not set errors, does not throw out and returns active=false', async () => {
     const { result } = renderHook(() => useProjectStore())
     let rejectStream!: (err: Error) => void
     vi.mocked(generateOutlineStream).mockImplementationOnce(
@@ -267,7 +267,7 @@ describe('useProjectStore 流式大纲项目隔离', () => {
     let pending!: Promise<{ complete: boolean; active: boolean } | undefined>
     act(() => { pending = result.current.generateOutlineStream() })
 
-    // 流未结束时切到另一个项目
+    // Cut to another item before the flow ends
     act(() => { result.current.setCurrentProject(projectB as any) })
 
     await act(async () => {
@@ -281,7 +281,7 @@ describe('useProjectStore 流式大纲项目隔离', () => {
     expect(result.current.currentProject?.id).toBe('proj-b')
   })
 
-  it('流进行中切到其他项目时，页面与完成回调不写入当前项目', async () => {
+  it('When streaming to other items, page and callback do not write to the current item', async () => {
     const { result } = renderHook(() => useProjectStore())
     let emitPage!: (page: any) => void
     let emitDone!: (data: any) => void
@@ -298,25 +298,25 @@ describe('useProjectStore 流式大纲项目隔离', () => {
     let pending!: Promise<{ complete: boolean; active: boolean } | undefined>
     act(() => { pending = result.current.generateOutlineStream() })
 
-    // 流未结束时切到另一个项目
+    // Cut to another item before the flow ends
     act(() => { result.current.setCurrentProject(projectB as any) })
 
     await act(async () => {
-      // 页面事件与完成事件现在才到达，且当前项目是 B
+      // The page event and the completed event have only arrived now and the current item is B
       emitPage({ index: 0, title: 'Source page', points: ['p'] })
       emitDone({ total: 1, complete: true, pages: [{ id: 'real-1', order_index: 0, outline_content: { title: 'Source page', points: ['p'] } }] })
       resolveStream()
       await expect(pending).resolves.toEqual({ complete: true, active: false })
     })
 
-    // B 的页面保持不变，错误状态保持为空
+    // B The page remains the same and the error status is empty
     expect(result.current.currentProject?.id).toBe('proj-b')
     expect(result.current.currentProject?.pages).toHaveLength(0)
     expect(result.current.error).toBeNull()
     expect(result.current.isOutlineStreaming).toBe(false)
   })
 
-  it('SSE error 事件在切走项目后到达时不设置错误、不抛出', async () => {
+  it('SSE error Event does not set error and does not throw when arriving after the item has been cut', async () => {
     const { result } = renderHook(() => useProjectStore())
     let emitError!: (message: string) => void
     let resolveStream!: () => void
@@ -331,7 +331,7 @@ describe('useProjectStore 流式大纲项目隔离', () => {
     let pending!: Promise<{ complete: boolean; active: boolean } | undefined>
     act(() => { pending = result.current.generateOutlineStream() })
 
-    // 流未结束时切到另一个项目
+    // Cut to another item before the flow ends
     act(() => { result.current.setCurrentProject(projectB as any) })
 
     await act(async () => {
@@ -345,7 +345,7 @@ describe('useProjectStore 流式大纲项目隔离', () => {
     expect(result.current.currentProject?.pages).toHaveLength(0)
   })
 
-  it('两个项目可同时流式生成，A 结束后 B 仍保持 streaming', async () => {
+  it('Two projects can be generated simultaneously.，A After that. B Hold on. streaming', async () => {
     const { result } = renderHook(() => useProjectStore())
     const resolvers: Array<() => void> = []
     vi.mocked(generateOutlineStream).mockImplementation(
@@ -364,18 +364,18 @@ describe('useProjectStore 流式大纲项目隔离', () => {
     expect([...result.current.outlineStreamingProjectIds].sort()).toEqual(['proj-a', 'proj-b'])
     expect(result.current.isOutlineStreaming).toBe(true)
 
-    // A 先完成：只清理 A，B 仍在流式
+    // A First completed： clean-up only A，B Still Flowing
     await act(async () => { resolvers[0](); await pendingA })
     expect(result.current.outlineStreamingProjectIds).toEqual(['proj-b'])
     expect(result.current.isOutlineStreaming).toBe(true)
 
-    // B 完成：全部清理
+    // B Completed： All cleared
     await act(async () => { resolvers[1](); await pendingB })
     expect(result.current.outlineStreamingProjectIds).toEqual([])
     expect(result.current.isOutlineStreaming).toBe(false)
   })
 
-  it('停留在发起项目时，流式失败仍设置错误并抛出', async () => {
+  it('Stay while initiating the project, the flow failed to set and throw the error', async () => {
     const { result } = renderHook(() => useProjectStore())
     let rejectStream!: (err: Error) => void
     vi.mocked(generateOutlineStream).mockImplementationOnce(
@@ -396,7 +396,7 @@ describe('useProjectStore 流式大纲项目隔离', () => {
     expect(result.current.isOutlineStreaming).toBe(false)
   })
 
-  it('同项目已有流式任务时，重复调用直接返回', async () => {
+  it('Recall direct return when current task with item already exists', async () => {
     const { result } = renderHook(() => useProjectStore())
     let resolveStream!: () => void
     vi.mocked(generateOutlineStream).mockImplementationOnce(
@@ -410,7 +410,7 @@ describe('useProjectStore 流式大纲项目隔离', () => {
     expect(second).toBeUndefined()
     expect(vi.mocked(generateOutlineStream)).toHaveBeenCalledTimes(1)
 
-    // 收尾后状态复位
+    // Reset after close
     resolveStream()
     await act(async () => { await first })
     expect(result.current.isOutlineStreaming).toBe(false)

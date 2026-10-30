@@ -20,91 +20,91 @@ import { isDesktop } from '@/utils';
 
 type CreationType = 'idea' | 'outline' | 'description' | 'ppt_renovation';
 
-// 支持作为参考文件上传的文档扩展名（与后端 file_parser_service 保持一致）
+// Supports document extensions uploaded as reference files (with backends) file_parser_service Consistency）
 const ALLOWED_DOC_EXTENSIONS = ['pdf', 'docx', 'pptx', 'doc', 'ppt', 'xlsx', 'xls', 'csv', 'txt', 'md'];
 
-// 页面特有翻译 - AI 可以直接看到所有文案，保留原始 key 结构
+// Page-specific translation - AI You can see all the files directly, keep the originals. key Structure
 const homeI18n = {
   zh: {
     nav: {
-      materialGenerate: '素材生成', materialCenter: '素材中心',
-      history: '历史项目', settings: '设置', help: '帮助'
+      materialGenerate: 'Generate Material', materialCenter: 'Material Center',
+      history: 'History', settings: 'Settings', help: 'Help'
     },
     settings: {
-      language: { label: '界面语言' },
-      theme: { label: '主题模式', light: '浅色', dark: '深色', system: '跟随系统' }
+      language: { label: 'Interface Language' },
+      theme: { label: 'Theme', light: 'Light', dark: 'Dark', system: 'System' }
     },
     home: {
       title: 'Banana Slides',
       subtitle: 'Vibe your slides like vibe coding',
-      tagline: '基于 nano banana pro 的原生 AI PPT 生成器',
+      tagline: 'AI-native PPT generator powered by nano banana pro',
       features: {
-        oneClick: '一句话生成 PPT',
-        naturalEdit: '自然语言修改',
-        regionEdit: '指定区域编辑',
-        export: '一键导出 PPTX/PDF',
+        oneClick: 'One-click PPT generation',
+        naturalEdit: 'Natural language editing',
+        regionEdit: 'Region-specific editing',
+        export: 'Export to PPTX/PDF',
       },
       tabs: {
-        idea: '一句话生成',
-        outline: '从大纲生成',
-        description: '从描述生成',
-        ppt_renovation: 'PPT 翻新',
+        idea: 'From Idea',
+        outline: 'From Outline',
+        description: 'From Description',
+        ppt_renovation: 'PPT Renovation',
       },
       tabDescriptions: {
-        idea: '输入你的想法，AI 将为你生成完整的 PPT',
-        outline: '已有大纲？直接粘贴，AI 将自动切分为结构化大纲',
-        description: '已有完整描述？AI 将自动解析并直接生成图片，跳过大纲步骤',
-        ppt_renovation: '上传已有的 PDF/PPTX 文件，AI 将解析内容并重新生成翻新后的PPT',
+        idea: 'Enter your idea, AI will generate a complete PPT for you',
+        outline: 'Have an outline? Paste it directly, AI will split it into a structured outline',
+        description: 'Have detailed descriptions? AI will parse and generate images directly, skipping the outline step',
+        ppt_renovation: 'Upload an existing PDF/PPTX file, AI will parse its content and regenerate the renovated PPT',
       },
       placeholders: {
-        idea: '例如：生成一份关于 AI 发展史的演讲 PPT',
-        outline: '粘贴你的 PPT 大纲...',
-        description: '粘贴你的完整页面描述...',
+        idea: 'e.g., Generate a presentation about the history of AI',
+        outline: 'Paste your PPT outline...',
+        description: 'Paste your complete page descriptions...',
       },
       examples: {
-        outline: '格式示例：\n\n第一页：AI 的起源\n- 1956年达特茅斯会议\n- 早期研究者的愿景\n\n第二页：机器学习的发展\n- 从规则驱动到数据驱动\n- 经典算法介绍\n\n第三页：未来展望\n- 趋势与挑战\n\n支持标题+要点的形式，也可以只写标题。AI 会自动切分为结构化大纲。',
-        description: '格式示例：\n\n第一页：AI 的起源\n介绍人工智能概念的诞生，从1956年达特茅斯会议讲起。页面采用左文右图布局，左侧展示时间线，右侧配一张复古风格的计算机插画。\n\n第二页：机器学习的发展\n讲解从规则驱动到数据驱动的转变。使用深蓝色背景，中央放置算法对比图表，底部列出关键里程碑。\n\n每页可包含内容描述、排版布局、视觉风格等，用空行分隔各页。',
+        outline: 'Format example:\n\nSlide 1: The Origins of AI\n- 1956 Dartmouth Conference\n- Vision of early researchers\n\nSlide 2: The Rise of Machine Learning\n- From rule-based to data-driven\n- Classic algorithms overview\n\nSlide 3: Future Outlook\n- Trends and challenges\n\nTitles with bullet points, or titles only. AI will split it into a structured outline.',
+        description: 'Format example:\n\nSlide 1: The Origins of AI\nIntroduce the birth of AI, starting from the 1956 Dartmouth Conference. Use a left-text right-image layout with a timeline on the left and a retro-style computer illustration on the right.\n\nSlide 2: The Rise of Machine Learning\nExplain the shift from rule-based to data-driven approaches. Dark blue background, algorithm comparison chart in the center, key milestones at the bottom.\n\nEach slide can include content, layout, and visual style. Separate slides with blank lines.',
       },
       template: {
-        title: '选择风格模板',
-        useTextStyle: '使用文字描述风格',
-        multiMode: '每页独立模板',
-        multiModeHint: '每页可使用不同模板，创建后在模板配置页逐页指定',
+        title: 'Select Style Template',
+        useTextStyle: 'Use text description for style',
+        multiMode: 'Per-page templates',
+        multiModeHint: 'Each page can use a different template; assign them per page on the setup page after creation',
       },
       actions: {
-        selectFile: '选择参考文件',
-        parsing: '解析中...',
-        createProject: '创建新项目',
-        startBlank: '或从空白项目开始',
-        startBlankHint: '不生成大纲，自己添加或导入页面',
+        selectFile: 'Select reference file',
+        parsing: 'Parsing...',
+        createProject: 'Create New Project',
+        startBlank: 'Or start from a blank project',
+        startBlankHint: 'Skip outline generation — add or import pages yourself',
       },
       renovation: {
-        uploadHint: '点击或拖拽上传 PDF / PPTX 文件',
-        formatHint: '支持 .pdf, .pptx, .ppt 格式（推荐上传 PDF）',
-        keepLayout: '保留原始排版布局',
-        onlyPdfPptx: '仅支持 PDF 和 PPTX 文件',
-        uploadFile: '请先上传 PDF 或 PPTX 文件',
+        uploadHint: 'Click or drag to upload PDF / PPTX file',
+        formatHint: 'Supports .pdf, .pptx, .ppt formats (PDF recommended)',
+        keepLayout: 'Keep original layout',
+        onlyPdfPptx: 'Only PDF and PPTX files are supported',
+        uploadFile: 'Please upload a PDF or PPTX file first',
       },
       messages: {
-        enterContent: '请输入内容',
-        filesParsing: '还有 {{count}} 个参考文件正在解析中，请等待解析完成',
-        projectCreateFailed: '项目创建失败',
-        multiModeSwitchFailed: '切换到每页独立模板失败，请在项目内重试',
-        uploadingImage: '正在上传图片并识别内容...',
-        imageUploadSuccess: '图片上传成功！已插入到光标位置',
-        imageUploadFailed: '图片上传失败',
-        fileUploadSuccess: '文件上传成功',
-        fileUploadFailed: '文件上传失败',
-        fileTooLarge: '文件过大：{{size}}MB，最大支持 200MB',
-        fileUploadInProgress: '正在上传文件，请等待当前上传完成后再试',
-        unsupportedFileType: '不支持的文件类型: {{type}}',
-        loadTemplateFailed: '加载模板失败，请重新选择或上传模板',
-        pptTip: '建议先在本地将 PPTX 转为 PDF 后再上传，可获得更好的兼容性和更快的处理速度',
-        filesAdded: '已添加 {{count}} 个参考文件',
-        imageRemoved: '已移除图片',
-        serviceTestTip: '建议先到设置页底部进行服务测试，避免后续功能异常',
-        verifying: '正在验证 API 配置...',
-        verifyFailed: '请在设置页配置正确的 API Key，并在页面底部点击「服务测试」验证',
+        enterContent: 'Please enter content',
+        filesParsing: '{{count}} reference file(s) are still parsing, please wait',
+        projectCreateFailed: 'Failed to create project',
+        multiModeSwitchFailed: 'Failed to switch to per-page templates; please retry inside the project',
+        uploadingImage: 'Uploading and recognizing image...',
+        imageUploadSuccess: 'Image uploaded! Inserted at cursor position',
+        imageUploadFailed: 'Failed to upload image',
+        fileUploadSuccess: 'File uploaded successfully',
+        fileUploadFailed: 'Failed to upload file',
+        fileTooLarge: 'File too large: {{size}}MB, maximum 200MB',
+        fileUploadInProgress: 'A file upload is already in progress — please wait for it to finish',
+        unsupportedFileType: 'Unsupported file type: {{type}}',
+        loadTemplateFailed: 'Failed to load the template. Please select or upload it again',
+        pptTip: 'We recommend converting your PPTX to PDF locally before uploading for better compatibility and faster processing',
+        filesAdded: 'Added {{count}} reference file(s)',
+        imageRemoved: 'Image removed',
+        serviceTestTip: 'Test services in Settings first to avoid issues',
+        verifying: 'Verifying API configuration...',
+        verifyFailed: 'Please configure a valid API Key in Settings and click "Service Test" at the bottom to verify',
       },
     },
   },
@@ -238,7 +238,7 @@ export const Home: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const themeMenuRef = useRef<HTMLDivElement>(null);
 
-  // 持久化草稿到 sessionStorage，确保跳转设置页后返回时内容不丢失
+  // Endurance Draft to sessionStorage，Make sure you don’t lose the contents when you return after skipping the settings
   useEffect(() => {
     if (content) {
       sessionStorage.setItem('home-draft-content', content);
@@ -250,12 +250,12 @@ export const Home: React.FC = () => {
   }, [activeTab]);
 
 
-  // 检查是否有当前项目 & 加载用户模板
+  // Check for current items & Load user templates
   useEffect(() => {
     const projectId = localStorage.getItem('currentProjectId');
     setCurrentProjectId(projectId);
 
-    // 加载用户模板列表（用于按需获取File）
+    // Loading the list of user templates (to be accessed on demand) File）
     const loadTemplates = async () => {
       try {
         const response = await listUserTemplates();
@@ -263,17 +263,17 @@ export const Home: React.FC = () => {
           setUserTemplates(response.data.templates);
         }
       } catch (error) {
-        console.error('加载用户模板失败:', error);
+        console.error('Failed to load user templates:', error);
       }
     };
     loadTemplates();
   }, []);
 
-  // 首次访问自动弹出帮助模态框
+  // First Access AutoEject Help Model
   useEffect(() => {
     const hasSeenHelp = localStorage.getItem('hasSeenHelpModal');
     if (!hasSeenHelp) {
-      // 延迟500ms打开，让页面先渲染完成
+      // Delay 500ms Open, let the page finish first.
       const timer = setTimeout(() => {
         setIsHelpModalOpen(true);
         localStorage.setItem('hasSeenHelpModal', 'true');
@@ -299,7 +299,7 @@ export const Home: React.FC = () => {
   }, [searchParams, setSearchParams]);
 
   const handleOpenMaterialModal = () => {
-    // 在主页始终生成全局素材，不关联任何项目
+    // Always generate global material on the home page, not associated with any items
     setIsMaterialModalOpen(true);
   };
 
@@ -311,7 +311,7 @@ export const Home: React.FC = () => {
     textareaRef.current?.insertAtCursor(markdown);
   }, []);
 
-  // 图片粘贴使用统一 hook（批量支持，不对非图片文件发出警告，由下方 handlePaste 处理文档）
+  // Unified use of graphic paste hook（Batch support, no warning for non-photo files from below handlePaste Processing documents）
   const { handlePaste: handleImagePaste, handleFiles: handleImageFiles, isUploading: isUploadingImage } = useImagePaste({
     projectId: null,
     setContent,
@@ -325,12 +325,12 @@ export const Home: React.FC = () => {
     textareaRef.current?.insertAtCursor(markdown + '\n');
   }, [setContent]);
 
-  // 检测粘贴事件，图片走 hook，文档走独立逻辑
+  // Check paste event. Pictures go. hook，Document takes an independent logic
   const handlePaste = async (e: React.ClipboardEvent<HTMLElement>) => {
     const items = e.clipboardData?.items;
     if (!items) return;
 
-    // 分类：图片 vs 文档 vs 不支持
+    // Classification： Pictures vs Documentation vs Not supported
     let hasImages = false;
     const docFiles: File[] = [];
     const unsupportedExts: string[] = [];
@@ -353,12 +353,12 @@ export const Home: React.FC = () => {
       }
     }
 
-    // 图片交给 hook 处理（批量上传）
+    // Give me the picture. hook Processing (volume uploading)）
     if (hasImages) {
       handleImagePaste(e);
     }
 
-    // 文档文件逐个上传
+    // Upload document files one by one
     if (docFiles.length > 0) {
       if (!hasImages) e.preventDefault();
       for (const file of docFiles) {
@@ -366,18 +366,18 @@ export const Home: React.FC = () => {
       }
     }
 
-    // 不支持的文件类型提示
+    // Unsupported file type hint
     if (unsupportedExts.length > 0 && !hasImages && docFiles.length === 0) {
       show({ message: t('home.messages.unsupportedFileType', { type: unsupportedExts.join(', ') }), type: 'info' });
     }
   };
 
-  // 上传文件
-  // 在 Home 页面，文件始终上传为全局文件（不关联项目），因为此时还没有项目
+  // Upload File
+  // Yes. Home page, the file is always uploaded as a global file (unconnected item) because there are no items at this time
   const handleFileUpload = useCallback(async (file: File) => {
     if (isUploadingFile) return;
 
-    // 检查文件大小（前端预检查）
+    // Check file size (frontend pre-check)）
     const maxSize = 200 * 1024 * 1024; // 200MB
     if (file.size > maxSize) {
       show({
@@ -387,48 +387,48 @@ export const Home: React.FC = () => {
       return;
     }
 
-    // 检查是否是PPT文件，提示建议使用PDF
+    // Check for yes or no. PPT File, hint to use PDF
     const fileExt = file.name.split('.').pop()?.toLowerCase();
     if (fileExt === 'ppt' || fileExt === 'pptx')
       show({ message: t('home.messages.pptTip'), type: 'info' });
 
     setIsUploadingFile(true);
     try {
-      // 在 Home 页面，始终上传为全局文件
+      // Yes. Home Pages, always uploaded as global files
       const response = await uploadReferenceFile(file, null);
       if (response?.data?.file) {
         const uploadedFile = response.data.file;
         setReferenceFiles(prev => [...prev, uploadedFile]);
         show({ message: t('home.messages.fileUploadSuccess'), type: 'success' });
 
-        // 如果文件状态为 pending，自动触发解析
+        // If the file state is pending，Auto Trigger Parsing
         if (uploadedFile.parse_status === 'pending') {
           try {
             const parseResponse = await triggerFileParse(uploadedFile.id);
-            // 使用解析接口返回的文件对象更新状态
+            // Update the file object status returned using the parsing interface
             if (parseResponse?.data?.file) {
               const parsedFile = parseResponse.data.file;
               setReferenceFiles(prev =>
                 prev.map(f => f.id === uploadedFile.id ? parsedFile : f)
               );
             } else {
-              // 如果没有返回文件对象，手动更新状态为 parsing（异步线程会稍后更新）
+              // If no file object is returned, manually update as parsing（The range will be updated later.）
               setReferenceFiles(prev =>
                 prev.map(f => f.id === uploadedFile.id ? { ...f, parse_status: 'parsing' as const } : f)
               );
             }
           } catch (parseError: any) {
-            console.error('触发文件解析失败:', parseError);
-            // 解析触发失败不影响上传成功提示
+            console.error('Trigger file resolution failed:', parseError);
+            // Parsing the trigger failure does not affect upload success tips
           }
         }
       } else {
         show({ message: t('home.messages.fileUploadFailed'), type: 'error' });
       }
     } catch (error: any) {
-      console.error('文件上传失败:', error);
+      console.error('File upload failed:', error);
 
-      // 特殊处理413错误
+      // Special handling 413 Error
       if (error?.response?.status === 413) {
         show({
           message: t('home.messages.fileTooLarge', { size: (file.size / 1024 / 1024).toFixed(1) }),
@@ -445,9 +445,9 @@ export const Home: React.FC = () => {
     }
   }, [isUploadingFile, show, t]);
 
-  // 拖拽进来的文档文件：按扩展名过滤后复用 handleFileUpload（逐个上传+自动触发解析）
+  // Drag-in document file： filter by extension and reuse handleFileUpload（Uploading each case+Auto Trigger Parsing）
   const handleDocumentFiles = useCallback(async (files: File[]) => {
-    // 已有上传在进行时告知用户，避免文件被静默丢弃（handleFileUpload 的 isUploadingFile 守卫）
+    // Uploading already exists to inform users while they are in progress, so that files are not discarded silently（handleFileUpload It’s... isUploadingFile Guards.）
     if (isUploadingFile) {
       show({ message: t('home.messages.fileUploadInProgress'), type: 'info' });
       return;
@@ -465,7 +465,7 @@ export const Home: React.FC = () => {
     }
 
     if (rejected.length > 0) {
-      // 去重扩展名，避免一次拖入多个同类型不支持文件时 toast 重复冗长
+      // To reextend the name and avoid dragging multiple files of the same type at a time toast It’s long.
       show({
         message: t('home.messages.unsupportedFileType', {
           type: Array.from(new Set(rejected)).join(', '),
@@ -479,30 +479,30 @@ export const Home: React.FC = () => {
     }
   }, [isUploadingFile, handleFileUpload, show, t]);
 
-  // 从当前项目移除文件引用（不删除文件本身）
+  // Remove file references from the current item (do not delete the file itself)）
   const handleFileRemove = (fileId: string) => {
     setReferenceFiles(prev => prev.filter(f => f.id !== fileId));
   };
 
-  // 文件状态变化回调
+  // Document status changeback
   const handleFileStatusChange = (updatedFile: ReferenceFile) => {
     setReferenceFiles(prev =>
       prev.map(f => f.id === updatedFile.id ? updatedFile : f)
     );
   };
 
-  // 点击回形针按钮 - 打开文件选择器
+  // Click on the return pin button - Open File Selector
   const handlePaperclipClick = () => {
     setIsFileSelectorOpen(true);
   };
 
-  // 从选择器选择文件后的回调
+  // Backup from Selector to Select File
   const handleFilesSelected = (selectedFiles: ReferenceFile[]) => {
-    // 合并新选择的文件到列表（去重）
+    // Merge the newly selected files to the list (reweighted)）
     setReferenceFiles(prev => {
       const existingIds = new Set(prev.map(f => f.id));
       const newFiles = selectedFiles.filter(f => !existingIds.has(f.id));
-      // 合并时，如果文件已存在，更新其状态（可能解析状态已改变）
+      // Updates the status of a file when it is merged if it already exists (possibly the status of the resolution has changed)）
       const updated = prev.map(f => {
         const updatedFile = selectedFiles.find(sf => sf.id === f.id);
         return updatedFile || f;
@@ -512,12 +512,12 @@ export const Home: React.FC = () => {
     show({ message: t('home.messages.filesAdded', { count: selectedFiles.length }), type: 'success' });
   };
 
-  // 获取当前已选择的文件ID列表，传递给选择器（使用 useMemo 避免每次渲染都重新计算）
+  // Fetch the currently selected file ID List, pass to selector (use useMemo Avoid recalculating every rendering）
   const selectedFileIds = useMemo(() => {
     return referenceFiles.map(f => f.id);
   }, [referenceFiles]);
 
-  // 文件选择变化
+  // File selection changes
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -526,7 +526,7 @@ export const Home: React.FC = () => {
       await handleFileUpload(files[i]);
     }
 
-    // 清空 input，允许重复选择同一文件
+    // Clear input，Allow repeated selection of the same file
     e.target.value = '';
   };
 
@@ -562,28 +562,28 @@ export const Home: React.FC = () => {
   };
 
   const handleTemplateSelect = async (templateFile: File | null, templateId?: string) => {
-    // 总是设置文件（如果提供）
+    // Always set file (if available)）
     if (templateFile) {
       setSelectedTemplate(templateFile);
     }
 
-    // 处理模板 ID
+    // Process Templates ID
     if (templateId) {
-      // 判断是用户模板还是预设模板
-      // 预设模板 ID 通常是 '1', '2', '3' 等短字符串
-      // 用户模板 ID 通常较长（UUID 格式）
+      // Whether the user template or the preset template is judged
+      // Preset Templates ID Usually. '1', '2', '3' Short Strings
+      // User Templates ID It’s usually longer.（UUID Format）
       if (templateId.length <= 3 && /^\d+$/.test(templateId)) {
-        // 预设模板
+        // Preset Templates
         setSelectedPresetTemplateId(templateId);
         setSelectedTemplateId(null);
       } else {
-        // 用户模板
+        // User Templates
         setSelectedTemplateId(templateId);
         setSelectedPresetTemplateId(null);
       }
     } else {
-      // 如果没有 templateId，可能是直接上传的文件
-      // 清空所有选择状态
+      // If not templateId，Could be a directly uploaded file.
+      // Empty all selections
       setSelectedTemplateId(null);
       setSelectedPresetTemplateId(null);
     }
@@ -593,7 +593,7 @@ export const Home: React.FC = () => {
 
   const handleSubmit = async () => {
     if (structured && !reportFields.topic.trim()) {
-      show({ message: i18n.language?.startsWith('zh') ? '请填写主题后继续' : '주제를 입력하세요', type: 'error' });
+      show({ message: i18n.language?.startsWith('zh') ? 'Please complete the subject and continue.' : '주제를 입력하세요', type: 'error' });
       return;
     }
     // For ppt_renovation, validate file instead of content
@@ -607,7 +607,7 @@ export const Home: React.FC = () => {
       return;
     }
 
-    // 检查是否有正在解析的文件
+    // Check if there are files in the process of resolution
     const parsingFiles = referenceFiles.filter(f =>
       f.parse_status === 'pending' || f.parse_status === 'parsing'
     );
@@ -621,7 +621,7 @@ export const Home: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      // PPT 翻新模式：走独立的上传+异步解析流程
+      // PPT Refurbishment mode： independent upload+Step Resolution Process
       if (activeTab === 'ppt_renovation' && renovationFile) {
         const styleDesc = templateStyle.trim() ? templateStyle.trim() : undefined;
         const result = await createPptRenovationProject(renovationFile, {
@@ -651,7 +651,7 @@ export const Home: React.FC = () => {
         return;
       }
 
-      // 如果有模板ID但没有File，按需加载
+      // If there is a template ID But I didn’t. File，Load on demand
       let templateFile = selectedTemplate;
       if (!templateFile && (selectedTemplateId || selectedPresetTemplateId)) {
         const templateId = selectedTemplateId || selectedPresetTemplateId;
@@ -664,24 +664,24 @@ export const Home: React.FC = () => {
         }
       }
 
-      // 传递风格描述（只要有内容就传递，不管开关状态）
+      // Pass style description (transmit as long as you have content, regardless of switch status)）
       const styleDesc = templateStyle.trim() ? templateStyle.trim() : undefined;
 
-      // 传递参考文件ID列表，确保 AI 生成时能读取参考文件内容
+      // Transmission of reference documents ID List, make sure AI Read reference file contents when generating
       const refFileIds = referenceFiles
         .filter(f => f.parse_status === 'completed')
         .map(f => f.id);
 
       await initializeProject(activeTab as 'idea' | 'outline' | 'description', content, templateFile || undefined, styleDesc, refFileIds.length > 0 ? refFileIds : undefined, aspectRatio);
 
-      // 根据类型跳转到不同页面
+      // Jump to different pages according to type
       const projectId = localStorage.getItem('currentProjectId');
       if (!projectId) {
         show({ message: t('home.messages.projectCreateFailed'), type: 'error' });
         return;
       }
 
-      // 每页独立模板：项目默认 single，创建后切到 multi（页级模板在模板配置页指定）
+      // Single template per page： project default single，Cut after creation multi（Page-level template specified on the template configuration page）
       if (multiTemplateMode) {
         try {
           await switchTemplateMode(projectId, { mode: 'multi' });
@@ -691,7 +691,7 @@ export const Home: React.FC = () => {
         }
       }
 
-      // 关联未完成解析的参考文件（已完成的在 initializeProject 中关联）
+      // Association does not complete the resolution reference document (in progress) initializeProject Association）
       if (referenceFiles.length > 0) {
         const unassociatedFiles = referenceFiles.filter(f => f.parse_status !== 'completed');
         if (unassociatedFiles.length > 0) {
@@ -709,12 +709,12 @@ export const Home: React.FC = () => {
         }
       }
 
-      // 关联图片素材到项目（解析content中的markdown图片链接）
+      // Association Image assets To Item (Parse) content Medium markdown Picture Link）
       const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
       const materialUrls: string[] = [];
       let match;
       while ((match = imageRegex.exec(content)) !== null) {
-        materialUrls.push(match[2]); // match[2] 是 URL
+        materialUrls.push(match[2]); // match[2] Yes. URL
       }
 
       if (materialUrls.length > 0) {
@@ -724,7 +724,7 @@ export const Home: React.FC = () => {
           devLog('Materials associated successfully:', response);
         } catch (error) {
           console.error('Failed to associate materials:', error);
-          // 不影响主流程，继续执行
+          // Do not affect the main process. Continue.
         }
       } else {
         devLog('No materials to associate');
@@ -732,7 +732,7 @@ export const Home: React.FC = () => {
 
       navigate(`/project/${projectId}/outline`);
     } catch (error: any) {
-      console.error('创建项目失败:', error);
+      console.error('Failed to create project:', error);
       const msg = error?.response?.data?.error?.message || error?.message || t('home.messages.projectCreateFailed');
       show({ message: msg, type: 'error' });
     } finally {
@@ -740,7 +740,7 @@ export const Home: React.FC = () => {
     }
   };
 
-  // 创建空白项目：不生成大纲，直接进入大纲页手动添加/导入页面
+  // Create blank items： no outline generation, go straight to outline page to add manually/Import Page
   const handleCreateBlank = async () => {
     setIsSubmitting(true);
     try {
@@ -764,7 +764,7 @@ export const Home: React.FC = () => {
 
       navigate(`/project/${projectId}/outline`);
     } catch (error: any) {
-      console.error('创建空白项目失败:', error);
+      console.error('Failed to create blank item:', error);
       const msg = error?.response?.data?.error?.message || error?.message || t('home.messages.projectCreateFailed');
       show({ message: msg, type: 'error' });
     } finally {
@@ -774,14 +774,14 @@ export const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-orange-50/30 to-pink-50/50 dark:from-background-primary dark:via-background-primary dark:to-background-primary relative overflow-hidden">
-      {/* 背景装饰元素 - 仅在亮色模式显示 */}
+      {/* Background Decoration Elements - Show only in bright color mode */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none dark:hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-banana-500/10 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-orange-400/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-yellow-400/5 rounded-full blur-3xl"></div>
       </div>
 
-      {/* 导航栏 — web only */}
+      {/* Navigation Bar — web only */}
       {!isDesktop && (
       <nav className="relative z-50 h-16 md:h-18 bg-white/40 dark:bg-background-primary backdrop-blur-2xl dark:backdrop-blur-none dark:border-b dark:border-border-primary">
 
@@ -799,7 +799,7 @@ export const Home: React.FC = () => {
             </span>
           </div>
           <div className="flex items-center gap-2 md:gap-3">
-            {/* 桌面端：带文字的素材生成按钮 */}
+            {/* Desktopend： Text-based material generation button */}
             <Button
               variant="ghost"
               size="sm"
@@ -809,7 +809,7 @@ export const Home: React.FC = () => {
             >
               <span className="hidden md:inline">{t('nav.materialGenerate')}</span>
             </Button>
-            {/* 手机端：仅图标的素材生成按钮 */}
+            {/* Cellend： Icon-only material generation button */}
             <Button
               variant="ghost"
               size="sm"
@@ -818,7 +818,7 @@ export const Home: React.FC = () => {
               className="sm:hidden hover:bg-banana-100/60 hover:shadow-sm hover:scale-105 transition-all duration-200"
               title={t('nav.materialGenerate')}
             />
-            {/* 桌面端：带文字的素材中心按钮 */}
+            {/* Desktopend： A text-based material center button */}
             <Button
               variant="ghost"
               size="sm"
@@ -828,7 +828,7 @@ export const Home: React.FC = () => {
             >
               <span className="hidden md:inline">{t('nav.materialCenter')}</span>
             </Button>
-            {/* 手机端：仅图标的素材中心按钮 */}
+            {/* Cell： Icon-only material centre button */}
             <Button
               variant="ghost"
               size="sm"
@@ -863,7 +863,7 @@ export const Home: React.FC = () => {
             >
               {t('nav.help')}
             </Button>
-            {/* 移动端帮助按钮 */}
+            {/* Move-side help button */}
             <Button
               variant="ghost"
               size="sm"
@@ -872,9 +872,9 @@ export const Home: React.FC = () => {
               className="md:hidden hover:bg-banana-100/60 hover:shadow-sm hover:scale-105 transition-all duration-200"
               title={t('nav.help')}
             />
-            {/* 分隔线 */}
+            {/* Separator */}
             <div className="h-5 w-px bg-gray-300 dark:bg-border-primary mx-1" />
-            {/* 语言切换按钮 */}
+            {/* Language Switch button */}
             <button
               onClick={() => i18n.changeLanguage('ko')}
               className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 dark:text-foreground-tertiary hover:text-gray-900 dark:hover:text-gray-100 hover:bg-banana-100/60 dark:hover:bg-background-hover rounded-md transition-all"
@@ -883,7 +883,7 @@ export const Home: React.FC = () => {
               <Globe size={14} />
               <span>한국어</span>
             </button>
-            {/* 主题切换按钮 */}
+            {/* Theme Switch button */}
             <div className="relative" ref={themeMenuRef}>
               <button
                 onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
@@ -893,7 +893,7 @@ export const Home: React.FC = () => {
                 {theme === 'system' ? <Monitor size={16} /> : isDark ? <Moon size={16} /> : <Sun size={16} />}
                 <ChevronDown size={12} className={`transition-transform ${isThemeMenuOpen ? 'rotate-180' : ''}`} />
               </button>
-              {/* 主题下拉菜单 */}
+              {/* Theme Downshow Menu */}
               {isThemeMenuOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setIsThemeMenuOpen(false)} />
@@ -923,19 +923,19 @@ export const Home: React.FC = () => {
                 </>
               )}
             </div>
-            {/* 分隔线 */}
+            {/* Separator */}
             <div className="h-5 w-px bg-gray-300 dark:bg-border-primary mx-1" />
-            {/* GitHub 仓库卡片 */}
+            {/* GitHub Warehouse Cards */}
 
-            {/* 分隔线 */}
+            {/* Separator */}
           </div>
         </div>
       </nav>
       )}
 
-      {/* 主内容 */}
+      {/* Main content */}
       <main className="relative max-w-5xl mx-auto px-3 md:px-4 py-8 md:py-12">
-        {/* Hero 标题区 */}
+        {/* Hero Title Area */}
         <div className="text-center mb-10 md:mb-16 space-y-4 md:space-y-6">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/60 dark:bg-background-secondary backdrop-blur-sm rounded-full shadow-sm dark:shadow-none mb-4">
             <span className="text-2xl animate-pulse"><Sparkles size={20} className="text-orange-500 dark:text-banana" /></span>
@@ -955,7 +955,7 @@ export const Home: React.FC = () => {
             {t('home.subtitle')}
           </p>
 
-          {/* 特性标签 */}
+          {/* Feature Label */}
           <div className="flex flex-wrap items-center justify-center gap-2 md:gap-3 pt-4">
             {[
               { icon: <Sparkles size={14} className="text-yellow-600 dark:text-banana" />, label: t('home.features.oneClick') },
@@ -975,9 +975,9 @@ export const Home: React.FC = () => {
           </div>
         </div>
 
-        {/* 创建卡片 */}
+        {/* Create card */}
         <Card className="p-4 md:p-10 bg-white/90 dark:bg-background-secondary backdrop-blur-xl dark:backdrop-blur-none shadow-2xl dark:shadow-none border-0 dark:border dark:border-border-primary hover:shadow-3xl dark:hover:shadow-none transition-all duration-300 dark:rounded-2xl">
-          {/* 选项卡 */}
+          {/* tab */}
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-6 md:mb-8">
             {(Object.keys(tabConfig) as CreationType[]).map((type) => {
               const config = tabConfig[type];
@@ -998,7 +998,7 @@ export const Home: React.FC = () => {
             })}
           </div>
 
-          {/* 描述 */}
+          {/* Description */}
           <div className="relative">
             <p className="text-sm md:text-base mb-4 md:mb-6 leading-relaxed">
               <span className="inline-flex items-center gap-2 text-gray-600 dark:text-foreground-tertiary">
@@ -1019,10 +1019,10 @@ export const Home: React.FC = () => {
             </p>
           </div>
 
-          {/* 输入区 - 带工具栏 */}
+          {/* Input Area - With Toolbars */}
           <div className="mb-2">
             {activeTab === 'ppt_renovation' ? (
-              /* PPT 翻新：文件上传区 */
+              /* PPT Refurbishment： document upload area */
               <div className="space-y-4">
                 <div
                   className="border-2 border-dashed border-gray-300 dark:border-border-primary rounded-xl p-8 text-center cursor-pointer hover:border-banana-400 dark:hover:border-banana transition-colors duration-200"
@@ -1084,7 +1084,7 @@ export const Home: React.FC = () => {
                   className="hidden"
                 />
 
-                {/* 保留布局 toggle */}
+                {/* Keep Layout toggle */}
                 <div className="flex items-center justify-between">
                   <label className="flex items-center gap-2 cursor-pointer group">
                     <span className="text-sm text-gray-600 dark:text-foreground-tertiary group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
@@ -1117,7 +1117,7 @@ export const Home: React.FC = () => {
               {[false, true].map(report => <button type="button" key={String(report)} aria-pressed={reportMode === report}
                 disabled={isSubmitting || isGlobalLoading} onClick={() => setReportMode(report)}
                 className={`px-3 py-2 rounded-lg text-sm ${reportMode === report ? 'bg-banana-100 text-gray-900' : 'text-gray-500'}`}>
-                {report ? (i18n.language?.startsWith('zh') ? '日常汇报' : '보고서 작성') : (i18n.language?.startsWith('zh') ? '自由输入' : '자유 입력')}
+                {report ? (i18n.language?.startsWith('zh') ? 'Daily debriefing' : '보고서 작성') : (i18n.language?.startsWith('zh') ? 'Free input' : '자유 입력')}
               </button>)}
             </div>}
             {structured && <ReportForm fields={reportFields} zh={!!i18n.language?.startsWith('zh')} disabled={isSubmitting || isGlobalLoading}
@@ -1144,7 +1144,7 @@ export const Home: React.FC = () => {
                   >
                     <Paperclip size={18} />
                   </button>
-                  {/* 画面比例选择 */}
+                  {/* Image Scale Selection */}
                   <div className="relative">
                     <button
                       type="button"
@@ -1196,7 +1196,7 @@ export const Home: React.FC = () => {
             )}
           </div>
 
-          {/* 空白项目入口：跳过 AI 生成，直接进入大纲页手动添加/导入 */}
+          {/* Blank project entry： Skip AI Generate, add manually directly to the outline page/Import */}
           <div className="flex justify-center mb-4">
             <button
               type="button"
@@ -1211,7 +1211,7 @@ export const Home: React.FC = () => {
             </button>
           </div>
 
-          {/* 隐藏的文件输入 */}
+          {/* Hidden File Input */}
           <input
             ref={fileInputRef}
             type="file"
@@ -1231,7 +1231,7 @@ export const Home: React.FC = () => {
             showToast={show}
           />
 
-          {/* 模板选择 */}
+          {/* Template Selection */}
           <div className="mb-6 md:mb-8 pt-4 border-t border-gray-100 dark:border-border-primary">
             <div className="flex items-center justify-between mb-3 md:mb-4">
               <div className="flex items-center gap-2">
@@ -1240,7 +1240,7 @@ export const Home: React.FC = () => {
                   {t('home.template.title')}
                 </h3>
               </div>
-              {/* 无模板图模式开关 */}
+              {/* No template chart mode switch */}
               <label className="flex items-center gap-2 cursor-pointer group">
                 <span className="text-sm text-gray-600 dark:text-foreground-tertiary group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
                   {t('home.template.useTextStyle')}
@@ -1251,13 +1251,13 @@ export const Home: React.FC = () => {
                     checked={useTemplateStyle}
                     onChange={(e) => {
                       setUseTemplateStyle(e.target.checked);
-                      // 切换到无模板图模式时，清空模板选择
+                      // Empty template selection when switching to no template pattern
                       if (e.target.checked) {
                         setSelectedTemplate(null);
                         setSelectedTemplateId(null);
                         setSelectedPresetTemplateId(null);
                       }
-                      // 不再清空风格描述，允许用户保留已输入的内容
+                      // Do not empty the style description anymore, allowing the user to keep the entered content
                     }}
                     className="sr-only peer"
                   />
@@ -1266,7 +1266,7 @@ export const Home: React.FC = () => {
               </label>
             </div>
 
-            {/* 每页独立模板开关 */}
+            {/* A separate template switch per page */}
             <label className="flex items-center gap-2 cursor-pointer group mb-3" title={t('home.template.multiModeHint')}>
               <input
                 type="checkbox"
@@ -1280,7 +1280,7 @@ export const Home: React.FC = () => {
               <span className="text-xs text-gray-400">{t('home.template.multiModeHint')}</span>
             </label>
 
-            {/* 根据模式显示不同的内容 */}
+            {/* Show different content according to mode */}
             {useTemplateStyle ? (
               <TextStyleSelector
                 value={templateStyle}
@@ -1293,7 +1293,7 @@ export const Home: React.FC = () => {
                 onSelect={handleTemplateSelect}
                 selectedTemplateId={selectedTemplateId}
                 selectedPresetTemplateId={selectedPresetTemplateId}
-                showUpload={true} // 在主页上传的模板保存到用户模板库
+                showUpload={true} // Save template uploaded on home page to user template library
                 projectId={currentProjectId}
               />
             )}
@@ -1302,26 +1302,26 @@ export const Home: React.FC = () => {
         </Card>
       </main>
       <ToastContainer />
-      {/* 素材生成模态 - 在主页始终生成全局素材 */}
+      {/* The material produces the pattern. - Always generate global material on the home page */}
       <MaterialGeneratorModal
         projectId={null}
         isOpen={isMaterialModalOpen}
         onClose={() => setIsMaterialModalOpen(false)}
       />
-      {/* 素材中心模态 */}
+      {/* The material center pattern. */}
       <MaterialCenterModal
         isOpen={isMaterialCenterOpen}
         onClose={() => setIsMaterialCenterOpen(false)}
       />
-      {/* 从素材库选择插入到文本框 */}
+      {/* Select Insert From Library to Text Box */}
       <MaterialSelector
         isOpen={isMaterialSelectorOpen}
         onClose={() => setIsMaterialSelectorOpen(false)}
         onSelect={handleMaterialSelect}
         multiple
       />
-      {/* 参考文件选择器 */}
-      {/* 在 Home 页面，始终查询全局文件，因为此时还没有项目 */}
+      {/* Reference File Selector */}
+      {/* Yes. Home Page, always query global files, as there are no items at this time */}
       <ReferenceFileSelector
         projectId={null}
         isOpen={isFileSelectorOpen}
@@ -1332,7 +1332,7 @@ export const Home: React.FC = () => {
       />
 
       <FilePreviewModal fileId={previewFileId} onClose={() => setPreviewFileId(null)} />
-      {/* 帮助模态框 */}
+      {/* Help mode frame */}
       <HelpModal
         isOpen={isHelpModalOpen}
         onClose={() => setIsHelpModalOpen(false)}

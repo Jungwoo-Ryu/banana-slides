@@ -1,18 +1,18 @@
 /**
- * MarkdownTextarea 拖放行为测试
+ * MarkdownTextarea Drag-and-drop behavioural test
  *
- * 覆盖 onDocumentFiles prop 的文件拆分逻辑：图片 vs 非图片。
+ * Overwrite onDocumentFiles prop The file splits logic： pictures vs Non-photo。
  */
 
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { MarkdownTextarea } from '@/components/shared/MarkdownTextarea'
 
-// 工具：创建一个带指定 name + MIME 类型的 File
+// Tools： Create a tape-specify name + MIME Type File
 const makeFile = (name: string, type: string) => new File(['dummy'], name, { type })
 
-// 工具：向目标派发合成 drop 事件，携带 dataTransfer.files。
-// 因为 jsdom 的 DataTransfer 不会自动填充 files，这里显式挂载 file list。
+// Tools： Synth sent to target drop Event, carry dataTransfer.files。
+// Because... jsdom It’s... DataTransfer Do not autofill files，Visible Mount here file list。
 const dropFiles = (target: HTMLElement, files: File[]) => {
   const dataTransfer = {
     files,

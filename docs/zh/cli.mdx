@@ -1,62 +1,62 @@
 ---
-title: "命令行工具"
-description: "使用 banana-cli 通过命令行操作 Banana Slides"
+title: "CLI Tool"
+description: "Use banana-cli to operate Banana Slides from the command line"
 ---
 
-## 概述
+## Overview
 
-`banana-cli` 是 Banana Slides 的命令行工具，通过调用后端 REST API 实现所有功能。适合：
+`banana-cli` is the command-line tool for Banana Slides, implementing all features through the backend REST API. Ideal for:
 
-- **批量生成**：从 JSONL/CSV 文件批量创建 PPT
-- **自动化流水线**：集成到 CI/CD 或脚本中
-- **AI Agent 编排**：作为 Agent 的工具调用接口
+- **Batch generation**: Create PPTs in bulk from JSONL/CSV files
+- **Automation pipelines**: Integrate into CI/CD or scripts
+- **AI Agent orchestration**: Use as a tool-calling interface for agents
 
-## 安装
+## Installation
 
-在项目根目录执行：
+From the project root:
 
 ```bash
-uv sync          # 安装依赖
-uv run banana-cli --help  # 验证安装
+uv sync          # Install dependencies
+uv run banana-cli --help  # Verify installation
 ```
 
 ## Agent Skill
 
-如果你在 Claude Code 中使用 AI Agent，可以一行命令安装 banana-cli skill，让 Agent 自动掌握 CLI 的使用方式：
+If you use AI Agents in Claude Code, install the banana-cli skill with a single command so the Agent automatically knows how to use the CLI:
 
 ```bash
-# 全局安装（推荐，所有项目可用）
+# Global install (recommended, available in all projects)
 npx skills add Anionex/banana-slides -g
 
-# 或仅安装到当前项目
+# Or install to current project only
 npx skills add Anionex/banana-slides
 ```
 
-安装后，Agent 会在需要时自动调用 `/banana-cli`，包含完整的环境检测、安装引导和命令使用示例。
+Once installed, the Agent will invoke `/banana-cli` as needed, with full environment detection, setup guidance, and usage examples.
 
-## 全局选项
+## Global Options
 
-所有命令都支持以下全局选项：
+All commands support the following global options:
 
 ```bash
-banana-cli [全局选项] <命令组> <子命令> [选项]
+banana-cli [global-options] <command-group> <subcommand> [options]
 ```
 
-| 选项 | 说明 | 默认值 |
-|------|------|--------|
-| `--base-url` | 后端地址 | `http://localhost:5011` |
-| `--access-code` | 访问码（注入 `X-Access-Code` 请求头） | 无 |
-| `--poll-interval` | 任务轮询间隔（秒） | `3` |
-| `--request-timeout` | 请求超时（秒） | `60` |
-| `--config` | 配置文件路径（TOML） | `~/.config/banana-slides/cli.toml` |
-| `--json` | 输出 JSON 格式 | 关闭 |
-| `--verbose` | 详细输出 | 关闭 |
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--base-url` | Backend address | `http://localhost:5011` |
+| `--access-code` | Access code (injected as `X-Access-Code` header) | None |
+| `--poll-interval` | Task polling interval (seconds) | `3` |
+| `--request-timeout` | Request timeout (seconds) | `60` |
+| `--config` | Config file path (TOML) | `~/.config/banana-slides/cli.toml` |
+| `--json` | Output in JSON format | Off |
+| `--verbose` | Verbose output | Off |
 
-### 配置优先级
+### Configuration Priority
 
-CLI 参数 > 环境变量 (`BANANA_CLI_*`) > TOML 配置文件 > 默认值
+CLI args > Environment variables (`BANANA_CLI_*`) > TOML config file > Defaults
 
-环境变量对应关系：
+Environment variable mapping:
 
 ```bash
 BANANA_CLI_BASE_URL=http://localhost:5011
@@ -68,91 +68,91 @@ BANANA_CLI_CONTINUE_ON_ERROR=true
 
 ---
 
-## 短 ID 前缀匹配
+## Short ID Prefix Matching
 
-所有 `--project-id` 和 `--page-id` 参数支持短前缀（类似 git 短哈希），无需输入完整 UUID：
-
-```bash
-banana-cli projects get a1b2          # 匹配 a1b2c3d4-e5f6-...
-banana-cli pages edit-image --page-id b9c8 --instruction "把标题改为红色"
-```
-
-前缀必须唯一匹配一个项目/页面，如果匹配到多个会提示补充更多字符。
-
-## 工作项目上下文
-
-设置工作项目后，后续命令可省略 `--project-id`：
+All `--project-id` and `--page-id` parameters accept short prefixes (like git short hashes) instead of full UUIDs:
 
 ```bash
-banana-cli projects use a1b2     # 设置工作项目（支持短前缀）
-banana-cli workflows outline      # 自动使用工作项目
-banana-cli projects use           # 查看当前工作项目
-banana-cli projects unuse         # 清除
+banana-cli projects get a1b2          # matches a1b2c3d4-e5f6-...
+banana-cli pages edit-image --page-id b9c8 --instruction "Change the title to red"
 ```
 
-工作项目保存在 `~/.config/banana-slides/context.json`，跨会话持久化。
+The prefix must uniquely match one project/page. If multiple matches are found, you'll be prompted to provide more characters.
+
+## Working Project Context
+
+Set a working project to skip `--project-id` on subsequent commands:
+
+```bash
+banana-cli projects use a1b2     # set working project (supports short prefix)
+banana-cli workflows outline      # uses working project automatically
+banana-cli projects use           # show current working project
+banana-cli projects unuse         # clear
+```
+
+The working project is stored in `~/.config/banana-slides/context.json` and persists across sessions.
 
 ---
 
-## 命令参考
+## Command Reference
 
-### projects — 项目管理
+### projects -- Project Management
 
 ```bash
-# 列出项目
+# List projects
 banana-cli projects list --limit 50 --offset 0
 
-# 获取项目详情
+# Get project details
 banana-cli projects get <project_id>
 
-# 创建项目
-banana-cli projects create --creation-type idea --idea-prompt "AI 技术发展趋势"
+# Create project
+banana-cli projects create --creation-type idea --idea-prompt "AI technology trends"
 
-# 更新项目
-banana-cli projects update <project_id> --template-style "深色商务风"
+# Update project
+banana-cli projects update <project_id> --template-style "Dark business style"
 
-# 删除项目
+# Delete project
 banana-cli projects delete <project_id>
 
-# 设置/查看工作项目
+# Set/show working project
 banana-cli projects use <project_id>
 banana-cli projects use
 
-# 清除工作项目
+# Clear working project
 banana-cli projects unuse
 ```
 
-### workflows — 工作流
+### workflows -- Workflows
 
-端到端的 PPT 生成流程。
+End-to-end PPT generation pipeline.
 
 ```bash
-# 生成大纲
+# Generate outline
 banana-cli workflows outline --project-id <id>
 
-# 指定页数（提示 AI，实际数量可能不同）
+# Specify page count (hint to AI, actual count may differ)
 banana-cli workflows outline --project-id <id> --pages 8
 
-# 从描述生成大纲
+# Generate outline from descriptions
 banana-cli workflows outline --project-id <id> --from-description
 
-# 用自然语言优化大纲
-banana-cli workflows outline --project-id <id> --refine "增加一页关于市场分析的内容"
+# Refine outline with natural language
+banana-cli workflows outline --project-id <id> --refine "Add a page about market analysis"
 
-# 生成描述（默认等待完成，加 --no-wait 异步返回）
+# Generate descriptions (waits for completion by default; add --no-wait for async)
 banana-cli workflows descriptions --project-id <id>
 
-# 生成图片
+# Generate images
 banana-cli workflows images --project-id <id> --use-template
 
-# 一键全流程：大纲 → 描述 → 图片
+# Full pipeline: outline -> descriptions -> images
 banana-cli workflows full --project-id <id> --language zh
 
-# 指定页数的全流程（页数为 AI 提示，实际数量可能不同）
+# Full pipeline with page count (page count is a hint to AI, actual count may differ)
 banana-cli workflows full --project-id <id> --language zh --pages 10
 ```
 
-`workflows full` 支持跳过部分步骤：
+`workflows full` supports skipping steps:
 
 ```bash
 banana-cli workflows full --project-id <id> \
@@ -161,141 +161,141 @@ banana-cli workflows full --project-id <id> \
   --image-max-workers 2
 ```
 
-### pages — 页面操作
+### pages -- Page Operations
 
 ```bash
-# 创建页面
+# Create page
 banana-cli pages create --project-id <id> --order-index 0
 
-# 设置大纲内容
+# Set outline content
 banana-cli pages set-outline --project-id <id> --page-id <pid> \
-  --outline-json '{"title": "第一章"}'
+  --outline-json '{"title": "Chapter 1"}'
 
-# 生成单页描述
+# Generate single page description
 banana-cli pages gen-description --project-id <id> --page-id <pid>
 
-# 生成单页图片
+# Generate single page image
 banana-cli pages gen-image --project-id <id> --page-id <pid> --use-template
 
-# 编辑图片
+# Edit image
 banana-cli pages edit-image --project-id <id> --page-id <pid> \
-  --instruction "把标题改为红色"
+  --instruction "Change the title to red"
 
-# 查看图片版本
+# View image versions
 banana-cli pages versions --project-id <id> --page-id <pid>
 
-# 切换图片版本
+# Switch image version
 banana-cli pages set-current --project-id <id> --page-id <pid> --version-id <vid>
 ```
 
-### exports — 导出
+### exports -- Export
 
 ```bash
-# 导出 PPTX（返回下载 URL）
+# Export PPTX (returns download URL)
 banana-cli exports pptx --project-id <id>
 
-# 导出并下载到本地
+# Export and download locally
 banana-cli exports pptx --project-id <id> --output ./slides.pptx
 
-# 导出 PDF
+# Export PDF
 banana-cli exports pdf --project-id <id> --output ./slides.pdf
 
-# 导出图片
+# Export images
 banana-cli exports images --project-id <id>
 
-# 导出可编辑 PPTX（默认等待完成）
+# Export editable PPTX (waits for completion by default)
 banana-cli exports editable-pptx --project-id <id> --output ./editable.pptx --max-depth 2
 ```
 
-`--output` 指定本地下载路径；不指定则返回服务端下载 URL。`--filename` 仅设置服务端生成的文件名。
+`--output` specifies a local download path; if omitted, the server-side download URL is returned. `--filename` only sets the filename generated on the server side.
 
-### materials — 素材管理
+### materials -- Material Management
 
 ```bash
-# 上传素材到项目
+# Upload material to project
 banana-cli materials upload --file /path/to/image.png --project-id <id>
 
-# 上传全局素材
+# Upload global material
 banana-cli materials upload --file /path/to/image.png --global
 
-# AI 生成素材
-banana-cli materials generate --prompt "科技感背景图" --project-id <id> --wait
+# AI-generate material
+banana-cli materials generate --prompt "Tech-style background" --project-id <id> --wait
 
-# 关联全局素材到项目
+# Associate global material with project
 banana-cli materials associate --project-id <id> --material-url <url>
 
-# 下载素材
+# Download material
 banana-cli materials download --material-id <mid> --output /tmp/materials.zip
 ```
 
-### refs — 参考文件
+### refs -- Reference Files
 
 ```bash
-# 上传参考文件
+# Upload reference file
 banana-cli refs upload --file /path/to/document.pdf --project-id <id>
 
-# 触发解析
+# Trigger parsing
 banana-cli refs parse --file-id <fid>
 
-# 关联到项目
+# Associate with project
 banana-cli refs associate --file-id <fid> --project-id <id>
 ```
 
-### templates — 模板
+### templates -- Templates
 
 ```bash
-# 上传模板图片
+# Upload template image
 banana-cli templates upload --project-id <id> --file /path/to/template.png
 
-# 删除模板
+# Delete template
 banana-cli templates delete --project-id <id>
 ```
 
-### renovation — PPT 翻新
+### renovation -- PPT Renovation
 
 ```bash
-# 上传旧 PPT 进行翻新
+# Upload old PPT for renovation
 banana-cli renovation create --file /path/to/old.pptx --wait --language zh
 ```
 
-### settings — 设置
+### settings -- Settings
 
 ```bash
-# 获取当前设置
+# Get current settings
 banana-cli settings get
 
-# 更新设置
+# Update settings
 banana-cli settings update --data '{"TEXT_MODEL": "gemini-2.0-flash"}'
 
-# 重置设置
+# Reset settings
 banana-cli settings reset
 
-# 验证配置
+# Verify configuration
 banana-cli settings verify
 
-# 运行功能测试
+# Run feature test
 banana-cli settings test --name text-model
 ```
 
-### tasks — 任务状态
+### tasks -- Task Status
 
 ```bash
-# 查询任务状态
+# Query task status
 banana-cli tasks status --project-id <id> --task-id <tid>
 
-# 等待任务完成（显示实时进度）
+# Wait for task completion (shows real-time progress)
 banana-cli tasks wait --project-id <id> --task-id <tid> --timeout-sec 600
 ```
 
-`tasks wait` 可随时 Ctrl+C 中断再重新等待，后端任务不受影响。
+`tasks wait` can be interrupted with Ctrl+C and resumed at any time -- the backend task is not affected.
 
-### styles — 风格提取
+### styles -- Style Extraction
 
 ```bash
 banana-cli styles extract --image /path/to/reference.png
 ```
 
-### files — 文件下载
+### files -- File Download
 
 ```bash
 banana-cli files fetch --url /files/project-id/exports/slides.pptx --output ./slides.pptx
@@ -303,35 +303,35 @@ banana-cli files fetch --url /files/project-id/exports/slides.pptx --output ./sl
 
 ---
 
-## 批量任务
+## Batch Jobs
 
-### Job 文件格式
+### Job File Format
 
-支持 JSONL 和 CSV 两种格式。每行/每行定义一个生成任务。
+Supports JSONL and CSV formats. Each line defines one generation task.
 
-**JSONL 示例**（`jobs.jsonl`）：
+**JSONL example** (`jobs.jsonl`):
 
 ```json
-{"job_id":"job-1","job_type":"full_generation","creation_type":"idea","idea_prompt":"人工智能入门","language":"zh","export":{"formats":["pptx"]}}
-{"job_id":"job-2","job_type":"full_generation","creation_type":"idea","idea_prompt":"机器学习实践","language":"zh","export":{"formats":["pptx","pdf"]}}
+{"job_id":"job-1","job_type":"full_generation","creation_type":"idea","idea_prompt":"Introduction to AI","language":"en","export":{"formats":["pptx"]}}
+{"job_id":"job-2","job_type":"full_generation","creation_type":"idea","idea_prompt":"Machine Learning in Practice","language":"en","export":{"formats":["pptx","pdf"]}}
 ```
 
-**字段说明**：
+**Field descriptions**:
 
-| 字段 | 必填 | 说明 |
-|------|------|------|
-| `job_id` | 否 | 任务标识，用于追踪和去重 |
-| `job_type` | 是 | `full_generation` 或 `export_only` |
-| `creation_type` | 是* | `idea`、`outline` 或 `descriptions`（full_generation 必填） |
-| `idea_prompt` | 是* | 主题描述（creation_type=idea 时必填） |
-| `language` | 否 | `zh`、`en`、`ja`、`auto` |
-| `use_template` | 否 | 是否使用模板生图，默认 `true` |
-| `export.formats` | 是 | 导出格式列表：`pptx`、`pdf`、`images`、`editable_pptx` |
-| `reference_files` | 否 | 参考文件绝对路径列表 |
-| `material_files` | 否 | 素材文件绝对路径列表 |
-| `template_image_path` | 否 | 模板图片绝对路径 |
+| Field | Required | Description |
+|-------|----------|-------------|
+| `job_id` | No | Job identifier for tracking and deduplication |
+| `job_type` | Yes | `full_generation` or `export_only` |
+| `creation_type` | Yes* | `idea`, `outline`, or `descriptions` (required for full_generation) |
+| `idea_prompt` | Yes* | Topic description (required when creation_type=idea) |
+| `language` | No | `zh`, `en`, `ja`, `auto` |
+| `use_template` | No | Whether to use template for image generation, default `true` |
+| `export.formats` | Yes | Export format list: `pptx`, `pdf`, `images`, `editable_pptx` |
+| `reference_files` | No | List of absolute paths to reference files |
+| `material_files` | No | List of absolute paths to material files |
+| `template_image_path` | No | Absolute path to template image |
 
-### 运行批量任务
+### Running Batch Jobs
 
 ```bash
 banana-cli run jobs \
@@ -343,21 +343,21 @@ banana-cli run jobs \
   --done-marker-file done.json
 ```
 
-- `--state-file`：实时写入运行状态，可用于监控
-- `--done-marker-file`：记录已完成的 job，重跑时自动跳过
-- `--continue-on-error` / `--fail-fast`：失败后继续或立即停止
+- `--state-file`: Writes running state in real-time for monitoring
+- `--done-marker-file`: Records completed jobs; automatically skipped on re-run
+- `--continue-on-error` / `--fail-fast`: Continue after failure or stop immediately
 
-### 监控运行状态
+### Monitoring Run Status
 
 ```bash
-# 查看一次快照
+# View a single snapshot
 banana-cli run monitor --state-file state.json
 
-# 持续监控直到完成
+# Continuous monitoring until completion
 banana-cli run monitor --state-file state.json --watch --interval 30
 ```
 
-### 交互式创建 Job 文件
+### Interactive Job File Builder
 
 ```bash
 uv run python -m cli.banana_cli.jobs.interactive_builder --output jobs.jsonl --count 3
@@ -365,45 +365,45 @@ uv run python -m cli.banana_cli.jobs.interactive_builder --output jobs.jsonl --c
 
 ---
 
-## 典型工作流示例
+## Typical Workflow Examples
 
-### 从想法到 PPTX
+### From Idea to PPTX
 
 ```bash
-# 1. 创建项目并设为工作项目
-result=$(banana-cli --json projects create --creation-type idea --idea-prompt "2024年AI发展报告")
+# 1. Create project and set as working project
+result=$(banana-cli --json projects create --creation-type idea --idea-prompt "2024 AI Development Report")
 project_id=$(echo "$result" | jq -r '.data.project_id')
 banana-cli projects use "$project_id"
 
-# 2. 一键生成（工作项目已设置，无需 --project-id）
+# 2. Full generation (working project is set, no --project-id needed)
 banana-cli workflows full --language zh --pages 8
 
-# 3. 导出到本地
+# 3. Export locally
 banana-cli exports pptx --output ./report.pptx
 ```
 
-### 批量生成 10 套 PPT
+### Batch Generate 10 PPTs
 
 ```bash
-# 准备 job 文件
+# Prepare job file
 cat > batch.jsonl << 'EOF'
-{"job_id":"ai-intro","job_type":"full_generation","creation_type":"idea","idea_prompt":"AI 入门指南","language":"zh","export":{"formats":["pptx"]}}
-{"job_id":"ml-guide","job_type":"full_generation","creation_type":"idea","idea_prompt":"机器学习实战","language":"zh","export":{"formats":["pptx"]}}
+{"job_id":"ai-intro","job_type":"full_generation","creation_type":"idea","idea_prompt":"AI Beginner's Guide","language":"en","export":{"formats":["pptx"]}}
+{"job_id":"ml-guide","job_type":"full_generation","creation_type":"idea","idea_prompt":"Machine Learning in Practice","language":"en","export":{"formats":["pptx"]}}
 EOF
 
-# 执行
+# Execute
 banana-cli run jobs --file batch.jsonl --report report.json --state-file state.json
 ```
 
 ---
 
-## 注意事项
+## Notes
 
-1. **后端必须运行**：CLI 通过 HTTP 调用后端 API，使用前确保后端已启动
-2. **文件路径必须绝对路径**：所有 `--file`、`--image` 等参数要求绝对路径
-3. **默认等待完成**：描述生成、图片生成、可编辑导出等异步任务默认等待完成并显示进度。传 `--no-wait` 可立即返回 task_id，后续用 `tasks wait` 手动轮询
-4. **可中断恢复**：`--wait` 和 `tasks wait` 随时可 Ctrl+C 中断，后端任务不受影响，可用相同 task_id 重新等待
-5. **`--pages` 是提示**：`--pages` 作为提示传给 AI，实际生成的页数可能不同。页数不匹配时 CLI 会在 stderr 打印提示
-6. **进度输出**：等待任务时，进度信息输出到 stderr（格式 `[PROGRESS] 阶段 状态 完成数/总数`），不影响 stdout 的 JSON 输出
-7. **Shell 补全**：运行 `banana-cli --install-completion` 安装当前 shell 的自动补全
-8. **AI Agent 友好**：当 stdout 为管道（非 TTY）时，`--help` 自动输出纯文本格式，无 Rich 装饰框
+1. **Backend must be running**: The CLI calls the backend API over HTTP -- ensure the backend is started before use
+2. **File paths must be absolute**: All `--file`, `--image` parameters require absolute paths
+3. **Waits for completion by default**: Async tasks such as description generation, image generation, and editable export wait for completion and show progress by default. Pass `--no-wait` to return the task_id immediately, then use `tasks wait` to poll manually
+4. **Interruptible and resumable**: `--wait` and `tasks wait` can be interrupted with Ctrl+C at any time. The backend task is unaffected -- you can resume waiting with the same task_id
+5. **`--pages` is a hint**: `--pages` is passed as a hint to the AI; the actual number of generated pages may differ. When there is a mismatch, the CLI prints a notice to stderr
+6. **Progress output**: While waiting for a task, progress information is written to stderr (format: `[PROGRESS] stage status completed/total`) and does not interfere with JSON output on stdout
+7. **Shell completion**: Run `banana-cli --install-completion` to install auto-completion for your current shell
+8. **AI Agent friendly**: When stdout is piped (non-TTY), `--help` automatically outputs plain text without Rich formatting

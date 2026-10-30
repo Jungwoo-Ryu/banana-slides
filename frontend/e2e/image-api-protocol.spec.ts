@@ -211,7 +211,7 @@ test.describe('Image API Protocol Setting', () => {
       await protocolSelect.selectOption('images');
 
       // Click save
-      const saveBtn = page.getByRole('button', { name: /保存|Save/i });
+      const saveBtn = page.getByRole('button', { name: /\u4fdd\u5b58|Save/i });
       await saveBtn.click();
 
       // Wait for save request
@@ -229,7 +229,7 @@ test.describe('Image API Protocol Setting', () => {
 
       // First, set image model source to openai to make the dropdown visible
       // Find the image model source dropdown
-      const imageModelSection = page.locator('text=图像生成模型,Image Generation Model').first().locator('..').locator('..');
+      const imageModelSection = page.locator('text=Image Generation Model,Image Generation Model').first().locator('..').locator('..');
 
       // Use API to set image_model_source to openai first
       const apiBase = BASE_URL.replace(/:\d+$/, ':' + (parseInt(BASE_URL.split(':').pop()!) + 2000));
@@ -258,7 +258,7 @@ test.describe('Image API Protocol Setting', () => {
       await protocolSelect.selectOption('chat');
 
       // Save
-      const saveBtn = page.getByRole('button', { name: /保存|Save/i });
+      const saveBtn = page.getByRole('button', { name: /\u4fdd\u5b58|Save/i });
       await saveBtn.click();
       await page.waitForTimeout(2000);
 

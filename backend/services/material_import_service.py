@@ -80,7 +80,7 @@ def import_reference_markdown_images_to_materials(
             existing_filenames.add(deterministic_name)
             imported_count += 1
         except Exception as exc:
-            logger.error("导入解析后的图片失败: %s", exc, exc_info=True)
+            logger.error("Failed to import parsing pictures: %s", exc, exc_info=True)
             continue
 
     return imported_count

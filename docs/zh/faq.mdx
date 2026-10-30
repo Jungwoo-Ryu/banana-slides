@@ -1,89 +1,88 @@
 ---
-title: "常见问题"
-description: "常见问题解答"
+title: "FAQ"
+description: "Frequently asked questions"
 ---
 
-## 生成的文字有乱码或模糊
+## Generated text is garbled or blurry
 
-- 检查是否处于 1K 低分辨率模式。在「**项目设置 → 全局设置**」中切换到 2K 或 4K 分辨率，文字清晰度差异明显。注意：部分 OpenAI 格式中转服务不支持调高分辨率，建议改用 Gemini 格式。
-- 在页面描述中包含具体要渲染的文字内容，AI 更容易正确渲染。
+- Check if you're on 1K low-resolution mode. Switch to 2K or 4K in **Project Settings → Global Settings** — the difference in text clarity is significant. Note: some OpenAI-format proxy services don't support higher resolutions; use Gemini format instead.
+- Include the specific text you want rendered in the page description — AI renders it more accurately when given explicit content.
 
-## 可编辑 PPTX 导出效果不好，文字错位或缺失
+## Editable PPTX export has overlapping text or missing styles
 
-通常是 API 配置问题。确保 `BAIDU_API_KEY` 设置正确，详见[配置说明](/zh/configuration#百度-api-key)。
+Usually an API configuration issue. Make sure `BAIDU_API_KEY` is set correctly — see [Configuration](/configuration#baidu-api-key).
 
-也可以在「**项目设置 → 导出设置**」中调整文本提取方法（OCR / 视觉模型 / 混合），不同模型对不同排版效果差异较大。
+You can also try adjusting the text extraction method in **Project Settings → Export Settings** (OCR / Vision model / Hybrid). Different methods perform differently depending on the layout.
 
-## 普通 PPTX 导出后文字无法在 PowerPoint 中编辑
+## The regular PPTX export has text I can't edit in PowerPoint
 
-普通 PPTX 是将幻灯片图片嵌入 PPT，图片内的文字不可编辑。需要可编辑文字请使用「**导出可编辑 PPTX（Beta）**」。
+Regular PPTX embeds slides as images — text inside images is not editable. Use **Export Editable PPTX (Beta)** if you need editable text.
 
-## 免费版 Gemini API 能用吗？
+## Does the free Gemini API tier work?
 
-文本生成（大纲、描述）可以用，但图片生成需要付费层级。
+Text generation (outlines, descriptions) works on the free tier, but image generation requires a paid tier.
 
-## 出现 503 错误或持续重试
+## Getting 503 errors or repeated retry failures
 
-通常是模型配置错误。建议先在设置页底部点击「**服务测试**」验证配置，再排查具体问题。
+Usually caused by incorrect model configuration. Run the **Service Test** at the bottom of the Settings page first to pinpoint the issue.
 
-也可以查看后端日志：
+Check backend logs for details:
 ```bash
 docker logs --tail 200 banana-slides-backend
 ```
 
-## 修改 .env 后没有生效
+## Environment variable changes not taking effect
 
-- Docker 部署需重启容器才生效。
-- 如果在网页设置页配置过参数，数据库中的值优先级高于 `.env`，点击「**还原默认设置**」可以清除。
+- Docker deployments require a container restart after editing `.env`.
+- If you've configured settings via the web UI, those database values override `.env`. Click **Reset to Default** in Settings to clear them.
 
-## PPT 翻新上传后解析结果不对
+## PPT Renovation didn't parse correctly
 
-- 推荐先在本地将 PPTX 转为 PDF 再上传，效果更稳定。
-- 直接上传 PPTX 需要服务端 LibreOffice 转换，可能因缺少字体（微软雅黑、Calibri 等）导致排版偏差。
-- Docker 用户需要在容器内安装 LibreOffice 才支持 PPTX 上传：
+- Upload PDF instead of PPTX for more stable results. Direct PPTX upload requires server-side LibreOffice conversion, which may fail due to missing fonts (Arial, Calibri, etc.).
+- Docker users who need PPTX support inside the container:
   ```bash
   docker exec -it banana-slides-backend bash -c "apt-get update && apt-get install -y libreoffice-impress"
   ```
 
-## 如何更改画面比例？
+## How do I change the aspect ratio?
 
-在首页创建项目前选择比例，或在幻灯片预览页的「**项目设置**」中修改。修改后需要重新生成图片才会生效。
+Select a ratio on the home page before creating, or change it in **Project Settings** on the preview page. Images must be regenerated after changing the ratio.
 
-注意：部分图像生成模型不支持某些比例，若生成报错可尝试切换到 16:9。
+Note: some image generation models don't support certain aspect ratios. If generation fails, try switching to 16:9.
 
-## 生成速度很慢
+## Generation is slow
 
-- 在「**设置**」中调大「**描述生成最大并发数**」和「**图像生成最大并发数**」，提高并行度。
-- 如果使用免费 API 额度，可能有速率限制，考虑使用付费额度或 [AIHubMix](https://api.inferera.com/?aff=17EC) 等中转服务。
+- Increase **Max description workers** and **Max image workers** in Settings to speed up parallel generation.
+- If you're on a free API tier, rate limits may apply. Consider upgrading or using a relay service like [AIHubMix](https://api.inferera.com/?aff=17EC).
 
-## 如何只重新生成某一页？
+## How do I regenerate just one page?
 
-在幻灯片预览页点击「**编辑**」，幻灯片下方会展开一条指令栏（窄屏为弹窗），填写修改指令后点击「**生成图片**」，只重新生成这一页。页面描述则在右侧的属性面板里随时修改。
+On the Slide Preview page, click **Edit**; a command bar expands beneath the slide (a dialog on narrow screens) while the slide stays in place. Add your edit instruction and click **Generate Image** to regenerate just that page. The page description stays editable any time in the properties panel on the right. You can also use multi-select to batch regenerate several pages.
 
-## 幻灯片里能放柱状图、折线图、树状图这些图表吗？
+## Can I include bar charts, line charts, or tree diagrams in slides?
 
-有两种方案：
+Two approaches:
 
-**方案一：描述 + 生成要求（推荐）**
-在页面描述中直接用 Markdown 或文字描述图表内容，并在「描述生成要求」或「额外要求」中注明图表风格，AI 大概率能直接生成出来。示例描述：
+**Option 1: Describe in text + generation requirements (recommended)**
+Write the chart content directly in the page description using plain text or Markdown, and specify the chart style in **Extra Requirements** or **Description Requirements**. AI can usually render it directly. Example:
 ```
-页面右侧展示过去5年营收柱状图，数据为：2020: 120万、2021: 180万、2022: 240万、2023: 310万、2024: 420万，柱子为蓝色渐变，背景白色。
+Right side of the page shows a 5-year revenue bar chart with data: 2020: $1.2M, 2021: $1.8M, 2022: $2.4M, 2023: $3.1M, 2024: $4.2M. Bars in blue gradient, white background.
 ```
 
-**方案二：先做成图片再粘贴**
-用 Excel、Python（matplotlib）等工具提前生成图表图片，然后直接粘贴（Ctrl+V）到描述卡片中作为参考图，AI 会参考图片风格进行绘制。
+**Option 2: Create the chart as an image first**
+Generate the chart with Excel, Python (matplotlib), or similar tools, then paste it (Ctrl+V) into the description card as a reference image. AI will draw in a similar style.
 
-## 如何保证每页图表风格统一？
+## How do I keep chart styles consistent across all slides?
 
-推荐使用**文字描述风格**而非上传参考图片——根据测试，文字方式对生成一致性的控制效果更好。
+Use **text-based style description** rather than uploading a reference image — tests show text gives better generation consistency.
 
-在「额外要求」或「风格描述」中明确写下统一规范，例如：
-- `所有图表使用蓝色系配色（#2563EB 为主色），白色背景，无边框`
-- `图表字体统一为无衬线字体，数据标签始终显示在柱子顶部`
-- `折线图使用圆形数据点标记，线条粗细 2px`
+Write explicit style rules in **Extra Requirements** or **Style Description**, for example:
+- `All charts use blue color scheme (#2563EB as primary), white background, no borders`
+- `Chart fonts are always sans-serif, data labels always shown above bars`
+- `Line charts use circular data point markers, line weight 2px`
 
-风格约束写得越具体，各页一致性越高。如果对字间距、字号这类细节有要求，也可以直接写进去。
+The more specific the constraints, the more consistent the output across pages. If you care about letter spacing or font sizes, include those too.
 
-## AI 修改大纲/描述的输入框在哪里？
+## Where is the AI input bar for editing outlines and descriptions?
 
-在**大纲编辑器**和**描述编辑器**的顶部导航栏中，有一个输入框，填写指令后按 **Ctrl+Enter** 提交。例如：`在第三页后加一页案例分析`。
+It's in the **top navigation bar** of the Outline Editor and Description Editor — fill in your instruction and press **Ctrl+Enter**. Example: `Add a case study section after page 3`.

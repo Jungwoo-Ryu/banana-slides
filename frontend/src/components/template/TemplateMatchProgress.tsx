@@ -7,12 +7,12 @@ import type { Task } from '@/types';
 const i18n = {
   zh: {
     tmp: {
-      matching: '正在自动匹配模板…',
-      done: '自动匹配完成',
-      failed: '自动匹配失败',
-      progress: '已处理 {completed}/{total} 页',
-      matched: '匹配 {matched} 页',
-      failedPages: '{failed} 页失败',
+      matching: 'Auto-matching templates…',
+      done: 'Auto-match completed',
+      failed: 'Auto-match failed',
+      progress: 'Processed {completed}/{total} pages',
+      matched: '{matched} pages matched',
+      failedPages: '{failed} pages failed',
     },
   },
   en: {

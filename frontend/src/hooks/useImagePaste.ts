@@ -91,12 +91,12 @@ export const generatePlaceholder = (file: File): { blobUrl: string; markdown: st
 const imagePasteI18n = {
   zh: {
     imagePaste: {
-      uploadSuccess: '{{count}} 张图片已插入',
-      uploadSuccessSingle: '图片已插入',
-      uploadFailed: '图片上传失败',
-      partialSuccess: '{{success}} 张上传成功，{{failed}} 张失败',
-      unsupportedType: '不支持的文件类型：{{types}}',
-      captionFailed: '图片描述识别失败，已使用文件名替代',
+      uploadSuccess: '{{count}} images inserted',
+      uploadSuccessSingle: 'Image inserted',
+      uploadFailed: 'Image upload failed',
+      partialSuccess: '{{success}} uploaded, {{failed}} failed',
+      unsupportedType: 'Unsupported file type: {{types}}',
+      captionFailed: 'Image caption recognition failed, using filename instead',
     }
   },
   en: {

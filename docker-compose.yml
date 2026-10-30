@@ -10,27 +10,27 @@ services:
         PYPI_INDEX_URL: ${PYPI_INDEX_URL:-}
     container_name: banana-slides-backend
     ports:
-      # 宿主机端口:容器内部端口
-      # 宿主机端口由 BACKEND_PORT 控制，容器内部固定 5000
+      # Host Port:Internal Port of Container
+      # Host port by BACKEND_PORT Control, inside the container fixed. 5000
       - "${BACKEND_PORT:-5011}:5000"
       # OpenAI OAuth callback server
       - "1455:1455"
-    # 从 .env 文件自动加载所有环境变量
+    # From .env The file automatically loads all environment variables
     env_file:
       - .env
     # Uncomment below to use Vertex AI with a GCP service-account key
     # environment:
     #   - GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-sa-key.json
     volumes:
-      # 持久化数据库
+      # Enduring database
       - ./backend/instance:/app/backend/instance
-      # 持久化上传的文件
+      # Enduring Uploaded Files
       - ./uploads:/app/uploads
       # Mount GCP service-account key (Vertex AI only — uncomment if needed)
       # - ./gcp-service-account.json:/app/gcp-sa-key.json:ro
     restart: unless-stopped
     healthcheck:
-      # 健康检查使用容器内部固定端口 5000
+      # Health checks use internal fixed ports in containers 5000
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
@@ -43,7 +43,7 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
-      # Windows 兼容性：禁用符号链接跟随 + 前端构建参数
+      # Windows Compatibility： Disable symbolic link following + Front-end build parameters
       args:
         DOCKER_BUILDKIT: 1
         DOCKER_REGISTRY: ${DOCKER_REGISTRY:-}

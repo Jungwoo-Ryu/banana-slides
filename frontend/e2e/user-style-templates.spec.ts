@@ -3,7 +3,7 @@ import { test, expect, Page } from '@playwright/test';
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3005';
 
 async function enableTextStyleMode(page: Page) {
-  const label = page.locator('label').filter({ hasText: /使用文字描述风格|Use text description/ });
+  const label = page.locator('label').filter({ hasText: /\u4f7f\u7528\u6587\u5b57\u63cf\u8ff0\u98ce\u683c|Use text description/ });
   const checkbox = label.locator('input[type="checkbox"]');
   if (!(await checkbox.isChecked())) {
     await label.click();
@@ -15,10 +15,10 @@ async function createStyleTemplate(page: Page, name: string, description: string
   await enableTextStyleMode(page);
   const textarea = page.locator('textarea').first();
   await textarea.fill(description);
-  await page.getByRole('button', { name: /保存为模板|Save as template/ }).click();
+  await page.getByRole('button', { name: /\u4fdd\u5b58\u4e3a\u6a21\u677f|Save as template/ }).click();
   const nameInput = page.locator('input[type="text"]').last();
   await nameInput.fill(name);
-  await page.getByRole('button', { name: /^保存$|^Save$/ }).click();
+  await page.getByRole('button', { name: /^\u4fdd\u5b58$|^Save$/ }).click();
   await page.waitForTimeout(500);
 }
 
@@ -92,7 +92,7 @@ test.describe('User Style Templates - Integration', () => {
 
   test('preset styles still work alongside user styles', async ({ page }) => {
     await enableTextStyleMode(page);
-    const presetBtn = page.locator('button').filter({ hasText: /简约商务|Business Simple/ }).first();
+    const presetBtn = page.locator('button').filter({ hasText: /\u7b80\u7ea6\u5546\u52a1|Business Simple/ }).first();
     await presetBtn.click();
     const textarea = page.locator('textarea').first();
     const val = await textarea.inputValue();
@@ -103,9 +103,9 @@ test.describe('User Style Templates - Integration', () => {
     await enableTextStyleMode(page);
     const textarea = page.locator('textarea').first();
     await textarea.fill('');
-    await page.getByRole('button', { name: /保存为模板|Save as template/ }).click();
+    await page.getByRole('button', { name: /\u4fdd\u5b58\u4e3a\u6a21\u677f|Save as template/ }).click();
     await page.waitForTimeout(300);
-    const nameInput = page.locator('input[placeholder*="风格名称"], input[placeholder*="style name"]');
+    const nameInput = page.locator('input[placeholder*="Style Name"], input[placeholder*="style name"]');
     await expect(nameInput).not.toBeVisible();
   });
 });
@@ -151,7 +151,7 @@ test.describe('User Style Templates - Mock', () => {
 
     const textarea = page.locator('textarea').first();
     await textarea.fill('Some style description');
-    await page.getByRole('button', { name: /保存为模板|Save as template/ }).click();
+    await page.getByRole('button', { name: /\u4fdd\u5b58\u4e3a\u6a21\u677f|Save as template/ }).click();
 
     const nameInput = page.locator('input[type="text"]').last();
     await expect(nameInput).toBeVisible();

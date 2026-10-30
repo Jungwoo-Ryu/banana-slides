@@ -1,241 +1,241 @@
 # Banana Slides Backend
 
-蕉幻（Banana Slides）后端服务 - AI驱动的PPT生成系统
+Banana Slides（Banana Slides）Backend Services - AI Driven PPT Generation System
 
-## 技术栈
+## Technology.
 
-- **框架**: Flask 3.0
-- **数据库**: SQLite + SQLAlchemy ORM
-- **AI服务**: Google Gemini API
-- **PPT处理**: python-pptx
-- **并发处理**: ThreadPoolExecutor
-- **包管理**: uv
+- **Frame**: Flask 3.0
+- **Database**: SQLite + SQLAlchemy ORM
+- **AI Services**: Google Gemini API
+- **PPT Processing**: python-pptx
+- **Co-processing**: ThreadPoolExecutor
+- **Package management**: uv
 
-## 项目结构
+## Project structure
 
 ```
 backend/
-├── app.py                    # Flask应用入口
-├── config.py                 # 配置文件
-├── models/                   # 数据库模型
+├── app.py                    # Flask Application entrance
+├── config.py                 # Profile
+├── models/                   # Database Model
 │   ├── __init__.py
-│   ├── project.py           # Project模型
-│   ├── page.py              # Page模型
-│   └── task.py              # Task模型
-├── services/                 # 服务层
+│   ├── project.py           # Project Model
+│   ├── page.py              # Page Model
+│   └── task.py              # Task Model
+├── services/                 # Service level
 │   ├── __init__.py
-│   ├── ai_service.py        # AI相关服务
-│   ├── file_service.py      # 文件管理服务
-│   ├── export_service.py    # 导出服务
-│   └── task_manager.py      # 异步任务管理
-├── controllers/              # 控制器层
+│   ├── ai_service.py        # AI Related services
+│   ├── file_service.py      # Document management services
+│   ├── export_service.py    # Export Service
+│   └── task_manager.py      # Step-by-step task management
+├── controllers/              # Control Layer
 │   ├── __init__.py
 │   ├── project_controller.py
 │   ├── page_controller.py
 │   ├── template_controller.py
 │   ├── export_controller.py
 │   └── file_controller.py
-├── utils/                    # 工具函数
+├── utils/                    # Tool Functions
 │   ├── __init__.py
-│   ├── response.py          # 统一响应格式
-│   └── validators.py        # 数据验证
-├── instance/                 # 数据库文件目录（自动创建）
-├── uploads/                  # 文件上传目录（自动创建）
-├── .env.example             # 环境变量示例
-└── README.md                # 本文件
+│   ├── response.py          # Harmonized Response Format
+│   └── validators.py        # Data validation
+├── instance/                 # Database File Directory (auto-create)）
+├── uploads/                  # File Upload Directory (auto-create)）
+├── .env.example             # Examples of environmental variables
+└── README.md                # This document
 ```
 
-## 快速开始
+## Fast start.
 
-### 1. 安装依赖
+### 1. Installation Dependence
 
-本项目使用 [uv](https://github.com/astral-sh/uv) 管理 Python 依赖。所有依赖定义在项目根目录的 `pyproject.toml` 文件中。
+Use of this project [uv](https://github.com/astral-sh/uv) Management Python Dependence. All relying on definitions in the root directory `pyproject.toml` File。
 
-在项目根目录下运行：
+Run under the root directory：
 ```bash
 uv sync
 ```
 
-这将自动安装所有必需的依赖包。
+This will automatically install all the required dependencies.。
 
-### 2. 配置环境变量
+### 2. Configure Environment Variables
 
-复制 `.env.example` 为 `.env` 并填写配置：
+Copy `.env.example` Yes. `.env` , and fill in configuration：
 
 ```bash
 cp .env.example .env
 ```
 
-编辑 `.env` 文件：
+Edit `.env` Documentation：
 
 ```env
 GOOGLE_API_KEY=your-google-api-key
 GOOGLE_API_BASE=https://generativelanguage.googleapis.com
 
-# 火山引擎配置（可选，用于 Inpainting 图像消除功能）
+# Volcanic engine configuration (optional, for Inpainting Image elimination function）
 VOLCENGINE_ACCESS_KEY=your-volcengine-access-key
 VOLCENGINE_SECRET_KEY=your-volcengine-secret-key
 VOLCENGINE_INPAINTING_TIMEOUT=60
 VOLCENGINE_INPAINTING_MAX_RETRIES=3
 ```
 
-### 3. 初始化 / 升级数据库结构（Alembic 迁移）
+### 3. Initialize / Upgrade database structure（Alembic Migration）
 
-从当前版本开始，后端使用 Alembic 管理数据库结构变更。
+From the current version, use backend Alembic Managing changes in database structure。
 
 ```bash
 cd backend
 uv run alembic upgrade head
 ```
 
-> 注意：  
-> - 首次运行时会自动创建 `alembic_version` 表并将数据库迁移到最新结构；  
-> - 后续新增模型字段时，只需要更新 `models/`，然后使用 `alembic revision --autogenerate` 生成迁移，再执行 `alembic upgrade head`。
+> Attention.：<br>
+> - It will be created automatically on first run `alembic_version` Table and migration of the database to the latest structure；<br>
+> - Only update following the new model field `models/`，And then use `alembic revision --autogenerate` Generate migration, execute `alembic upgrade head`。
 
-### 4. 运行服务
+### 4. Operation services
 
-使用 uv 运行：
+Usage uv Run：
 ```bash
 cd backend
 uv run python app.py
 ```
-服务将在 `http://localhost:5011` 启动。
+The service will be `http://localhost:5011` Start。
 
-## API文档
+## API Documentation
 
-完整的API文档请参考项目根目录的 `API设计文档.md`。
+Full API Document refer to the root directory of the item `API Design Document.md`。
 
-### 主要端点
+### Main Peers
 
-#### 项目管理
-- `POST /api/projects` - 创建项目
-- `GET /api/projects/{project_id}` - 获取项目详情
-- `PUT /api/projects/{project_id}` - 更新项目
-- `DELETE /api/projects/{project_id}` - 删除项目
+#### Project management
+- `POST /api/projects` - Create Item
+- `GET /api/projects/{project_id}` - Retrieving project details
+- `PUT /api/projects/{project_id}` - Update item
+- `DELETE /api/projects/{project_id}` - Delete Item
 
-#### 大纲生成
-- `POST /api/projects/{project_id}/generate/outline` - 生成大纲
+#### Outline Generation
+- `POST /api/projects/{project_id}/generate/outline` - Generate Outline
 
-#### 描述生成
-- `POST /api/projects/{project_id}/generate/descriptions` - 批量生成描述（异步）
-- `POST /api/projects/{project_id}/pages/{page_id}/generate/description` - 单页生成
+#### Description Generation
+- `POST /api/projects/{project_id}/generate/descriptions` - Batch generation description (speech)）
+- `POST /api/projects/{project_id}/pages/{page_id}/generate/description` - Single Page Generation
 
-#### 图片生成
-- `POST /api/projects/{project_id}/generate/images` - 批量生成图片（异步）
-- `POST /api/projects/{project_id}/pages/{page_id}/generate/image` - 单页生成
-- `POST /api/projects/{project_id}/pages/{page_id}/edit/image` - 编辑图片
+#### Picture Generation
+- `POST /api/projects/{project_id}/generate/images` - Batch generation of pictures (show)）
+- `POST /api/projects/{project_id}/pages/{page_id}/generate/image` - Single Page Generation
+- `POST /api/projects/{project_id}/pages/{page_id}/edit/image` - Edit Pictures
 
-#### 模板管理
-- `POST /api/projects/{project_id}/template` - 上传模板
-- `DELETE /api/projects/{project_id}/template` - 删除模板
+#### Template Management
+- `POST /api/projects/{project_id}/template` - Upload Template
+- `DELETE /api/projects/{project_id}/template` - Remove Template
 
-#### 导出
-- `GET /api/projects/{project_id}/export/pptx` - 导出PPTX
-- `GET /api/projects/{project_id}/export/pdf` - 导出PDF
+#### Export
+- `GET /api/projects/{project_id}/export/pptx` - Export PPTX
+- `GET /api/projects/{project_id}/export/pdf` - Export PDF
 
-#### 静态文件
-- `GET /files/{project_id}/{type}/{filename}` - 获取文件
+#### Static File
+- `GET /files/{project_id}/{type}/{filename}` - Get File
 
-## 核心功能
+## Core functions
 
-### 1. AI驱动的内容生成
+### 1. AI Driverd Content Generation
 
-基于 Google Gemini API，支持：
-- 自动生成PPT大纲
-- 并行生成页面描述
-- 根据参考模板生成图片
-- 自然语言编辑图片
+Based on Google Gemini API，Support：
+- Auto Generate PPT Outline
+- Parallel Generate Page Description
+- Generate pictures based on reference templates
+- Edit pictures in natural languages
 
-### 2. 异步任务处理
+### 2. Step-by-step processing
 
-使用 `ThreadPoolExecutor` 实现简单但高效的异步任务处理：
-- 并行生成多个页面描述
-- 并行生成多个页面图片
-- 实时任务进度跟踪
+Usage `ThreadPoolExecutor` Achieving simple but efficient walk-through tasks：
+- Create multiple page descriptions in parallel
+- Generate multiple pages in parallel
+- Real-time task tracker
 
-### 3. 文件管理
+### 3. Document management
 
-完整的文件管理系统：
-- 项目级文件隔离
-- 模板图片管理
-- 生成图片管理
-- 自动清理机制
+Complete document management system：
+- Project-level file segregation
+- Template Picture Management
+- Generate Image Management
+- Automatic clean-up mechanism
 
-### 4. Inpainting 图像消除（可选）
+### 4. Inpainting Image Elimination (optional)）
 
-基于火山引擎的 Inpainting 服务，支持：
-- 根据边界框（bbox）精确消除图像区域
-- 自动生成掩码图像
-- 重新生成背景（保留前景，消除其他区域）
-- 支持批量处理和重试机制
+Volcanic-based engines. Inpainting Services, support：
+- By Boundary Frame（bbox）Exact elimination of image range
+- Automatically generate mask images
+- Recreate the background (retention prospects, elimination of other regions)）
+- Supporting batch processing and re-testing mechanisms
 
-使用方法：
+Usage method：
 ```python
 from services.inpainting_service import InpaintingService, remove_regions
 from PIL import Image
 
-# 方式1：使用服务类
+# Modalities 1：Use of service category
 service = InpaintingService()
 image = Image.open('original.png')
-bboxes = [(100, 100, 200, 200), (300, 150, 400, 250)]  # 要消除的区域
+bboxes = [(100, 100, 200, 200), (300, 150, 400, 250)]  # Area to be eliminated
 result = service.remove_regions_by_bboxes(image, bboxes)
 
-# 方式2：使用便捷函数
+# Modalities 2：Use a convenient function
 result = remove_regions(image, bboxes, expand_pixels=5)
 ```
 
-### 5. 数据持久化
+### 5. Data Durable
 
-使用 SQLite + SQLAlchemy：
-- 轻量级，无需额外配置
-- 支持关系型数据操作
-- 事务保证数据一致性
+Usage SQLite + SQLAlchemy：
+- Lightweight, no additional configuration
+- Support relationship data operations
+- Service to ensure data consistency
 
-## 开发说明
+## Development Note
 
-### 数据模型
+### Data Model
 
-#### Project（项目）
-- 项目基本信息
-- 模板图片路径
-- 项目状态
-- 关联的页面和任务
+#### Project（Item）
+- Basic information on the project
+- Template Picture Path
+- Project Status
+- Associated Pages and Tasks
 
-#### Page（页面）
-- 页面顺序
-- 大纲内容（JSON）
-- 描述内容（JSON）
-- 生成的图片路径
-- 页面状态
+#### Page（Page）
+- Page Order
+- Outline（JSON）
+- Description（JSON）
+- Path to Generate Pictures
+- Page Status
 
-#### Task（任务）
-- 任务类型（生成描述/生成图片）
-- 任务状态
-- 进度信息（JSON）
-- 错误信息
+#### Task（Tasks）
+- Task type (generation description)/Generate pictures）
+- Task Status
+- Progress Information（JSON）
+- Error message
 
-### 状态机
+### Status machine
 
-#### 项目状态
+#### Project Status
 ```
 DRAFT → OUTLINE_GENERATED → DESCRIPTIONS_GENERATED → GENERATING_IMAGES → COMPLETED
 ```
 
-#### 页面状态
+#### Page Status
 ```
 DRAFT → DESCRIPTION_GENERATED → GENERATING → COMPLETED | FAILED
 ```
 
-#### 任务状态
+#### Task Status
 ```
 PENDING → PROCESSING → COMPLETED | FAILED
 ```
 
-### 扩展开发
+### Extension development
 
-#### 添加新的AI模型
+#### Add New AI Model
 
-在 `services/ai_service.py` 中添加新的模型支持：
+Yes. `services/ai_service.py` Add new model support：
 
 ```python
 class AIService:
@@ -247,96 +247,96 @@ class AIService:
         # ...
 ```
 
-#### 自定义提示词模板
+#### Customized Phrasing Template
 
-修改 `services/ai_service.py` 中的提示词生成逻辑：
+Modify `services/ai_service.py` , and then click the：
 
 ```python
 def generate_image_prompt(self, ...):
     prompt = dedent(f"""
-        # 自定义提示词模板
+        # Customized Phrasing Template
         ...
     """)
     return prompt
 ```
 
-#### 添加新的导出格式
+#### Add New Export Format
 
-在 `services/export_service.py` 中添加新的导出方法：
+Yes. `services/export_service.py` Add new export method：
 
 ```python
 class ExportService:
     @staticmethod
     def create_custom_format(image_paths, output_file):
-        # 实现自定义格式导出
+        # Get Custom Format Export
         pass
 ```
 
 
-## 测试
+## Test
 
-### 健康检查
+### Health screening
 
 ```bash
 curl http://localhost:5011/health
 ```
 
-### 创建项目
+### Create Item
 
 ```bash
 curl -X POST http://localhost:5011/api/projects \
   -H "Content-Type: application/json" \
-  -d '{"creation_type":"idea","idea_prompt":"生成环保主题ppt"}'
+  -d '{"creation_type":"idea","idea_prompt":"Generate the theme of environmental protection ppt"}'
 ```
 
-### 上传模板
+### Upload Template
 
 ```bash
 curl -X POST http://localhost:5011/api/projects/{project_id}/template \
   -F "template_image=@template.png"
 ```
 
-### 生成大纲
+### Generate Outline
 
 ```bash
 curl -X POST http://localhost:5011/api/projects/{project_id}/generate/outline \
   -H "Content-Type: application/json" \
-  -d '{"idea_prompt":"生成环保主题ppt"}'
+  -d '{"idea_prompt":"Generate the theme of environmental protection ppt"}'
 ```
 
-## 常见问题
+## Common problems
 
-### Q: 数据库文件在哪里？
-A: 在 `backend/instance/database.db`，会自动创建。
+### Q: Where are the database files?？
+A: Yes. `backend/instance/database.db`，It’s created automatically。
 
-### Q: 上传的文件存在哪里？
-A: 在 `uploads/{project_id}/` 目录下，按项目隔离。
+### Q: Where are the uploaded files?？
+A: Yes. `uploads/{project_id}/` Under the directories, lined up.。
 
-### Q: 如何修改并发数？
-A: 推荐通过前端设置页修改（会同步到数据库并覆盖 `.env` 值）；也可以在 `.env` 文件中修改 `MAX_DESCRIPTION_WORKERS` 和 `MAX_IMAGE_WORKERS` 作为默认值，然后在设置页点击“重置为默认值”同步到 DB。
+### Q: How to Modify Parallel Numbers？
+A: Suggest changes by front-end settings page (sync to database and overwrite) `.env` value; can also be in `.env` Document Changes `MAX_DESCRIPTION_WORKERS` and `MAX_IMAGE_WORKERS` As default, then click ” Reset to Default ” on the settings page to sync to DB。
 
-### Q: 如何切换到其他AI模型 / 修改 MinerU 地址？
-A: 从当前版本开始，推荐通过前端“系统设置”页面修改：  
-- 大模型提供商格式 / API Base / API Key  
-- 文本模型 (`TEXT_MODEL`) / 图片模型 (`IMAGE_MODEL`)  
-- MinerU 地址 (`MINERU_API_BASE`) / 图片识别模型 (`IMAGE_CAPTION_MODEL`)  
+### Q: How to switch to other AI Model / Modify MinerU Address？
+A: From the current version it is recommended that changes be made through the front-end System Settings page：<br>
+- Large model provider format / API Base / API Key<br>
+- Text Model (`TEXT_MODEL`) / Picture Model (`IMAGE_MODEL`)<br>
+- MinerU Address (`MINERU_API_BASE`) / Picture Identification Model (`IMAGE_CAPTION_MODEL`)<br>
 
-这些值会保存到 `settings` 表并覆盖 `.env` 中对应配置，点击“重置为默认值”会回到 `.env` 的默认值。
+These values will be saved to `settings` Table & Overwrite `.env` . Click Reset to Default to return `.env` Default value。
 
-### Q: 支持哪些图片格式？
-A: PNG, JPG, JPEG, GIF, WEBP。在 `config.py` 中的 `ALLOWED_EXTENSIONS` 配置。
+### Q: Which image formats are supported？
+A: PNG, JPG, JPEG, GIF, WEBP。Yes. `config.py` Medium `ALLOWED_EXTENSIONS` Configuration。
 
 
-## 开源字体说明
+## Open Source Font Description
 
-本项目包含 **Noto Sans CJK SC**（思源黑体简体中文）字体文件，用于 PPT 导出时的精确文本测量。
+Included in this project **Noto Sans CJK SC**（Source Han Sans Simplified Chinese) font file, used for PPT Accurate text measurement at export。
 
-- **字体文件**: `fonts/NotoSansSC-Regular.ttf`
-- **来源**: [Google Noto CJK Fonts](https://github.com/googlefonts/noto-cjk)
-- **许可证**: [SIL Open Font License 1.1 (OFL)](https://scripts.sil.org/OFL)
+- **Font File**: `fonts/NotoSansSC-Regular.ttf`
+- **Source**: [Google Noto CJK Fonts](https://github.com/googlefonts/noto-cjk)
+- **Licence**: [SIL Open Font License 1.1 (OFL)](https://scripts.sil.org/OFL)
 
-OFL 许可证允许自由使用、修改和分发该字体。
+OFL Licence allows free use, modification and distribution of the font。
 
-## 联系方式
+## Contact information
 
-如有问题或建议，请通过 GitHub Issues 反馈。
+If you have any questions or suggestions, please adopt them. GitHub Issues Feedback。

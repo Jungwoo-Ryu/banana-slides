@@ -1,14 +1,9 @@
 """
-AI Service Prompts - 集中管理所有 AI 服务的 prompt 模板
+AI service prompt templates.
 
-分区:
-  1. 共享工具 & 常量    — 语言配置、格式化辅助、DRY 常量
-  2. 大纲 Prompts       — 生成、解析、细化大纲
-  3. 描述 Prompts       — 单页、流式、拆分、细化描述
-  4. 图片生成 Prompts   — 文生图、图片编辑
-  5. 图片处理 Prompts   — 背景提取、画质修复
-  6. 内容提取 Prompts   — 文字属性、页面内容、排版分析、风格提取
-  7. 旁白 Prompts        — TTS 播报视频旁白生成
+Sections: shared helpers; outline creation and parsing; slide descriptions;
+image generation and editing; background restoration; OCR/style extraction;
+narration; template analysis and matching.
 """
 import json
 import logging
@@ -22,23 +17,23 @@ logger = logging.getLogger(__name__)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 1. 共享工具 & 常量
+# 1. Shared Tools & Constant
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
-# --- 常量 ---
+# --- Constant ---
 
 LANGUAGE_CONFIG = {
     'ko': {'name': '한국어', 'instruction': '모든 내용을 자연스러운 한국어로 작성하세요. 내부 구조 표식과 JSON 키는 지시된 형식을 유지하세요.', 'ppt_text': '슬라이드의 모든 문자는 한국어로 작성하세요.'},
     'zh': {
-        'name': '中文',
-        'instruction': '请使用全中文输出。',
-        'ppt_text': 'PPT文字请使用全中文。'
+        'name': 'Chinese',
+        'instruction': 'Write all output in Chinese.',
+        'ppt_text': 'Write all slide text in Chinese.'
     },
     'ja': {
-        'name': '日本語',
-        'instruction': 'すべて日本語で出力してください。',
-        'ppt_text': 'PPTのテキストは全て日本語で出力してください。'
+        'name': 'Japanese',
+        'instruction': 'Write all output in Japanese.',
+        'ppt_text': 'Write all slide text in Japanese.'
     },
     'en': {
         'name': 'English',
@@ -46,16 +41,16 @@ LANGUAGE_CONFIG = {
         'ppt_text': 'Use English for PPT text.'
     },
     'auto': {
-        'name': '自动',
+        'name': 'Auto',
         'instruction': '',
         'ppt_text': ''
     }
 }
 
 DETAIL_LEVEL_SPECS = {
-    'concise': '文字极致地压缩和精简，每条要点用一个核心词语或数据代替，例如效率↑80%',
-    'default': '清晰明了，每条要点控制在15-20字以内，优先使用短语而非完整句子；落地到页面的文字建议在2-6句之内，避免冗长和复杂表述，为演示服务，而不是代替演讲人叙述。',
-    'detailed': '忠于原文的基础上做到内容详实，逻辑清晰。',
+    'concise': 'Use minimal text: one key phrase or datum per point, e.g. efficiency +80%.',
+    'default': 'Prefer short phrases of about 15-20 characters and 2-6 statements per slide. Avoid long or complex prose; slides support the speaker rather than replace the talk.',
+    'detailed': 'Stay faithful to the source while providing detailed, logically organized content.',
 }
 
 DEFAULT_NARRATION_CONFIG = {
@@ -93,7 +88,7 @@ flat top-level entries — they belong to the deck as a whole, never inside a "p
     }
 ]"""
 
-# 论断式大纲（assertion-evidence）：大纲承载每页结论，描述层据此写标题、定视觉主次
+# Summary outline（assertion-evidence）：Outline to carry the conclusion per page, describing the layer as the basis for the heading, visualization of the header
 _OUTLINE_TAKEAWAY_RULE = """\
 Takeaway rule:
 - For content pages, the FIRST point must be the page's takeaway: one complete assertion \
@@ -112,7 +107,7 @@ not nest them under a `# Part` heading, and do not give them a "part" value.
 - Read in order, the takeaways should form a coherent storyline of the whole deck."""
 
 
-# --- 辅助函数 ---
+# --- Auxiliary Functions ---
 
 def _build_prompt(prompt_text: str, reference_files_content=None, *, tag: str = '') -> str:
     """Prepend reference files XML and log the final prompt."""
@@ -124,36 +119,26 @@ def _build_prompt(prompt_text: str, reference_files_content=None, *, tag: str = 
 
 
 def _get_original_input(project_context: 'ProjectContext') -> str:
-    """Extract original user input from project context (shared across prompt builders)."""
-    if project_context.creation_type == 'idea' and project_context.idea_prompt:
-        return project_context.idea_prompt
+    """Extract the user's original idea, outline or description."""
     if project_context.creation_type == 'outline' and project_context.outline_text:
-        return f"用户提供的大纲：\n{project_context.outline_text}"
+        return f'User-provided outline:\n{project_context.outline_text}'
     if project_context.creation_type == 'descriptions' and project_context.description_text:
-        return f"用户提供的描述：\n{project_context.description_text}"
-    return project_context.idea_prompt or ""
+        return f'User-provided description:\n{project_context.description_text}'
+    return project_context.idea_prompt or ''
+
 
 
 def _get_original_input_labeled(project_context: 'ProjectContext') -> str:
-    """Build labeled original input section for refinement prompts."""
-    text = "\n原始输入信息：\n"
-    if project_context.creation_type == 'idea' and project_context.idea_prompt:
-        text += f"- PPT构想：{project_context.idea_prompt}\n"
-    elif project_context.creation_type == 'outline' and project_context.outline_text:
-        text += f"- 用户提供的大纲文本：\n{project_context.outline_text}\n"
-    elif project_context.creation_type == 'descriptions' and project_context.description_text:
-        text += f"- 用户提供的页面描述文本：\n{project_context.description_text}\n"
-    elif project_context.idea_prompt:
-        text += f"- 用户输入：{project_context.idea_prompt}\n"
-    return text
+    """Add an English heading without translating user content."""
+    return f'\nOriginal input:\n{_get_original_input(project_context)}\n'
+
 
 
 def _get_previous_requirements_text(previous_requirements: Optional[List[str]]) -> str:
-    """Format previous modification history."""
     if not previous_requirements:
-        return ""
-    prev_list = "\n".join([f"- {req}" for req in previous_requirements])
-    return f"\n\n之前用户提出的修改要求：\n{prev_list}\n"
+        return ''
+    return '\n\nPrevious user requirements:\n' + '\n'.join(f'- {item}' for item in previous_requirements) + '\n'
+
 
 
 def _normalize_word_count(value: Any, default: int) -> int:
@@ -217,37 +202,36 @@ def parse_narration_generation_result(result: str) -> Dict[int, str]:
     return parsed
 
 
-# 预置字段的生成指令：定义 + 排他规则 + 长度预算。字段间不得重叠：
-# 内容归页面文字，视觉内容归配图与素材，编排归版式与重点，讲稿归演讲者备注。
+# Generating command for preset fields： definition + The rules of exclusion. + Length budget. Fields may not overlap：
+# Contents SLIDE_TEXT，Visual content return Visual assets，Organization Layout and emphasis，Return of speeches Speaker notes。
 EXTRA_FIELD_INSTRUCTIONS = {
-    '配图与素材': (
-        '配图与素材：[本页除文字外要展示什么：需要绘制的图表/图示/插画，写明类型与要表达的内容'
-        '（如"折线图：2020-2025 营收增长，突出 2023 年拐点"）；'
-        '要使用的真实素材图片以 markdown 引用（如 ![说明](/files/xxx/image.png)）。'
-        '不要写正文文字（属于页面文字），不要写摆放位置（属于版式与重点）。最多 3 项；无需配图时省略此字段]'
+    'Visual assets': (
+        'Visual assets: [Describe non-text visuals: chart, diagram or illustration type and content. '
+        'Reference real images with Markdown syntax, e.g. ![Image description](/files/xxx/image.png). '
+        'Do not write body text (belongs in SLIDE_TEXT). Do not specify positioning (belongs in Layout and emphasis). '
+        'At most 3 items; omit this field when no visual assets are needed.]'
     ),
-    '版式与重点': (
-        '版式与重点：[不超过两句：第一句写版式结构'
-        '（如：上标题下两栏 / 左文右图 / 横向时间线 / 大图铺底文字浮层 / 居中大标题），'
-        '第二句写视觉重点（观众第一眼应看到什么、哪个元素放大或强调）。'
-        '只描述已有内容如何编排，不引入新内容，不复述页面文字]'
+    'Layout and emphasis': (
+        'Layout and emphasis: [At most two sentences: first describe the layout structure, '
+        'then the visual focus (what the viewer should notice first and what to enlarge or emphasize). '
+        'Arrange existing content only. Do not introduce new content or repeat SLIDE_TEXT.]'
     ),
-    '演讲者备注': (
-        '演讲者备注：[演讲时的口头讲解要点：推理展开、页间过渡、补充例子。'
-        '此字段不会渲染到页面上，也不影响生图]'
+    'Speaker notes': (
+        'Speaker notes: [Oral explanation, reasoning, transitions and supporting examples. '
+        'These notes are not rendered on the slide and do not affect image generation.]'
     ),
 }
 
 
 def _format_extra_field_instructions(extra_fields: list | None) -> str:
-    """将额外字段列表格式化为 prompt 中的输出要求。预置字段用定义好的指令，自定义/旧字段用通用格式。"""
+    """Format the list of additional fields into prompt . Preset fields are customised using defined commands/Old fields in common format。"""
     if not extra_fields:
         return ''
     parts = [
-        EXTRA_FIELD_INSTRUCTIONS.get(f, f'{f}：[关于{f}的建议，只写其他字段未覆盖的信息]')
+        EXTRA_FIELD_INSTRUCTIONS.get(f, f'{f}: [Guidance for {f}; include only information not covered by other fields.]')
         for f in extra_fields
     ]
-    return '\n'.join([''] + parts)  # 前导换行
+    return '\n'.join([''] + parts)  # Lead lead line break
 
 
 def _format_reference_files_xml(reference_files_content: Optional[List[Dict[str, str]]]) -> str:
@@ -269,16 +253,16 @@ def _format_reference_files_xml(reference_files_content: Optional[List[Dict[str,
 
 
 def _format_requirements(requirements: str, context: str = "outline") -> str:
-    """格式化用户提供的生成要求，返回可直接拼接到 prompt 中的文本段。
+    """Format the generation requirements provided by the user, and return directly to the cipher prompt text bands in。
 
-    context: "outline" 或 "description"，用于生成对应的结构标记示例。
+    context: "outline" or "description"，Example of structure tags used to generate corresponding。
     """
     if requirements and requirements.strip():
         if context == "description":
             marker_example = (
                 "For example, if the user asks to avoid certain symbols, "
                 "do NOT use them in the page content, but still use structural markers "
-                "like '页面文字：', '图片素材：', and '<!-- PAGE_END -->' as-is."
+                "like 'SLIDE_TEXT：', 'Image assets：', and '<!-- PAGE_END -->' as-is."
             )
         else:
             marker_example = (
@@ -298,33 +282,33 @@ def _format_requirements(requirements: str, context: str = "outline") -> str:
 
 
 def get_default_output_language() -> str:
-    """获取环境变量中配置的默认输出语言"""
+    """Gets the default output language configured in the environment variable"""
     from config import Config
     from services.runtime_config import setting
     return setting('OUTPUT_LANGUAGE', 'ko')
 
 
 def get_language_instruction(language: str = None) -> str:
-    """获取语言限制指令文本"""
+    """Get Language Limit Command Text"""
     lang = language if language else get_default_output_language()
     config = LANGUAGE_CONFIG.get(lang, LANGUAGE_CONFIG['ko'])
     return config['instruction']
 
 
 def get_ppt_language_instruction(language: str = None) -> str:
-    """获取PPT文字语言限制指令"""
+    """Access PPT Text Language Limit Command"""
     lang = language if language else get_default_output_language()
     config = LANGUAGE_CONFIG.get(lang, LANGUAGE_CONFIG['ko'])
     return config['ppt_text']
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 2. 大纲 Prompts — 生成、解析、细化大纲
+# 2. Outline Prompts — Generate, parse, fine-tune outlines
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
 def get_outline_generation_prompt(project_context: 'ProjectContext', language: str = None) -> str:
-    """生成 PPT 大纲的 prompt（JSON 输出）"""
+    """Generate PPT Outline prompt（JSON Output）"""
     idea_prompt = project_context.idea_prompt or ""
 
     prompt = (f"""\
@@ -348,7 +332,7 @@ The user's request: {idea_prompt}.
 
 
 def get_outline_generation_prompt_markdown(project_context: 'ProjectContext', language: str = None) -> str:
-    """生成 PPT 大纲的 prompt（Markdown 输出，用于流式生成）"""
+    """Generate PPT Outline prompt（Markdown Output, for current generation）"""
     idea_prompt = project_context.idea_prompt or ""
 
     prompt = (f"""\
@@ -408,7 +392,7 @@ The user's request: {idea_prompt}.
 
 
 def get_outline_parsing_prompt(project_context: 'ProjectContext', language: str = None) -> str:
-    """解析用户提供的大纲文本的 prompt（JSON 输出）"""
+    """Parsing the outline text provided by the user prompt（JSON Output）"""
     outline_text = project_context.outline_text or ""
 
     prompt = (f"""\
@@ -442,7 +426,7 @@ Now parse the outline text above into the structured format. Return only the JSO
 
 
 def get_outline_parsing_prompt_markdown(project_context: 'ProjectContext', language: str = None) -> str:
-    """解析用户提供的大纲文本的 prompt（Markdown 输出，用于流式生成）"""
+    """Parsing the outline text provided by the user prompt（Markdown Output, for current generation）"""
     outline_text = project_context.outline_text or ""
 
     prompt = (f"""\
@@ -469,7 +453,7 @@ Now parse the outline text above into the Markdown format. Output `<!-- END -->`
 
 
 def get_description_to_outline_prompt(project_context: 'ProjectContext', language: str = None) -> str:
-    """从描述文本解析出大纲的 prompt（JSON 输出）"""
+    """Parsing the outline from the description text prompt（JSON Output）"""
     description_text = project_context.description_text or ""
 
     prompt = (f"""\
@@ -507,17 +491,17 @@ Now extract the outline structure from the description text above. Return only t
 def get_description_to_outline_prompt_markdown(project_context: 'ProjectContext',
                                                language: str = None,
                                                extra_fields: list = None) -> str:
-    """从描述文本解析出逐页大纲和页面描述的 prompt（Markdown 输出，用于流式生成）"""
+    """Parsing page-to-page outline and page description from description text prompt（Markdown Output, for current generation）"""
     description_text = project_context.description_text or ""
     detail_level = "default"
     description_format = f"""\
---- 页面文字 ---
-[此处使用 markdown 直接放置正文文字，细致程度要求：{DETAIL_LEVEL_SPECS[detail_level]}。可包含 LaTeX 公式、表格等内容，不要重复添加页面标题，不要把用户的设计意图显式地放在页面文字中。]
+--- SLIDE_TEXT ---
+[Use here markdown Place text directly in the body, detail required：{DETAIL_LEVEL_SPECS[detail_level]}。Organisation LaTeX Formulas, tables, etc., do not add duplicates Slide title，Don’t put the user’s design clearly. SLIDE_TEXT Medium。]
 
---- 页面文字结束 ---
+--- SLIDE_TEXT_END ---
 {_format_extra_field_instructions(extra_fields)}
 
-素材图片（以 /files/ 开头的本地路径）以 markdown 格式引用，如 ![描述](/files/xxx/image.png)，优先写入"配图与素材"字段；若该字段未启用，则直接附在页面文字之后。
+Image of material (in /files/ Local path to start) markdown Format references, e.g. ![Description](/files/xxx/image.png)，Prioritize Writing"Visual assets"fields; if this field is not enabled, attach directly to SLIDE_TEXT After。
 """
 
     prompt = (f"""\
@@ -546,19 +530,19 @@ Output rules:
 - Do NOT wrap in code blocks or add any extra text
 
 Example:
-## 市场机会概览
+## Overview of market opportunities
 <!-- OUTLINE_POINTS -->
-- 需求正从单点工具转向端到端解决方案，这是本轮增长的真正驱动力。
-- 用三年增长数据说明市场规模与结构变化。
+- Demand is shifting from a single-point tool to an end-to-end solution, which is the real driver of the current round of growth.。
+- Three-year growth data to illustrate market size and structural changes。
 <!-- PAGE_DESCRIPTION -->
---- 页面文字 ---
-- 过去三年目标市场保持高速增长
-- 需求从单点工具转向端到端解决方案
+--- SLIDE_TEXT ---
+- Target markets have been growing at a high rate over the past three years
+- Demand moving from single point tool to end-to-end solution
 
---- 页面文字结束 ---
+--- SLIDE_TEXT_END ---
 
-配图与素材：折线图：过去三年目标市场增长曲线，突出增速
-版式与重点：上标题下内容，左侧要点右侧趋势图；趋势图为视觉重点
+Visual assets：Line map： target market growth curve over the last three years, highlighting the rate of growth
+Layout and emphasis：Under heading above, right-hand trend map of the left point; trend map for visual focus
 <!-- PAGE_END -->
 
 Now split the description text above and output the page-by-page structure. Output `<!-- END -->` on the last line when finished.
@@ -569,603 +553,318 @@ Now split the description text above and output the page-by-page structure. Outp
 
 
 def get_outline_refinement_prompt(current_outline: List[Dict], user_requirement: str,
-                                   project_context: 'ProjectContext',
-                                   previous_requirements: Optional[List[str]] = None,
+                                   project_context: 'ProjectContext', previous_requirements: Optional[List[str]] = None,
                                    language: str = None) -> str:
-    """根据用户要求修改已有大纲的 prompt"""
-    if not current_outline or len(current_outline) == 0:
-        outline_text = "(当前没有内容)"
-    else:
-        outline_text = json.dumps(current_outline, ensure_ascii=False, indent=2)
-
-    prompt = (f"""\
-You are a helpful assistant that modifies PPT outlines based on user requirements.
+    """Revise an outline while preserving the assertion/evidence structure."""
+    outline_text = json.dumps(current_outline, ensure_ascii=False, indent=2) if current_outline else '(No content yet)'
+    prompt = f'''Revise this presentation outline according to the user's requirements.
 {_get_original_input_labeled(project_context)}
-当前的 PPT 大纲结构如下：
-
+Current outline:
 {outline_text}
 {_get_previous_requirements_text(previous_requirements)}
-**用户现在提出新的要求：{user_requirement}**
-
-请根据用户的要求修改和调整大纲。你可以：
-- 添加、删除或重新排列页面
-- 修改页面标题和要点
-- 调整页面的组织结构
-- 添加或删除章节（part）
-- 合并或拆分页面
-- 根据用户要求进行任何合理的调整
-- 如果当前没有内容，请根据用户要求和原始输入信息创建新的大纲
-
-输出格式可以选择：
-
-1. 简单格式（适用于没有主要章节的短 PPT）：
-[{{"title": "title1", "points": ["point1", "point2"]}}, {{"title": "title2", "points": ["point1", "point2"]}}]
-
-2. 基于章节的格式（适用于有明确主要章节的长 PPT）。封面（及目录，如有）是顶层独立条目，
-属于整个 deck，不嵌入任何 "part" 分组：
-[
-    {{"title": "欢迎", "points": ["point1", "point2"]}},
-    {{
-    "part": "第一部分：引言",
-    "pages": [
-        {{"title": "概述", "points": ["point1", "point2"]}}
-    ]
-    }},
-    {{
-    "part": "第二部分：主要内容",
-    "pages": [
-        {{"title": "主题1", "points": ["point1", "point2"]}},
-        {{"title": "主题2", "points": ["point1", "point2"]}}
-    ]
-    }}
-]
-
-选择最适合内容的格式。当 PPT 有清晰的主要章节时使用章节格式。
-
+New user requirement: {user_requirement}
+You may add, remove, merge, split or reorder pages and sections, and revise titles and points.
+If there is no outline yet, create one from the original input and the new requirement.
+Select the appropriate JSON structure:
+{_OUTLINE_JSON_FORMAT}
 {_OUTLINE_TAKEAWAY_RULE}
-
-现在请根据用户要求修改大纲，只输出 JSON 格式的大纲，不要包含其他文字。
+Return only the revised JSON outline, without explanations or code fences.
 {get_language_instruction(language)}
-""")
-
+'''
     return _build_prompt(prompt, project_context.reference_files_content, tag='get_outline_refinement_prompt')
 
 
+
 # ═══════════════════════════════════════════════════════════════════════════════
-# 3. 描述 Prompts — 单页、流式、拆分、细化描述
+# 3. Description Prompts — Single page, current, split, detailed description
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
 def get_page_description_prompt(project_context: 'ProjectContext', outline: list,
-                                page_outline: dict, page_index: int,
-                                part_info: str = "",
-                                language: str = None,
-                                detail_level: str = "default",
+                                page_outline: dict, page_index: int, part_info: str = '',
+                                language: str = None, detail_level: str = 'default',
                                 extra_fields: list = None) -> str:
-    """生成单个页面描述的 prompt"""
-    original_input = _get_original_input(project_context)
+    """Describe one slide, keeping visible text separate from design guidance."""
+    cover_rule = 'Keep the cover minimal: title, subtitle and speaker only; no additional assets.' if page_index == 1 else ''
+    prompt = f'''Generate the content description for slide {page_index}.
+Original request: {_get_original_input(project_context)}
+Complete outline: {outline}
+{part_info}
+Current slide: {page_outline}
+{_format_requirements(project_context.description_requirements, 'description')}
+{cover_rule}
+{_OUTLINE_TAKEAWAY_RULE}
+Use the first takeaway as the content slide's assertion title. Functional pages use short titles.
+Only text intended to appear verbatim on the slide belongs in SLIDE_TEXT. Keep explanations,
+design intentions and layout instructions in the separate fields below.
+Detail level: {DETAIL_LEVEL_SPECS[detail_level]}
 
-    prompt = (f"""\
-我们正在为PPT的每一页生成内容描述。
-用户的原始需求是：\n{original_input}\n
-我们已经有了完整的大纲：\n{outline}\n{part_info}
-{_format_requirements(project_context.description_requirements, "description")}现在请为第 {page_index} 页生成描述：
-{page_outline}
-{"**除非特殊要求，第一页的内容需要保持极简，只放标题副标题以及演讲人等（输出到标题后）, 不添加任何素材。**" if page_index == 1 else ""}
-## 重要提示
-- "页面文字"中的内容会被逐字渲染到 PPT 页面上：只写真正要出现在页面上的文字，不要包含任何说明性文字、注释或设计意图（设计意图写入下方对应字段）。
-- 标题规则：内容页的标题优先写成论断句——一句话陈述本页结论（如"算力瓶颈才是历次 AI 寒冬的根因"），而不是话题短语（如"AI 寒冬回顾"）。大纲中该页的第一条 takeaway 要点是标题的首选来源。封面、目录、章节过渡等功能页保持简短标题。
-
-## 输出格式
-
---- 页面文字 ---
-
-[此处使用markdown直接放置正文文字, 细致程度要求：{DETAIL_LEVEL_SPECS[detail_level]}\n\n, 可包含latex公式、表格等内容, 不要重复添加]
-
---- 页面文字结束 ---
+Output format:
+--- SLIDE_TEXT ---
+[Markdown body text; LaTeX and tables are allowed. Do not repeat the title.]
+--- SLIDE_TEXT_END ---
 {_format_extra_field_instructions(extra_fields)}
 
-## 关于素材图片
-如果参考文件中包含以 /files/ 开头的本地文件URL图片（例如 /files/mineru/xxx/image.png），请以 markdown 格式引用（如 ![图片描述](/files/mineru/xxx/image.png)），写入"配图与素材"字段；若该字段未启用，则直接附在页面文字之后。这些图片会被包含在PPT页面中。
+Reference images with local /files/ URLs must retain their Markdown image syntax,
+e.g. ![Image description](/files/xxx/image.png). Put them in Visual assets when enabled;
+otherwise append them after SLIDE_TEXT. These images will be included in the slide.
 {get_language_instruction(language)}
-""")
-
+'''
     return _build_prompt(prompt, project_context.reference_files_content, tag='get_page_description_prompt')
 
 
-def get_all_descriptions_stream_prompt(project_context: 'ProjectContext',
-                                       outline: list,
-                                       flat_pages: list,
-                                       language: str = None,
-                                       detail_level: str = "default",
-                                       extra_fields: list = None) -> str:
-    """一次性生成所有页面描述的 prompt（用于流式生成）"""
-    original_input = _get_original_input(project_context)
 
-    # 构建页面大纲列表
-    outline_lines = []
-    for i, page in enumerate(flat_pages):
-        part_str = f"  [章节: {page['part']}]" if page.get('part') else ""
-        points_str = ", ".join(page.get('points', []))
-        outline_lines.append(f"第 {i + 1} 页：{page.get('title', '')}{part_str}\n  要点：{points_str}")
-    pages_outline_text = "\n".join(outline_lines)
-
-    prompt = (f"""\
-我们正在为PPT的每一页生成内容描述。
-用户的原始需求是：\n{original_input}\n
-完整大纲如下：
+def get_all_descriptions_stream_prompt(project_context: 'ProjectContext', outline: list,
+                                       flat_pages: list, language: str = None,
+                                       detail_level: str = 'default', extra_fields: list = None) -> str:
+    """Stream slide descriptions with stable language-independent delimiters."""
+    lines = []
+    for index, page in enumerate(flat_pages, 1):
+        part = f" [Section: {page['part']}]" if page.get('part') else ''
+        lines.append(f"Page {index}: {page.get('title', '')}{part}\nPoints: {', '.join(page.get('points', []))}")
+    pages_outline_text = '\n'.join(lines)
+    prompt = f'''Generate descriptions for every slide in order.
+Original request: {_get_original_input(project_context)}
+Complete outline:
 {pages_outline_text}
+{_format_requirements(project_context.description_requirements, 'description')}
+{_OUTLINE_TAKEAWAY_RULE}
+Use each content slide's first takeaway as its assertion title. Keep functional-page titles short.
+Keep the cover minimal: title, subtitle and speaker only; no additional assets.
+SLIDE_TEXT is rendered verbatim. Do not include explanations, comments or design intentions there.
+Detail level: {DETAIL_LEVEL_SPECS[detail_level]}
+Reference /files/ images using Markdown image syntax in Visual assets, or after SLIDE_TEXT
+if that field is disabled. Keep slide text and additional fields separate.
 
-{_format_requirements(project_context.description_requirements, "description")}请为每一页依次生成描述。先输出 `<!-- BEGIN -->` 标记开始，然后逐页输出内容，每页用 `<!-- PAGE_END -->` 结束，全部完成后输出 `<!-- END -->`。
-
-## 重要提示
-- "页面文字"中的内容会被逐字渲染到 PPT 页面上：只写真正要出现在页面上的文字，不要包含任何说明性文字、注释或设计意图（设计意图写入下方对应字段）。
-- 标题规则：内容页的标题优先写成论断句——一句话陈述本页结论（如"算力瓶颈才是历次 AI 寒冬的根因"），而不是话题短语（如"AI 寒冬回顾"）。大纲中该页的第一条 takeaway 要点是标题的首选来源。封面、目录、章节过渡等功能页保持简短标题。
-- **第一页（封面页）保持极简**，只放标题、副标题、演讲人等信息，不添加任何素材。
-- 细致程度要求：{DETAIL_LEVEL_SPECS[detail_level]}
-
-## 输出格式
-每页包含"页面文字"与下列额外字段。素材图片（以 /files/ 开头的本地路径）以 markdown 格式引用，优先写入"配图与素材"字段。
-```
+Begin with <!-- BEGIN -->. End each page with <!-- PAGE_END --> and finish with <!-- END -->.
+Use this exact structure for every page:
 <!-- BEGIN -->
-
---- 页面文字 ---
-[第1页文字内容，可包含标题、副标题、要点、latex公式、表格等，根据实际需求选择，避免堆砌和重复. 不要把用户的设计意图显式地放在页面文字中。]
-
---- 页面文字结束 ---
+--- SLIDE_TEXT ---
+[First page text, including title and body as needed. Markdown, LaTeX and tables are allowed.]
+--- SLIDE_TEXT_END ---
 {_format_extra_field_instructions(extra_fields)}
 <!-- PAGE_END -->
-
---- 页面文字 ---
-[第2页文字内容]
-
---- 页面文字结束 ---
+--- SLIDE_TEXT ---
+[Second page text]
+--- SLIDE_TEXT_END ---
 {_format_extra_field_instructions(extra_fields)}
 <!-- PAGE_END -->
 ...
 <!-- END -->
-```
-
-现在请开始生成，严格按照上述格式输出。
 {get_language_instruction(language)}
-""")
-
+'''
     return _build_prompt(prompt, project_context.reference_files_content, tag='get_all_descriptions_stream_prompt')
 
 
-def get_description_split_prompt(project_context: 'ProjectContext',
-                                 outline: List[Dict],
-                                 language: str = None) -> str:
-    """从描述文本切分出每页描述的 prompt"""
-    outline_json = json.dumps(outline, ensure_ascii=False, indent=2)
-    description_text = project_context.description_text or ""
 
-    prompt = (f"""\
-You are a helpful assistant that splits a complete PPT description text into individual page descriptions.
-
-The user has provided a complete description text:
-
-{description_text}
-
-We have already extracted the outline structure:
-
-{outline_json}
-
-Your task is to split the description text into individual page descriptions based on the outline structure.
-For each page in the outline, extract the corresponding description from the original text.
-
-Return a JSON array where each element corresponds to a page in the outline (in the same order).
-Each element should be a string containing the page description in the following format:
-
-页面标题：[页面标题]
-
-页面文字：
-- [要点1]
-- [要点2]
-...
-
-配图与素材：[本页要展示的图表/图示/素材图片引用，无则省略整行]
-版式与重点：[版式结构与视觉重点，无则省略整行]
-
-Example output format:
-[
-    "页面标题：人工智能的诞生\\n页面文字：\\n- 1950 年，图灵提出"图灵测试"\\n- 奠定了AI的理论基础\\n\\n版式与重点：标题居中，大字号",
-    "页面标题：AI 的发展历程\\n页面文字：\\n- 1950年代：符号主义...",
-    ...
-]
-
-Important rules:
-- Split the description text according to the outline structure
-- Each page description should match the corresponding page in the outline
-- Preserve all important content from the original text, including layout details (排版细节), style requirements (风格要求), material specifications (素材说明), and any other design requirements
-- If the user described materials or images for a page, put them in the "配图与素材" line; if the user described layout, composition, or emphasis, put them in the "版式与重点" line
-- Keep the format consistent with the example above
-- If a page in the outline doesn't have a clear description in the text, create a reasonable description based on the outline
-
-Now split the description text into individual page descriptions. Return only the JSON array, don't include any other text.
+def get_description_split_prompt(project_context: 'ProjectContext', outline: List[Dict], language: str = None) -> str:
+    """Split an existing description into the pages defined by the outline."""
+    example = json.dumps(['Slide title: The origins of AI\nSLIDE_TEXT:\n- In 1950, Turing proposed the Turing Test.\nVisual assets: A historical photo\nLayout and emphasis: Centered title and two columns'], ensure_ascii=False)
+    return f'''Split the user's complete presentation description into individual page descriptions.
+User description:
+{project_context.description_text or ''}
+Outline (defines page order):
+{json.dumps(outline, ensure_ascii=False, indent=2)}
+Return a JSON array of strings, one per outline page in the same order.
+Preserve all important source content, layout details, style requirements and asset specifications.
+If a page has no explicit source description, create a reasonable one from its outline.
+Each string must use these fields:
+Slide title: [title]
+SLIDE_TEXT:
+- [visible text]
+Visual assets: [charts, diagrams and Markdown image references; omit if unnecessary]
+Layout and emphasis: [layout structure and visual focus; omit if unnecessary]
+Example JSON:
+{example}
+Return only the JSON array.
 {get_language_instruction(language)}
-""")
+'''
 
-    logger.debug(f"[get_description_split_prompt] Final prompt:\n{prompt}")
-    return prompt
 
 
 def get_descriptions_refinement_prompt(current_descriptions: List[Dict], user_requirement: str,
-                                       project_context: 'ProjectContext',
-                                       outline: List[Dict] = None,
+                                       project_context: 'ProjectContext', outline: List[Dict] = None,
                                        previous_requirements: Optional[List[str]] = None,
                                        language: str = None) -> str:
-    """根据用户要求修改已有页面描述的 prompt"""
-    # 构建大纲文本
-    outline_text = ""
-    if outline:
-        outline_json = json.dumps(outline, ensure_ascii=False, indent=2)
-        outline_text = f"\n\n完整的 PPT 大纲：\n{outline_json}\n"
-
-    # 构建所有页面描述的汇总
-    all_descriptions_text = "当前所有页面的描述：\n\n"
-    has_any_description = False
+    """Revise descriptions without losing extra fields or reference-image syntax."""
+    pages = []
     for desc in current_descriptions:
-        page_num = desc.get('index', 0) + 1
-        title = desc.get('title', '未命名')
-        content = desc.get('description_content', '')
+        content = desc.get('description_content') or ''
         if isinstance(content, dict):
-            # 额外字段一并带上，否则精修会在不知情的情况下把它们改没
-            extra_fields = content.get('extra_fields') or {}
-            content = content.get('text') or ''
-            if isinstance(extra_fields, dict):
-                field_lines = [
-                    f"{name}：{value}" for name, value in extra_fields.items()
-                    if value is not None and str(value).strip() != ""
-                ]
-                if field_lines:
-                    content = '\n'.join([content, *field_lines]) if content else '\n'.join(field_lines)
-
-        if content:
-            has_any_description = True
-            all_descriptions_text += f"--- 第 {page_num} 页：{title} ---\n{content}\n\n"
-        else:
-            all_descriptions_text += f"--- 第 {page_num} 页：{title} ---\n(当前没有内容)\n\n"
-
-    if not has_any_description:
-        all_descriptions_text = "当前所有页面的描述：\n\n(当前没有内容，需要基于大纲生成新的描述)\n\n"
-
-    prompt = (f"""\
-You are a helpful assistant that modifies PPT page descriptions based on user requirements.
-{_get_original_input_labeled(project_context)}{outline_text}
-{all_descriptions_text}
+            fields = content.get('extra_fields') or {}
+            text = content.get('text') or ''
+            if isinstance(fields, dict):
+                text = '\n'.join([text, *(f'{name}：{value}' for name, value in fields.items()
+                                         if value is not None and str(value).strip())])
+            content = text
+        pages.append(f"Page {desc.get('index', 0) + 1}: {desc.get('title', 'Untitled')}\n{content or '(No content yet)'}")
+    current = '\n\n'.join(pages)
+    prompt = f'''Revise each slide description according to the user's request.
+{_get_original_input_labeled(project_context)}
+Complete outline: {json.dumps(outline or [], ensure_ascii=False)}
+Current descriptions:
+{current}
 {_get_previous_requirements_text(previous_requirements)}
-**用户现在提出新的要求：{user_requirement}**
-
-请根据用户的要求修改和调整所有页面的描述。你可以：
-- 修改页面标题和内容
-- 调整页面文字的详细程度
-- 添加或删除要点
-- 调整描述的结构和表达
-- 确保所有页面描述都符合用户的要求
-- 如果当前没有内容，请根据大纲和用户要求创建新的描述
-
-请为每个页面生成修改后的描述，格式如下：
-
-页面标题：[页面标题]
-
-页面文字：
-- [要点1]
-- [要点2]
-...
-配图与素材：[本页要展示的图表/图示/素材图片引用，无则省略整行]
-版式与重点：[版式结构与视觉重点，无则省略整行]
-
-注意：
-- "页面文字"会被逐字渲染到页面上，不要把设计意图写进去；设计意图写入上面对应字段。
-- 原描述中已有的字段行请保留并按用户要求调整，不要凭空删除。
-- 如果参考文件中包含以 /files/ 开头的本地文件URL图片（例如 /files/mineru/xxx/image.png），请将这些图片以markdown格式输出，例如：![图片描述](/files/mineru/xxx/image.png)，而不是作为普通文本。
-
-请返回一个 JSON 数组，每个元素是一个字符串，对应每个页面的修改后描述（按页面顺序）。
-
-示例输出格式：
-[
-    "页面标题：人工智能的诞生\\n页面文字：\\n- 1950 年，图灵提出\\"图灵测试\\"...",
-    "页面标题：AI 的发展历程\\n页面文字：\\n- 1950年代：符号主义...",
-    ...
-]
-
-现在请根据用户要求修改所有页面描述，只输出 JSON 数组，不要包含其他文字。
+New user requirement: {user_requirement}
+You may adjust titles, text detail, points, structure and wording. Create missing descriptions
+from the outline. Preserve existing extra fields; do not silently delete them.
+Use this structure in each page description:
+Slide title: [title]
+SLIDE_TEXT:
+- [visible text]
+Visual assets: [visual content and Markdown image references]
+Layout and emphasis: [layout structure and visual focus]
+Keep existing Speaker notes and custom fields when present. SLIDE_TEXT is rendered verbatim;
+keep design instructions in their respective fields. Preserve local /files/ image URLs as Markdown
+images, e.g. ![Image description](/files/xxx/image.png), rather than plain text.
+Return only a JSON array of strings, one revised description per page in the original order.
 {get_language_instruction(language)}
-""")
-
+'''
     return _build_prompt(prompt, project_context.reference_files_content, tag='get_descriptions_refinement_prompt')
 
 
+
 # ═══════════════════════════════════════════════════════════════════════════════
-# 4. 图片生成 Prompts — 文生图、图片编辑
+# 4. Picture Generation Prompts — Text-to-image generation and image editing
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
-def get_image_generation_prompt(page_desc: str, outline_text: str,
-                                current_section: str,
-                                has_material_images: bool = False,
-                                extra_requirements: str = None,
-                                language: str = None,
-                                has_template: bool = True,
-                                page_index: int = 1,
-                                aspect_ratio: str = "16:9",
-                                page_style_text: str = None) -> str:
-    """生成图片生成 prompt
-
-    has_template: 是否有模板**图片**(用作 ref_image)。控制 "和模板图片严格相似" 措辞。
-    page_style_text: 页级文字风格(per-page-template 决策 7)。非空时拼入显式风格段。
-    """
-    material_images_note = ""
-    if has_material_images:
-        material_images_note = (
-            "\n\n提示：" + ("除了模板参考图片（用于风格参考）外，还提供了额外的素材图片。" if has_template else "用户提供了额外的素材图片。") +
-            "这些素材图片是可供挑选和使用的元素，你可以从这些素材图片中选择合适的图片、图标、图表或其他视觉元素"
-            "直接整合到生成的PPT页面中。请根据页面内容的需要，智能地选择和组合这些素材图片中的元素。"
-        )
-
-    extra_req_text = ""
-    if extra_requirements and extra_requirements.strip():
-        extra_req_text = f"\n\n额外要求（请务必遵循）：\n{extra_requirements}\n"
-
-    template_style_guideline = "- 配色和设计语言和模板图片严格相似。" if has_template else "- 严格按照风格描述进行设计。"
-    forbidden_template_text_guidline = "- 只参考风格设计，禁止出现模板中的文字。\n" if has_template else ""
-
-    page_style_block = ""
-    if page_style_text and page_style_text.strip():
-        page_style_block = (
-            "\n\n<page_style>\n"
-            f"{page_style_text.strip()}\n"
-            "</page_style>\n"
-            "- 必须遵循上述 page_style 中的视觉风格、配色、版式语言。"
-        )
-
-    prompt = (f"""\
-你是一位专家级UI UX演示设计师，专注于生成设计良好的PPT页面。
-当前PPT页面的页面描述如下:
+def get_image_generation_prompt(page_desc: str, outline_text: str, current_section: str,
+                                has_material_images: bool = False, extra_requirements: str = None,
+                                language: str = None, has_template: bool = True, page_index: int = 1,
+                                aspect_ratio: str = '16:9', page_style_text: str = None) -> str:
+    """Render visible slide text and visual guidance using the selected style."""
+    template_rule = ('Match the reference template color palette and design language strictly. '
+                     'Use its style only; never copy its text.' if has_template else
+                     'Follow the provided style description strictly.')
+    materials = ('Additional reference images are available. Select suitable pictures, icons or charts '
+                 'and integrate them into the slide according to its content.' if has_material_images else '')
+    style = f'<page_style>\n{page_style_text.strip()}\n</page_style>\nFollow this page_style for visual style, color and layout.' if page_style_text and page_style_text.strip() else ''
+    requirements = f'Additional requirements (mandatory):\n{extra_requirements}' if extra_requirements and extra_requirements.strip() else ''
+    cover = 'This is the cover slide. Use a professional cover composition and emphasize the title.' if page_index == 1 else ''
+    prompt = f'''You are an expert presentation and UI/UX designer. Generate a professionally designed slide.
 <page_description>
 {page_desc}
 </page_description>
-{page_style_block}
-
+{style}
 <design_guidelines>
-- 要求文字清晰锐利, 画面为4K分辨率，{aspect_ratio}比例。
-{template_style_guideline}
-- 根据内容和要求自动设计最完美的构图，不重不漏地渲染"页面文字"段落中的文本。
-- 如非必要，禁止出现 markdown 格式符号（如 # 和 * 等）。
-{forbidden_template_text_guidline}
+- Render sharp, legible text at 4K resolution with a {aspect_ratio} aspect ratio.
+- {template_rule}
+- Design illustrations to suit the content and requirements. Render SLIDE_TEXT verbatim.
+- Render Markdown formatting visually; do not display syntax such as # or * unless explicitly needed.
 </design_guidelines>
 {get_ppt_language_instruction(language)}
-{material_images_note}{extra_req_text}
-
-{"**注意：当前页面为ppt的封面页，请你采用专业的封面设计美学技巧，务必凸显出页面标题，分清主次，确保一下就能抓住观众的注意力。**" if page_index == 1 else ""}
-""")
-
-    logger.debug(f"[get_image_generation_prompt] Final prompt:\n{prompt}")
+{materials}
+{requirements}
+{cover}
+'''
+    logger.debug('[get_image_generation_prompt] Final prompt:\n%s', prompt)
     return prompt
+
 
 
 def get_image_edit_prompt(edit_instruction: str, original_description: str = None) -> str:
-    """生成图片编辑 prompt"""
-    if original_description:
-        if "其他页面素材" in original_description:
-            original_description = original_description.split("其他页面素材")[0].strip()
+    """Apply the requested edit while preserving the original content and style."""
+    description = original_description or ''
+    for marker in ('Other page material', '\u5176\u4ed6\u9875\u9762\u7d20\u6750'):
+        description = description.split(marker)[0].strip()
+    context = f'Original slide description:\n{description}\n\n' if description else ''
+    return (f'{context}Edit this slide according to the following instruction:\n{edit_instruction}\n'
+            'Preserve the original text, content structure and design style except where the requested edit requires changes. '
+            'Reference images may contain new assets or a user-selected region. Infer their intended role '
+            'from the instruction and their relationship to the original slide.')
 
-        prompt = (f"""\
-该PPT页面的原始页面描述为：
-{original_description}
-
-现在，根据以下指令修改这张PPT页面：{edit_instruction}
-
-要求维持原有的文字内容和设计风格，只按照指令进行修改。提供的参考图中既有新素材，也有用户手动框选出的区域，请你根据原图和参考图的关系智能判断用户意图。
-""")
-    else:
-        prompt = f"根据以下指令修改这张PPT页面：{edit_instruction}\n保持原有的内容结构和设计风格，只按照指令进行修改。提供的参考图中既有新素材，也有用户手动框选出的区域，请你根据原图和参考图的关系智能判断用户意图。"
-
-    logger.debug(f"[get_image_edit_prompt] Final prompt:\n{prompt}")
-    return prompt
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 5. 图片处理 Prompts — 背景提取、画质修复
+# 5. Picture Processing Prompts — Background extraction, painting restoration
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
 def get_clean_background_prompt(removal_regions: Optional[List[Dict[str, Any]]] = None) -> str:
-    """生成纯背景图的 prompt（去除文字和插画）"""
-    regions_info = ""
+    """Remove foreground content while preserving the original background."""
+    regions = ''
     if removal_regions:
-        regions_json = json.dumps(removal_regions, ensure_ascii=False, indent=2)
-        regions_info = f"""
-以下是当前图片里需要重点移除的前景元素 bbox 列表，坐标都已经按当前图片宽高做了 0-1 归一化：
+        regions = f'''Prioritize these foreground regions and nearby or overlapping foreground elements:
+{json.dumps(removal_regions, ensure_ascii=False, indent=2)}
+Coordinates are normalized to 0-1: bbox.x0/y0 are the top-left corner, bbox.x1/y1 the
+bottom-right corner, and bbox.width/height the fraction of the full image dimensions.
+element_type identifies text, image, chart, table or figure.
+'''
+    return f'''You are an expert image restoration specialist. Produce a clean slide background.
+Remove all text, illustrations, charts and other foreground content everywhere on the page.
+Preserve the original background gradients, textures, patterns, lines and color blocks,
+including the background shapes of text boxes. Reconstruct occluded background seamlessly.
+Keep the original dimensions, style and colors. Do not add any elements.
+{regions}
+The output must contain no text or charts.
+'''
 
-```json
-{regions_json}
-```
-
-坐标说明：
-- `bbox.x0`, `bbox.y0`：元素左上角坐标，范围 0-1
-- `bbox.x1`, `bbox.y1`：元素右下角坐标，范围 0-1
-- `bbox.width`, `bbox.height`：元素宽高占整张图的比例
-- `element_type`：该区域的大致元素类型，如 `text` / `image` / `chart` / `table` / `figure`
-
-请优先移除这些 bbox 内，以及与这些 bbox 紧贴或轻微重叠的所有前景内容，避免遗漏。
-"""
-
-    prompt = f"""\
-你是一位专业的图片文字&图片擦除专家。你的任务是从原始图片中移除文字和配图，输出一张无任何文字和图表内容、干净纯净的底板图。
-<requirements>
-- 彻底移除页面中的所有文字、插画、图表。必须确保所有文字都被完全去除。
-- 保持原背景设计的完整性（包括渐变、纹理、图案、线条、色块等）。保留原图的文本框和色块。
-- 对于被前景元素遮挡的背景区域，要智能填补，使背景保持无缝和完整，就像被移除的元素从来没有出现过。
-- 输出图片的尺寸、风格、配色必须和原图完全一致。
-- 请勿新增任何元素。
-</requirements>
-
-{regions_info}
-
-注意，**任意位置的, 所有的**文字和图表都应该被彻底移除，**输出不应该包含任何文字和图表。**
-"""
-    logger.debug(f"[get_clean_background_prompt] Final prompt:\n{prompt}")
-    return prompt
 
 
 def get_quality_enhancement_prompt(inpainted_regions: list = None) -> str:
-    """生成画质提升的 prompt（用于百度图像修复后的画质修复）"""
-    regions_info = ""
-    if inpainted_regions and len(inpainted_regions) > 0:
-        regions_json = json.dumps(inpainted_regions, ensure_ascii=False, indent=2)
-        regions_info = f"""
-以下是被抹除工具处理过的具体区域（共 {len(inpainted_regions)} 个矩形区域），请重点修复这些位置：
+    """Repair inpainting artifacts without changing unaffected regions."""
+    regions = ''
+    if inpainted_regions:
+        regions = f'''Repair these {len(inpainted_regions)} erased regions:
+{json.dumps(inpainted_regions, ensure_ascii=False, indent=2)}
+All coordinates are percentages (0-100). left/right refer to horizontal image position;
+top/bottom refer to vertical position. width_percent/height_percent give region size.
+For example, left=10 starts 10% of the image width from the left edge.
+'''
+    return f'''You are an expert image restoration specialist. Repair artifacts left by text/object removal:
+uneven colors, blurred patches, smears, broken textures and discontinuous patterns.
+{regions}
+Blend the marked regions seamlessly into their surroundings. Preserve texture, color and pattern continuity.
+Remove blur, noise and artifacts. Preserve composition, layout, color palette and original dimensions.
+Do not add text, charts, illustrations, patterns, borders or any new elements.
+Keep pixels outside the marked regions unchanged. Output the restored high-resolution slide background.
+'''
 
-```json
-{regions_json}
-```
-
-坐标说明（所有数值都是相对于图片宽高的百分比，范围0-100%）：
-- left: 区域左边缘距离图片左边缘的百分比
-- top: 区域上边缘距离图片上边缘的百分比
-- right: 区域右边缘距离图片左边缘的百分比
-- bottom: 区域下边缘距离图片上边缘的百分比
-- width_percent: 区域宽度占图片宽度的百分比
-- height_percent: 区域高度占图片高度的百分比
-
-例如：left=10 表示区域从图片左侧10%的位置开始。
-"""
-
-    prompt = f"""\
-你是一位专业的图像修复专家。这张ppt页面图片刚刚经过了文字/对象抹除操作，抹除工具在指定区域留下了一些修复痕迹，包括：
-- 色块不均匀、颜色不连贯
-- 模糊的斑块或涂抹痕迹
-- 与周围背景不协调的区域，比如不和谐的渐变色块
-- 可能的纹理断裂或图案不连续
-{regions_info}
-你的任务是修复这些抹除痕迹，让图片看起来像从未有过对象抹除操作一样自然。
-
-要求：
-- **重点修复上述标注的区域**：这些区域刚刚经过抹除处理，需要让它们与周围背景完美融合
-- 保持纹理、颜色、图案的连续性
-- 提升整体画质，消除模糊、噪点、伪影
-- 保持图片的原始构图、布局、色调风格
-- 禁止添加任何文字、图表、插画、图案、边框等元素
-- 除了上述区域，其他区域不要做任何修改，保持和原图像素级别地一致。
-- 输出图片的尺寸必须与原图一致
-
-请输出修复后的高清ppt页面背景图片，不要遗漏修复任何一个被涂抹的区域。
-"""
-    return prompt
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 6. 内容提取 Prompts — 文字属性、页面内容、排版分析、风格提取
+# 6. Content Ripping Prompts — Text properties, page content, layout analysis, style extraction
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
-def get_text_attribute_extraction_prompt(content_hint: str = "") -> str:
-    """生成文字属性提取的 prompt（提取文字内容、颜色、公式等信息）"""
-    prompt = """你的任务是精确识别这张图片中的文字内容和样式，返回JSON格式的结果。
+def get_text_attribute_extraction_prompt(content_hint: str = '') -> str:
+    """Extract exact text, spacing, colors and mathematical notation."""
+    example = {'colored_segments': [
+        {'text': 'Sample  text', 'color': '#26397A'},
+        {'text': 'x^2 + y^2 = z^2', 'color': '#FF0000', 'is_latex': True},
+    ]}
+    return f'''Read the text and styles in this image precisely.
+Content hint: {content_hint}
+- Transcribe the symbols actually visible; do not invent or paraphrase text.
+- Preserve the exact position and number of spaces, including consecutive spaces.
+- Split text into segments by its actual color; merge adjacent ordinary text with the same color.
+- For a mathematical expression, output LaTeX and set is_latex to true.
+Return only a JSON object with colored_segments. Each segment has text, color (#RRGGBB),
+and optional is_latex (false by default). Example:
+{json.dumps(example, ensure_ascii=False)}
+'''
 
-{content_hint}
-
-## 核心任务
-请仔细观察图片，精确识别：
-1. **文字内容** - 输出你实际看到的文字符号。
-2. **颜色** - 每个字/词的实际颜色
-3. **空格** - 精确识别文本中空格的位置和数量
-4. **公式** - 如果是数学公式，输出 LaTeX 格式
-
-## 注意事项
-- **空格识别**：必须精确还原空格数量，多个连续空格要完整保留，不要合并或省略
-- **颜色分割**：一行文字可能有多种颜色，按颜色分割成片段，一般来说只有两种颜色。
-- **公式识别**：如果片段是数学公式，设置 is_latex=true 并用 LaTeX 格式输出
-- **相邻合并**：相同颜色的相邻普通文字应合并为一个片段
-
-## 输出格式
-- colored_segments: 文字片段数组，每个片段包含：
-  - text: 文字内容（公式时为 LaTeX 格式，如 "x^2"、"\\sum_{{i=1}}^n"）
-  - color: 颜色，十六进制格式 "#RRGGBB"
-  - is_latex: 布尔值，true 表示这是一个 LaTeX 公式片段（可选，默认 false）
-
-只返回JSON对象，不要包含任何其他文字。
-示例输出：
-```json
-{{
-    "colored_segments": [
-        {{"text": "·  创新合成", "color": "#000000"}},
-        {{"text": "1827个任务环境", "color": "#26397A"}},
-        {{"text": "与", "color": "#000000"}},
-        {{"text": "8.5万提示词", "color": "#26397A"}},
-        {{"text": "突破数据瓶颈", "color": "#000000"}},
-        {{"text": "x^2 + y^2 = z^2", "color": "#FF0000", "is_latex": true}}
-    ]
-}}
-```
-""".format(content_hint=content_hint)
-
-    return prompt
 
 
 def get_batch_text_attribute_extraction_prompt(text_elements_json: str) -> str:
-    """生成批量文字属性提取的 prompt（给模型全图 + 所有文本元素的 bbox）"""
-    prompt = f"""你是一位专业的 PPT/文档排版分析专家。请分析这张图片中所有标注的文字区域的样式属性。
-
-我已经从图片中提取了以下文字元素及其位置信息：
-
-```json
+    """Analyze the style of each identified text region in input order."""
+    return f'''Analyze the marked text regions in this slide image.
+Input elements and bounding boxes:
 {text_elements_json}
-```
+For each element, inspect the actual appearance and return:
+- element_id: the unchanged input ID
+- text_content: the visible text
+- font_color: the actual hexadecimal color (#RRGGBB); do not default everything to black
+- is_bold, is_italic, is_underline: JSON booleans based on the visible lettering
+- text_alignment: one of left, center, right, justify; infer from the text's position if uncertain
+Return only a JSON array with one object per input element, in the same order.
+'''
 
-请仔细观察图片，对比每个文字区域在图片中的实际视觉效果，为每个元素分析以下属性：
-
-1. **font_color**: 字体颜色的十六进制值，格式为 "#RRGGBB"
-   - 请仔细观察文字的实际颜色，不要只返回黑色
-   - 常见颜色如：白色 "#FFFFFF"、蓝色 "#0066CC"、红色 "#FF0000" 等
-
-2. **is_bold**: 是否为粗体 (true/false)
-   - 观察笔画粗细，标题通常是粗体
-
-3. **is_italic**: 是否为斜体 (true/false)
-
-4. **is_underline**: 是否有下划线 (true/false)
-
-5. **text_alignment**: 文字对齐方式
-   - "left": 左对齐
-   - "center": 居中对齐
-   - "right": 右对齐
-   - "justify": 两端对齐
-   - 如果无法判断，根据文字在其区域内的位置推测
-
-请返回一个 JSON 数组，数组中每个对象对应输入的一个元素（按相同顺序），包含以下字段：
-- element_id: 与输入相同的元素ID
-- text_content: 文字内容
-- font_color: 颜色十六进制值
-- is_bold: 布尔值
-- is_italic: 布尔值
-- is_underline: 布尔值
-- text_alignment: 对齐方式字符串
-
-只返回 JSON 数组，不要包含其他文字：
-```json
-[
-    {{
-        "element_id": "xxx",
-        "text_content": "文字内容",
-        "font_color": "#RRGGBB",
-        "is_bold": true/false,
-        "is_italic": true/false,
-        "is_underline": true/false,
-        "text_alignment": "对齐方式"
-    }},
-    ...
-]
-```
-"""
-
-    return prompt
 
 
 def get_ppt_page_content_extraction_prompt(markdown_text: str, language: str = None) -> str:
-    """从 fileparser 解析出的 markdown 文本中提取页面内容（title, points, description）"""
+    """From fileparser Parsed markdown Extracting page contents from text（title, points, description）"""
     prompt = f"""\
 You are a helpful assistant that extracts structured PPT page content from parsed document text.
 
@@ -1181,21 +880,21 @@ Your task is to extract the following structured information from this slide:
 2. **points**: A list of key bullet points or content items on the slide
 3. **description**: A complete page description suitable for regenerating this slide, following this format:
 
-页面标题：[title]
+Slide title：[title]
 
-页面文字：
+SLIDE_TEXT：
 - [point 1]
 - [point 2]
 ...
 
-其他页面素材（如果有图表、表格、公式等描述，保留原文中的markdown图片完整形式）
+Other page material (where graphs, tables, formulae, etc. are described, retain original text markdown Picture Full Form）
 
 Rules:
 - Extract the title faithfully from the first heading in the markdown. Do NOT invent or rephrase it
 - Points must be extracted verbatim from the slide content, in their original order
-- In the description, 页面标题 and 页面文字 must be copied verbatim from the original text (punctuation may be normalized, but wording must be identical)
+- In the description, Slide title and SLIDE_TEXT must be copied verbatim from the original text (punctuation may be normalized, but wording must be identical)
 - The description should capture ALL content on the slide including text, data, and visual element descriptions
-- If there are tables, charts, or formulas, describe them in the description under "其他页面素材"
+- If there are tables, charts, or formulas, describe them in the description under "Other page material"
 - Preserve the original language of the content
 
 Return a JSON object with exactly these three fields: "title", "points" (array of strings), "description" (string).
@@ -1207,7 +906,7 @@ Return only the JSON, no other text.
 
 
 def get_layout_caption_prompt() -> str:
-    """描述 PPT 页面的排版布局（给 caption model 用）"""
+    """Description PPT Page Page layout（Here. caption model Use it.）"""
     prompt = """\
 You are a professional PPT layout analyst. Describe the visual layout and composition of this PPT slide image in detail.
 
@@ -1217,13 +916,13 @@ Focus on:
 3. **Visual elements**: Position and size of images, charts, icons, decorative elements
 4. **Spacing and proportions**: How space is distributed between elements
 
-Output a concise layout description in Chinese that can be used to recreate a similar layout. Format:
+Output a concise layout description in English that can be used to recreate a similar layout. Format:
 
-排版布局：
-- 整体结构：[描述]
-- 标题位置：[描述]
-- 内容区域：[描述]
-- 视觉元素：[描述]
+Page layout：
+- Overall structure：[Description]
+- Header Position：[Description]
+- Content Area：[Description]
+- Visual elements：[Description]
 
 Only describe the layout and spatial arrangement. Do not describe colors, text content, or style.
 """
@@ -1232,7 +931,7 @@ Only describe the layout and spatial arrangement. Do not describe colors, text c
 
 
 def get_style_extraction_prompt() -> str:
-    """从图片中提取风格描述（通用，可复用于所有创建模式）"""
+    """Extract style description from pictures (general, reusable for all creation modes)）"""
     prompt = """\
 You are a professional PPT design analyst. Analyze this image and extract a detailed style description that can be used to generate PPT slides with a similar visual style.
 
@@ -1243,9 +942,9 @@ Focus on:
 4. **Overall mood**: Professional, playful, minimalist, corporate, creative, etc.
 5. **Layout tendencies**: How content is typically arranged, spacing preferences
 
-Output a concise style description in Chinese that can be directly used as a style prompt for PPT generation. Write it as a single paragraph, not a list. Example:
+Output a concise style description in English that can be directly used as a style prompt for PPT generation. Write it as a single paragraph, not a list. Example:
 
-"采用深蓝色渐变背景，搭配白色和金色文字。整体风格简约商务，使用无衬线字体，标题加粗突出。页面装饰以几何线条和半透明色块为主，配色统一协调。内容区域留白充足，视觉层次分明。"
+"Use a dark-blue gradient background with white and gold text. Use a clean business style, sans-serif typography and bold headings. Add geometric lines and translucent color blocks, with a consistent palette, generous whitespace and a clear visual hierarchy."
 
 Only output the style description text, no other content.
 """
@@ -1253,50 +952,15 @@ Only output the style description text, no other content.
     return prompt
 
 
-def get_style_from_content_prompt(content: str, language: str = 'zh') -> str:
+def get_style_from_content_prompt(content: str, language: str = 'ko') -> str:
     """
-    根据用户输入的 PPT 内容/大纲/主题，自动构思并建模生成专业的 PPT 风格描述。
-    格式与范式参考 4 大经典预设风格（简约商务、现代科技、严谨学术、活泼创意等）。
+    Based on user input PPT Contents/Outline/It’s a theme. It’s an automatic conceptualization and modelling. PPT Style Description。
+    Format & Paradigm Reference 4 It’s a classic pre-set style (simplified business, modern technology, rigorous academia, lively creativity, etc.)）。
     """
-    is_zh = (language or 'zh').lower().startswith('zh')
-    # 截断过长内容，避免不必要的 token 消耗
+    # Cut too long and avoid unnecessary. token Consumption
     trimmed_content = content.strip()[:3000]
 
-    if is_zh:
-        prompt = f"""\
-你是一位拥有顶级视觉审美与专业幻灯片设计经验的资深 PPT 设计总监。
-请根据用户提供的 PPT 主题、大纲或内容，深度分析其行业领域、受众群体、表达情绪与应用场景，为其量身打造一套最契合的 PPT 视觉风格建模描述。
-
-【输入内容】：
-{trimmed_content}
-
-【风格建模设计规范】：
-你生成的风格描述必须参照以下 4 个核心维度，输出为结构清晰、指令具体、可直接作为 AI 生图/设计 Prompt 的段落文本（请包含以下4个小标题段落，不要输出任何多余的前言、解释或总结）：
-
-1. **视觉描述**：界定全局视觉语言与设计范式（如极致扁平、极简留白、未来科技流体、杂志排版、手绘亲和等），阐述整体设计氛围、光照环境（如均匀演播室漫射光、暗调霓虹辉光、自然漫射光等）与基调。
-2. **配色与材质**：明确背景色（给出具体建议十六进制色值，如 #0B1F3B 或 #F8F7F2）、正文/标题文字色、核心强调色（注明占比限制，如不超过 3%~5%）及次要辅助色；明确材质表现（如平滑矢量色块、哑光纸质颗粒、玻璃拟态等）与阴影规则（如禁止阴影/极弱软阴影）。
-3. **内容与排版**：明确网格对齐规范、页面分区结构（几何分区/模块化卡片/留白比例）、装饰线条与边框粗细色值，以及中英文字体调性（无衬线体、衬线体、圆体等字重与层级逻辑）。
-4. **插图与渲染要求**：明确插画/图形资产形态（如统一白色线稿、2D扁平矢量、手绘插画、玻璃微拟态等）、图表配色与要求，以及最终渲染质量和美学风格（如超高清矢量插画与商务信息图风格，边缘锐利无锯齿）。
-
-【参考经典范例格式】：
-范例一（简约商务）：
-视觉描述：全局视觉语言严格对齐国际顶级咨询公司通用商务范式，强调专业、稳重、克制与可复用。全稿采用极致扁平化与强秩序网格，以信息清晰传达为唯一优先级。禁止渐变、发光、高光、拟物纹理与非必要装饰。光照固定为均匀演播室漫射光，无硬阴影。
-配色与材质：背景色锁定为海军蓝（#0B1F3B），文字颜色固定为纯白（#FFFFFF），唯一强调色为天蓝（#38BDF8，面积不超过3%），辅助分割线使用浅灰（#E5E7EB）。材质为平滑矢量色块，不使用阴影与复杂材质。
-内容与排版：遵循严格模块化网格系统，页面几何分区清晰，边界使用1px细线（#E5E7EB）划分。字体为现代无衬线体（如思源黑体/Roboto），层级分明。
-插图与渲染要求：所有视觉素材统一为白色矢量线稿（#FFFFFF），关键路径用天蓝点亮；输出超高清矢量插画与商务信息图风格，边缘锐利无锯齿。
-
-范例二（现代科技）：
-视觉描述：全局视觉语言融合深邃未来感与现代SaaS产品美学。整体氛围神秘、深邃且富有动感，光照采用暗调环境下的自发光与辉光效果。
-配色与材质：背景色采用午夜黑（#0B0F19），主色调使用电光蓝（#00A3FF）与赛博紫（#7C3AED）线性渐变，材质运用半透明磨砂玻璃与微发光网格线。
-内容与排版：采用不对称动态平衡排版，融入轻量3D线框几何或芯片结构，使用科技感等宽字体或现代无衬线体。
-插图与渲染要求：高精度渲染风格，强调光线追踪、辉光与景深控制，粒子特效细腻且充满视觉冲击力。
-
-【输出要求】：
-- 直接输出上述规范格式的风格描述文本（包含 视觉描述、配色与材质、内容与排版、插图与渲染要求）。
-- 严禁包含任何前缀闲聊（如"好的，为您生成如下风格："）或后缀说明。
-"""
-    else:
-        prompt = f"""\
+    prompt = f"""\
 You are a senior PPT visual design director. Analyze the given presentation topic/outline/content and generate a tailored, professional visual style description for this presentation.
 
 [Input Content]:
@@ -1309,31 +973,39 @@ Your generated style description MUST cover these 4 core dimensions:
 3. **Content & Typography**: Grid alignment, page partitioning, divider lines, and font classification (serif, sans-serif, weight hierarchy).
 4. **Illustration & Rendering**: Illustration style (vector line art, flat 2D, 3D clay, etc.), chart specifications, and final rendering aesthetic quality.
 
+Reference styles:
+- Business minimalism: flat modular grids, navy #0B1F3B background, white #FFFFFF text,
+  sky-blue #38BDF8 accents covering at most 3%, light-gray #E5E7EB dividers, clean sans-serif
+  type and white vector line art. No gradients, complex textures or decorative shadows.
+- Modern technology: midnight #0B0F19 background, electric-blue #00A3FF and purple #7C3AED
+  gradients, translucent glass, luminous grids, asymmetric geometry and subtle wireframes.
+
 Output ONLY the structured style description text without any conversational preamble or markdown code blocks.
 """
+    prompt += "\n" + get_language_instruction(language)
     logger.debug(f"[get_style_from_content_prompt] Final prompt:\n{prompt}")
     return prompt
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 7. 旁白 Prompts — TTS 播报视频旁白生成
+# 7. Narrator. Prompts — TTS Video feed bystander generation
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
 def get_narration_generation_prompt(
     pages: list,
-    language: str = 'zh',
+    language: str = 'ko',
     config: Optional[Dict[str, Any]] = None,
 ) -> str:
     """
-    一次性生成所有页面旁白的 prompt。
+    One-time generation of all pages next to each page prompt。
 
     Args:
-        pages: 页面列表，每项包含 {title, points, description_text, page_index}
-        language: 输出语言
-        config: 可配置的演讲稿生成参数
+        pages: Page list, each containing {title, points, description_text, page_index}
+        language: Output Language
+        config: Arguable speech generation parameters
     """
-    lang_cfg = LANGUAGE_CONFIG.get(language, LANGUAGE_CONFIG['zh'])
+    lang_cfg = LANGUAGE_CONFIG.get(language, LANGUAGE_CONFIG['ko'])
     lang_instruction = lang_cfg['instruction']
     total_pages = len(pages)
     fallback_topic = ''
@@ -1347,7 +1019,7 @@ def get_narration_generation_prompt(
         idx = p['page_index']
         title = p.get('title', '')
         points = p.get('points', [])
-        points_text = '\n'.join(f'- {p2}' for p2 in points) if points else '(无)'
+        points_text = '\n'.join(f'- {p2}' for p2 in points) if points else '(None)'
         desc = p.get('description_text', '')
         slides_block += f"""\
 === SLIDE {idx} ===
@@ -1393,10 +1065,10 @@ Output format — use exactly this delimiter before each narration:
 
 
 # =============================================================================
-# 8. 模板解析 & 自动匹配 Prompts (per-page-template, PRD §5.3 / §8)
+# 8. Template Parsing & Automatic Matching Prompts (per-page-template, PRD §5.3 / §8)
 # =============================================================================
 
-def get_template_analysis_prompt(language: str = 'zh') -> str:
+def get_template_analysis_prompt(language: str = 'ko') -> str:
     """
     PRD §5.3 9-field schema. Returns markdown-fenced JSON; parsed by
     AIService.generate_json_with_image (3x soft retry).
@@ -1404,112 +1076,7 @@ def get_template_analysis_prompt(language: str = 'zh') -> str:
     On unrecognizable input the model must return {"error": "not_a_slide"};
     the caller flips analysis_status='failed' (decision 2).
     """
-    is_zh = language.lower().startswith('zh')
 
-    if is_zh:
-        return """你是一名 PPT 模板视觉分析师。仔细观察这张幻灯片图像，提取它作为"模板"的结构化特征。
-
-# 输出要求
-
-严格返回**一个** JSON 对象，包裹在 ```json 代码块中。**禁止**输出代码块以外的任何文字。
-
-如果这张图根本不是幻灯片（例如是一张照片、表情包、自拍），返回：
-```json
-{"error": "not_a_slide"}
-```
-
-# JSON Schema (10 字段)
-
-```json
-{
-  "template_role": "cover | content | section_divider | summary | data | comparison | timeline | other",
-  "layout_structure": "用 kebab-case 概括版式，如 title-top-two-column / hero-image-bottom-text",
-  "extracted_text": "模板图上可见的真实文字：主标题 + 关键要点，≤80 字；若全是 Lorem ipsum 等占位文字则留空字符串",
-  "content_capacity": "low | medium | high",
-  "text_regions": [
-    {"name": "title", "position": "top | center | bottom | left | right", "size": "small | medium | large"}
-  ],
-  "image_regions": [
-    {"name": "hero", "position": "top | center | bottom | left | right", "size": "small | medium | large"}
-  ],
-  "visual_density": "low | medium | high",
-  "style_keywords": ["最多 5 个英文形容词，如 academic / clean / minimalist / bold / playful"],
-  "color_palette": ["最多 5 个主色 hex，#RRGGBB"],
-  "notes": "用一两句话补充任何 schema 字段未覆盖的视觉特征，如固定 logo、装饰元素、特殊版式约束"
-}
-```
-
-# 示例 1 — 封面页
-
-```json
-{
-  "template_role": "cover",
-  "layout_structure": "centered-title-large-hero-bg",
-  "extracted_text": "智慧城市数据平台发布会 · 2025 产品战略",
-  "content_capacity": "low",
-  "text_regions": [
-    {"name": "title", "position": "center", "size": "large"},
-    {"name": "subtitle", "position": "center", "size": "medium"}
-  ],
-  "image_regions": [
-    {"name": "background", "position": "center", "size": "large"}
-  ],
-  "visual_density": "low",
-  "style_keywords": ["bold", "modern", "high-contrast"],
-  "color_palette": ["#0E1A2B", "#F4B400"],
-  "notes": "底部 1/4 处有半透明渐变蒙版，便于叠加白色标题"
-}
-```
-
-# 示例 2 — 双栏正文
-
-```json
-{
-  "template_role": "content",
-  "layout_structure": "title-top-two-column",
-  "extracted_text": "研究方法与数据来源：问卷调查 / 深度访谈",
-  "content_capacity": "medium",
-  "text_regions": [
-    {"name": "title", "position": "top", "size": "medium"},
-    {"name": "left_body", "position": "left", "size": "medium"},
-    {"name": "right_body", "position": "right", "size": "medium"}
-  ],
-  "image_regions": [],
-  "visual_density": "medium",
-  "style_keywords": ["academic", "clean", "blue"],
-  "color_palette": ["#FFFFFF", "#1F4E79", "#4472C4"],
-  "notes": "右下角有固定 logo 区域，左栏与右栏之间有 4px 浅灰分割线"
-}
-```
-
-# 示例 3 — 时间线
-
-```json
-{
-  "template_role": "timeline",
-  "layout_structure": "horizontal-timeline-five-nodes",
-  "extracted_text": "项目实施路线图：启动 / 调研 / 开发 / 试点 / 推广",
-  "content_capacity": "high",
-  "text_regions": [
-    {"name": "title", "position": "top", "size": "medium"},
-    {"name": "node_labels", "position": "center", "size": "small"}
-  ],
-  "image_regions": [
-    {"name": "node_icons", "position": "center", "size": "small"}
-  ],
-  "visual_density": "high",
-  "style_keywords": ["infographic", "timeline", "professional"],
-  "color_palette": ["#2E75B6", "#A9D18E", "#FFC000", "#ED7D31"],
-  "notes": "贯穿水平的箭头主线，5 个等距节点，节点上方放图标、下方放文字"
-}
-```
-
-# 关键约束
-
-- `style_keywords` 与 `color_palette` 最多 5 项
-- `text_regions` / `image_regions` 数组可空，但必须存在
-- 所有 enum 字段严格使用上述候选值，不得自创
-- `notes` 字段是你主观补充的"AI 观察"，鼓励填写但不超过 80 字"""
 
     return """You are a slide-template visual analyst. Inspect this slide image and extract structured features that describe it **as a template**.
 
@@ -1616,63 +1183,16 @@ If the image is clearly not a slide (e.g. a photo, meme, selfie), return:
 - `notes` is your subjective "AI observation"; encouraged but max ~80 words"""
 
 
-def get_template_auto_match_prompt(templates: list, pages: list, language: str = 'zh') -> str:
+def get_template_auto_match_prompt(templates: list, pages: list, language: str = 'ko') -> str:
     """
     Decision 5 prompt. Returns the full instruction string ready for
     generate_json. The caller is responsible for input trimming
     (page summary <= 100 chars, notes <= 200 chars, style_keywords <= 5).
     """
-    is_zh = language.lower().startswith('zh')
 
     templates_json = json.dumps(templates, ensure_ascii=False, indent=2)
     pages_json = json.dumps(pages, ensure_ascii=False, indent=2)
 
-    if is_zh:
-        return f"""你是一名 PPT 模板调度师。给定一组项目内的"模板"和一份按 order_index 排序的页面摘要，请为每页选择最合适的模板。
-
-# 候选模板（asset_id 必须从这里挑选，禁止编造）
-
-```json
-{templates_json}
-```
-
-# 待匹配页面
-
-```json
-{pages_json}
-```
-
-# 输出要求
-
-严格返回**一个** JSON 数组，包裹在 ```json 代码块中。每个元素对应一页：
-
-```json
-[
-  {{
-    "page_id": "<必须等于输入页面的 page_id>",
-    "template_asset_id": "<候选模板里的 asset_id；status=undecided 时为 null>",
-    "status": "matched | undecided",
-    "confidence": 0.0,
-    "reason": "≤80 字，解释为什么选这张/为什么放弃"
-  }}
-]
-```
-
-# 选择原则
-
-按以下优先级依次考量：
-
-1. **角色对齐**：封面必须分到 `template_role=cover`，目录、分章节、总结同理。角色错配是最严重的错误。
-2. **排版结构匹配**：主要依据——页面的图文构成（`layout_hint`、`summary`）应与模板的 `layout_structure` / `text_regions` / `image_regions` 吻合；`content_density` 与 `content_capacity` / `visual_density` 对应（low↔low, high↔high）。
-3. **文字对应辅助消歧**：在角色与排版都合适的候选之间，若模板的 `extracted_text` 与该页 `title`/`summary` 明显对应（模板很可能就是这一页的草稿/成稿），优先选它并提高 confidence；由此定案时不受第 5 条节奏限制，整库逐页对应时自然形成一对一。它只辅助消歧，不得为迁就文字对应而选排版不合适的模板。`sort_order` 与 `order_index` 一致可作佐证；占位文字（空 `extracted_text`）不参与。
-4. **风格连贯（tie-break）**：模板库风格通常统一，且生成时模板会把风格强加给内容，风格只在库内风格不一时用于收尾——保持全篇连贯，避免相邻页风格跳变。
-5. **节奏感**：避免连续 5 页用同一张模板；同一模板间至少留 1 页间隔（除非候选数量不足）。
-6. **不确定时**：宁可返回 `status=undecided`（`template_asset_id=null`），让用户手动决定，也不要乱猜。`confidence < 0.5` 时建议改用 undecided。
-7. **绝不**返回不在候选列表里的 `asset_id`。
-
-# 输出长度
-
-数组长度必须严格等于待匹配页面数量；`page_id` 顺序应与输入一致。"""
 
     return f"""You are a slide-template assigner. Given a project's template library and a page-summary list (sorted by order_index), pick the best template for each page.
 

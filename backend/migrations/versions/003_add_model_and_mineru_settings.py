@@ -18,7 +18,7 @@ depends_on = None
 
 
 def _column_exists(table_name: str, column_name: str) -> bool:
-    """检查列是否存在"""
+    """Check column for presence"""
     bind = op.get_bind()
     inspector = inspect(bind)
     columns = [col['name'] for col in inspector.get_columns(table_name)]
@@ -28,21 +28,21 @@ def _column_exists(table_name: str, column_name: str) -> bool:
 def upgrade() -> None:
     """
     Add new model and MinerU configuration fields to settings table.
-    
+
     Idempotent: checks each column before adding.
     """
     # Add text_model column if not exists
     if not _column_exists('settings', 'text_model'):
         op.add_column('settings', sa.Column('text_model', sa.String(length=100), nullable=True))
-    
+
     # Add image_model column if not exists
     if not _column_exists('settings', 'image_model'):
         op.add_column('settings', sa.Column('image_model', sa.String(length=100), nullable=True))
-    
+
     # Add mineru_api_base column if not exists
     if not _column_exists('settings', 'mineru_api_base'):
         op.add_column('settings', sa.Column('mineru_api_base', sa.String(length=255), nullable=True))
-    
+
     # Add image_caption_model column if not exists
     if not _column_exists('settings', 'image_caption_model'):
         op.add_column('settings', sa.Column('image_caption_model', sa.String(length=100), nullable=True))

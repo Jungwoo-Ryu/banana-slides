@@ -53,8 +53,8 @@ async function openPresetPanel(
   } catch (error) {
     if (!(error instanceof Error) || error.name !== 'TimeoutError') throw error
     const panelName = type === 'outline'
-      ? /大纲生成要求|Outline Generation Requirements/i
-      : /描述设置|Description Settings/i
+      ? /\u5927\u7eb2\u751f\u6210\u8981\u6c42|Outline Generation Requirements/i
+      : /\u63cf\u8ff0\u8bbe\u7f6e|Description Settings/i
     await page.getByRole('button', { name: panelName }).click()
   }
   await expect(addButton).toBeVisible()
@@ -83,7 +83,7 @@ test.describe('Preset capsules - OutlineEditor (mock)', () => {
 
   test('repairs a non-array preset cache without blocking the editor', async ({ page }) => {
     await page.addInitScript(() => {
-      localStorage.setItem('presetCapsules_outline', JSON.stringify({ name: '旧缓存' }))
+      localStorage.setItem('presetCapsules_outline', JSON.stringify({ name: 'Old Cache' }))
     })
 
     await page.goto(`/project/${PROJECT_ID}/outline`)
@@ -98,9 +98,9 @@ test.describe('Preset capsules - OutlineEditor (mock)', () => {
   test('salvages valid presets from a mixed legacy cache', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('presetCapsules_outline', JSON.stringify([
-        { name: '  保留  ', content: '  有效内容  ', legacy: true },
-        { name: '', content: '无名称' },
-        { name: '错误内容', content: 7 },
+        { name: '  Reservations  ', content: '  Effective content  ', legacy: true },
+        { name: '', content: 'No name' },
+        { name: 'Error', content: 7 },
       ]))
     })
 
@@ -109,10 +109,10 @@ test.describe('Preset capsules - OutlineEditor (mock)', () => {
     await openPresetPanel(page, 'outline')
 
     const preset = page.locator('[data-testid="outline-user-preset-0"]')
-    await expect(preset).toContainText('保留')
+    await expect(preset).toContainText('Reservations')
     await expect(page.locator('[data-testid^="outline-user-preset-"]')).toHaveCount(1)
     await expect.poll(() => page.evaluate(() => localStorage.getItem('presetCapsules_outline'))).toBe(
-      JSON.stringify([{ name: '保留', content: '有效内容' }]),
+      JSON.stringify([{ name: 'Reservations', content: 'Effective content' }]),
     )
   })
 
@@ -122,14 +122,14 @@ test.describe('Preset capsules - OutlineEditor (mock)', () => {
     await openPresetPanel(page, 'outline')
 
     await page.locator('[data-testid="outline-add-preset"]').click()
-    await page.locator('[data-testid="outline-preset-name-input"]').fill('我的预设')
-    await page.locator('[data-testid="outline-preset-content-input"]').fill('自定义提示词内容')
+    await page.locator('[data-testid="outline-preset-name-input"]').fill('My preset.')
+    await page.locator('[data-testid="outline-preset-content-input"]').fill('Customise the content of the hint')
     await page.locator('[data-testid="outline-preset-confirm"]').click()
     await openPresetPanel(page, 'outline')
 
     const userPreset = page.locator('[data-testid="outline-user-preset-0"]')
     await expect(userPreset).toBeVisible()
-    await expect(userPreset).toContainText('我的预设')
+    await expect(userPreset).toContainText('My preset.')
     await expect(page.locator('[data-testid="outline-delete-preset-0"]')).toBeVisible()
   })
 
@@ -149,17 +149,17 @@ test.describe('Preset capsules - OutlineEditor (mock)', () => {
     await openPresetPanel(page, 'outline')
 
     await page.locator('[data-testid="outline-add-preset"]').click()
-    await page.locator('[data-testid="outline-preset-name-input"]').fill('仅本次使用')
-    await page.locator('[data-testid="outline-preset-content-input"]').fill('缓存不可写也可继续')
+    await page.locator('[data-testid="outline-preset-name-input"]').fill('Use only for this time')
+    await page.locator('[data-testid="outline-preset-content-input"]').fill('Cache cannot be written or continue')
     await page.locator('[data-testid="outline-preset-confirm"]').click()
 
-    await expect(page.locator('[data-testid="outline-user-preset-0"]')).toContainText('仅本次使用')
+    await expect(page.locator('[data-testid="outline-user-preset-0"]')).toContainText('Use only for this time')
   })
 
   test('clicking custom preset appends content', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('presetCapsules_outline', JSON.stringify([
-        { name: '测试预设', content: '测试提示词' }
+        { name: 'Test Presets', content: 'Test hints' }
       ]))
     })
 
@@ -172,13 +172,13 @@ test.describe('Preset capsules - OutlineEditor (mock)', () => {
     await expect(userPreset).toBeVisible()
     await userPreset.locator('button').first().click()
 
-    await expect(textarea).toHaveText('测试提示词')
+    await expect(textarea).toHaveText('Test hints')
   })
 
   test('can delete custom preset', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('presetCapsules_outline', JSON.stringify([
-        { name: '待删除', content: '内容' }
+        { name: 'To be deleted', content: 'Contents' }
       ]))
     })
 
@@ -215,10 +215,10 @@ test.describe('Preset capsules - OutlineEditor (mock)', () => {
     const confirmBtn = page.locator('[data-testid="outline-preset-confirm"]')
     await expect(confirmBtn).toBeDisabled()
 
-    await page.locator('[data-testid="outline-preset-name-input"]').fill('名称')
+    await page.locator('[data-testid="outline-preset-name-input"]').fill('Name')
     await expect(confirmBtn).toBeDisabled()
 
-    await page.locator('[data-testid="outline-preset-content-input"]').fill('内容')
+    await page.locator('[data-testid="outline-preset-content-input"]').fill('Contents')
     await expect(confirmBtn).toBeEnabled()
   })
 })
@@ -247,10 +247,10 @@ test.describe('Preset capsules - DetailEditor (mock)', () => {
   test('description custom presets are independent from outline presets', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('presetCapsules_outline', JSON.stringify([
-        { name: '大纲预设', content: '大纲内容' }
+        { name: 'Outline presets', content: 'Outline' }
       ]))
       localStorage.setItem('presetCapsules_description', JSON.stringify([
-        { name: '描述预设', content: '描述内容' }
+        { name: 'Description Presets', content: 'Description' }
       ]))
     })
 
@@ -260,8 +260,8 @@ test.describe('Preset capsules - DetailEditor (mock)', () => {
 
     const descPreset = page.locator('[data-testid="description-user-preset-0"]')
     await expect(descPreset).toBeVisible()
-    await expect(descPreset).toContainText('描述预设')
-    await expect(page.locator('text=大纲预设')).not.toBeVisible()
+    await expect(descPreset).toContainText('Description Presets')
+    await expect(page.locator('text=Outline presets')).not.toBeVisible()
   })
 
   test('can save a description preset from the settings popover modal', async ({ page }) => {
@@ -270,13 +270,13 @@ test.describe('Preset capsules - DetailEditor (mock)', () => {
     await openPresetPanel(page, 'description')
 
     await page.locator('[data-testid="description-add-preset"]').click()
-    await page.locator('[data-testid="description-preset-name-input"]').fill('描述预设')
-    await page.locator('[data-testid="description-preset-content-input"]').fill('强调数据对比')
+    await page.locator('[data-testid="description-preset-name-input"]').fill('Description Presets')
+    await page.locator('[data-testid="description-preset-content-input"]').fill('Emphasis on data comparison')
     await page.locator('[data-testid="description-preset-confirm"]').click()
 
-    await expect(page.locator('[data-testid="description-user-preset-0"]')).toContainText('描述预设')
+    await expect(page.locator('[data-testid="description-user-preset-0"]')).toContainText('Description Presets')
     await expect.poll(() => page.evaluate(() => localStorage.getItem('presetCapsules_description'))).toBe(
-      JSON.stringify([{ name: '描述预设', content: '强调数据对比' }]),
+      JSON.stringify([{ name: 'Description Presets', content: 'Emphasis on data comparison' }]),
     )
   })
 })
@@ -305,7 +305,7 @@ test.describe('Preset capsules (integration)', () => {
     // Seed a preset
     await page.evaluate(() => {
       localStorage.setItem('presetCapsules_outline', JSON.stringify([
-        { name: '集成预设', content: '集成测试内容' }
+        { name: 'Integration presets', content: 'Integrated Test Content' }
       ]))
     })
 
@@ -321,7 +321,7 @@ test.describe('Preset capsules (integration)', () => {
       (resp) => resp.url().includes(`/api/projects/${projectId}`) && resp.request().method() === 'PUT'
     )
     await page.locator('[data-testid="outline-user-preset-0"]').locator('button').first().click()
-    await expect(textarea).toHaveText('集成测试内容')
+    await expect(textarea).toHaveText('Integrated Test Content')
 
     // Wait for debounced auto-save
     await savePromise
@@ -333,7 +333,7 @@ test.describe('Preset capsules (integration)', () => {
 
     const textareaAfter = page.locator('[data-testid="outline-requirements-textarea"] [contenteditable="true"]')
     await expect(textareaAfter).toBeVisible()
-    await expect(textareaAfter).toHaveText('集成测试内容')
+    await expect(textareaAfter).toHaveText('Integrated Test Content')
   })
 
   test('custom presets persist in localStorage across page navigations', async ({ page }) => {
@@ -342,8 +342,8 @@ test.describe('Preset capsules (integration)', () => {
     await openPresetPanel(page, 'outline')
 
     await page.locator('[data-testid="outline-add-preset"]').click()
-    await page.locator('[data-testid="outline-preset-name-input"]').fill('集成测试预设')
-    await page.locator('[data-testid="outline-preset-content-input"]').fill('集成测试内容')
+    await page.locator('[data-testid="outline-preset-name-input"]').fill('Integrated Test Presets')
+    await page.locator('[data-testid="outline-preset-content-input"]').fill('Integrated Test Content')
     await page.locator('[data-testid="outline-preset-confirm"]').click()
     await openPresetPanel(page, 'outline')
 
@@ -356,7 +356,7 @@ test.describe('Preset capsules (integration)', () => {
 
     const userPreset = page.locator('[data-testid="outline-user-preset-0"]')
     await expect(userPreset).toBeVisible()
-    await expect(userPreset).toContainText('集成测试预设')
+    await expect(userPreset).toContainText('Integrated Test Presets')
   })
 
   test('recovers a corrupted cache, then saves and reloads a new preset', async ({ page }) => {
@@ -372,15 +372,15 @@ test.describe('Preset capsules (integration)', () => {
     await expect(page.locator('[data-testid="outline-add-preset"]')).toBeVisible()
 
     await page.locator('[data-testid="outline-add-preset"]').click()
-    await page.locator('[data-testid="outline-preset-name-input"]').fill('恢复后的预设')
-    await page.locator('[data-testid="outline-preset-content-input"]').fill('恢复后的内容')
+    await page.locator('[data-testid="outline-preset-name-input"]').fill('Presets after restoration')
+    await page.locator('[data-testid="outline-preset-content-input"]').fill('Recovered content')
     await page.locator('[data-testid="outline-preset-confirm"]').click()
     await openPresetPanel(page, 'outline')
-    await expect(page.locator('[data-testid="outline-user-preset-0"]')).toContainText('恢复后的预设')
+    await expect(page.locator('[data-testid="outline-user-preset-0"]')).toContainText('Presets after restoration')
 
     await page.reload()
     await page.waitForLoadState('networkidle')
     await openPresetPanel(page, 'outline')
-    await expect(page.locator('[data-testid="outline-user-preset-0"]')).toContainText('恢复后的预设')
+    await expect(page.locator('[data-testid="outline-user-preset-0"]')).toContainText('Presets after restoration')
   })
 })

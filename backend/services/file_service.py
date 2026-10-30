@@ -49,11 +49,11 @@ def resize_image_for_thumbnail(image: Image.Image, max_width: int = 1920) -> Ima
     """
     Resize image for thumbnail if it exceeds max width.
     Maintains aspect ratio.
-    
+
     Args:
         image: PIL Image object
         max_width: Maximum width in pixels (default 1920)
-        
+
     Returns:
         Resized PIL Image (or original if already smaller)
     """
@@ -66,25 +66,25 @@ def resize_image_for_thumbnail(image: Image.Image, max_width: int = 1920) -> Ima
 
 class FileService:
     """Service for file management"""
-    
+
     def __init__(self, upload_folder: str, storage: Optional[FileStorage] = None):
         """Initialize file service"""
         self.storage = storage or LocalFileStorage(upload_folder)
         self.upload_folder = self.storage.root
         self.upload_folder.mkdir(exist_ok=True, parents=True)
-    
+
     def _get_project_dir(self, project_id: str) -> Path:
         """Get project directory"""
         project_dir = self.upload_folder / project_id
         project_dir.mkdir(exist_ok=True, parents=True)
         return project_dir
-    
+
     def _get_template_dir(self, project_id: str) -> Path:
         """Get template directory for project"""
         template_dir = self._get_project_dir(project_id) / "template"
         template_dir.mkdir(exist_ok=True, parents=True)
         return template_dir
-    
+
     def _get_pages_dir(self, project_id: str) -> Path:
         """Get pages directory for project"""
         pages_dir = self._get_project_dir(project_id) / "pages"
@@ -144,31 +144,31 @@ class FileService:
             except Exception:
                 pass
             raise ValueError("Invalid image file. Please upload a valid PNG, JPG, GIF, or WEBP image.") from exc
-    
+
     def save_template_image(self, file, project_id: str) -> str:
         """
         Save template image file
-        
+
         Args:
             file: FileStorage object from Flask request
             project_id: Project ID
-        
+
         Returns:
             Relative file path from upload folder
         """
         template_dir = self._get_template_dir(project_id)
-        
+
         # Secure filename and add unique suffix
         original_filename = secure_filename(file.filename)
         ext = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else 'png'
         filename = f"template.{ext}"
-        
+
         filepath = template_dir / filename
         self._save_validated_image_upload(file, filepath)
-        
+
         # Return relative path
         return filepath.relative_to(self.upload_folder).as_posix()
-    
+
     def save_generated_image(self, image: Image.Image, project_id: str,
                            page_id: str, image_format: str = 'PNG',
                            version_number: int = None) -> str:
@@ -297,7 +297,7 @@ class FileService:
 
         # Return relative path
         return filepath.relative_to(self.upload_folder).as_posix()
-    
+
     def delete_page_image_version(self, image_path: str) -> bool:
         """
         Delete a specific image version file and its cache
@@ -322,16 +322,16 @@ class FileService:
             cache_filepath.unlink()
 
         return deleted
-    
+
     def get_file_url(self, project_id: Optional[str], file_type: str, filename: str) -> str:
         """
         Generate file URL for frontend access
-        
+
         Args:
             project_id: Project ID (None for global materials)
             file_type: 'template', 'pages', or 'materials'
             filename: File name
-        
+
         Returns:
             URL path for file access
         """
@@ -339,38 +339,38 @@ class FileService:
             # Global materials
             return f"/files/materials/{filename}"
         return f"/files/{project_id}/{file_type}/{filename}"
-    
+
     def get_absolute_path(self, relative_path: str) -> str:
         """
         Get absolute file path from relative path
-        
+
         Args:
             relative_path: Relative path from upload folder
-        
+
         Returns:
             Absolute file path
         """
         return str(self.storage.resolve(relative_path))
-    
+
     def delete_template(self, project_id: str) -> bool:
         """
         Delete template for project
-        
+
         Args:
             project_id: Project ID
-        
+
         Returns:
             True if deleted successfully
         """
         template_dir = self._get_template_dir(project_id)
-        
+
         # Delete all files in template directory
         for file in template_dir.iterdir():
             if file.is_file():
                 file.unlink()
-        
+
         return True
-    
+
     def delete_page_image(self, project_id: str, page_id: str) -> bool:
         """
         Delete all page images (all versions and their caches)
@@ -391,97 +391,97 @@ class FileService:
                 file.unlink()
 
         return True
-    
+
     def delete_project_files(self, project_id: str) -> bool:
         """
         Delete all files for a project
-        
+
         Args:
             project_id: Project ID
-        
+
         Returns:
             True if deleted successfully
         """
         import shutil
         project_dir = self._get_project_dir(project_id)
-        
+
         if project_dir.exists():
             shutil.rmtree(project_dir)
-        
+
         return True
-    
+
     def file_exists(self, relative_path: str) -> bool:
         """Check if file exists"""
         filepath = self.upload_folder / relative_path.replace('\\', '/')
         return filepath.exists() and filepath.is_file()
-    
+
     def get_template_path(self, project_id: str) -> Optional[str]:
         """
         Get template file path for project
-        
+
         Args:
             project_id: Project ID
-        
+
         Returns:
             Absolute path to template file or None
         """
-        
-        # 刷新数据库会话，确保获取最新数据
+
+        # Refresh database sessions to ensure access to up-to-date data
         db.session.expire_all()
         project = Project.query.get(project_id)
         if project and project.template_image_path:
-            # template_image_path 是相对路径，需要转换为绝对路径
+            # template_image_path It’s a relative path that needs to be converted to an absolute path.
             template_path = self.upload_folder / project.template_image_path
             if template_path.exists() and template_path.is_file():
                 return str(template_path)
-        
-        # 如果数据库中没有，回退到目录查找（兼容旧数据）
+
+        # If not found in database, back to directory search (compatible with old data)）
         template_dir = self._get_template_dir(project_id)
         if template_dir.exists():
-            # 按修改时间排序，返回最新的模板文件
+            # Sort by change time, return the latest template file
             template_files = [
-                f for f in template_dir.iterdir() 
+                f for f in template_dir.iterdir()
                 if f.is_file() and f.stem == 'template'
             ]
             if template_files:
-                # 返回修改时间最新的文件
+                # Returns the most up-to-date file of the modified time
                 latest_file = max(template_files, key=lambda f: f.stat().st_mtime)
                 return str(latest_file)
-        
+
         return None
-    
+
     def _get_user_templates_dir(self) -> Path:
         """Get user templates directory"""
         templates_dir = self.upload_folder / "user-templates"
         templates_dir.mkdir(exist_ok=True, parents=True)
         return templates_dir
-    
+
     def save_user_template(self, file, template_id: str) -> str:
         """
         Save user template image file
-        
+
         Args:
             file: FileStorage object from Flask request
             template_id: Template ID
-        
+
         Returns:
             Relative file path from upload folder
         """
         templates_dir = self._get_user_templates_dir()
         template_dir = templates_dir / template_id
         template_dir.mkdir(exist_ok=True, parents=True)
-        
+
         # Secure filename and preserve extension
         original_filename = secure_filename(file.filename)
         ext = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else 'png'
         filename = f"template.{ext}"
-        
+
         filepath = template_dir / filename
         self._save_validated_image_upload(file, filepath)
-        
+
         # Return relative path
         return filepath.relative_to(self.upload_folder).as_posix()
-    
+
     def delete_user_template(self, template_id: str) -> bool:
         """
         Delete user template
@@ -660,4 +660,4 @@ class FileService:
             return thumb_filepath.relative_to(self.upload_folder).as_posix()
         except Exception:
             return None
-    
+

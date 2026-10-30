@@ -31,56 +31,56 @@ const i18n = {
   zh: {
     home: { title: 'Banana Slides' },
     ts: {
-      title: '模板配置',
-      back: '返回',
-      next: '前往预览',
-      toSingle: '转为统一模板',
-      autoMatchAll: '一键自动匹配',
-      matching: '匹配中…',
-      library: '项目模板库',
-      pages: '页面列表',
-      uploadImage: '上传图片',
-      uploadPdf: '上传 PDF',
-      uploading: '上传中…',
-      pdfProcessing: 'PDF 解析中…',
-      emptyLibrary: '模板库为空',
-      emptyLibraryHint: '上传模板图片或整份 PDF，解析后即可为每一页分配模板',
-      emptyPages: '暂无页面，先在大纲或描述编辑器生成页面',
-      labelPlaceholder: '添加标记（可选）',
-      delete: '删除',
-      reanalyze: '重新解析',
-      expand: '展开解析',
-      collapse: '收起',
-      statusPending: '解析中',
-      statusProcessing: '解析中',
-      statusCompleted: '已解析',
-      statusFailed: '解析失败',
-      pickTemplate: '选择模板',
-      autoMatchPage: '单页自动匹配',
-      editStyle: '编辑文字模板',
-      stylePlaceholder: '为该页输入文字风格描述…',
-      saveStyle: '保存',
-      unconfirmed: '未确认',
-      noDescHint: '该页缺少描述，无法自动匹配',
-      page: '第 {{num}} 页',
-      currentStyle: '文字模板',
-      confirmDelete: '删除该模板后，引用它的页面将被清空。确定删除吗？',
-      confirmDeleteTitle: '确认删除模板',
-      deletedCleared: '已删除模板，{{count}} 个页面被重置',
-      saved: '已保存',
-      matchDone: '自动匹配完成',
-      pageMatchDone: '本页匹配完成',
-      matchFailed: '自动匹配失败',
-      waitForPages: '页面仍在生成，请等待页面描述完成后再自动匹配',
-      waitForDescriptions: '请先完成所有页面描述，再进行自动匹配',
-      waitForTemplates: '模板仍在解析，请等待全部解析完成',
-      needAnalyzedTemplate: '至少需要一个解析成功的模板才能自动匹配',
-      loading: '加载中…',
-      matchedOfTotal: '已匹配 {{matched}}/{{total}}',
-      usedByPages: '{{count}} 页使用',
-      autoMatched: '自动匹配',
-      manualPicked: '手动指定',
-      templateRef: '模板 #{{num}}',
+      title: 'Template Setup',
+      back: 'Back',
+      next: 'Go to Preview',
+      toSingle: 'Switch to unified',
+      autoMatchAll: 'Auto-match all',
+      matching: 'Matching…',
+      library: 'Project template library',
+      pages: 'Pages',
+      uploadImage: 'Upload image',
+      uploadPdf: 'Upload PDF',
+      uploading: 'Uploading…',
+      pdfProcessing: 'Splitting PDF…',
+      emptyLibrary: 'Library is empty',
+      emptyLibraryHint: 'Upload template images or a whole PDF; once analyzed you can assign one per page',
+      emptyPages: 'No pages yet — generate them in the outline or description editor',
+      labelPlaceholder: 'Add a label (optional)',
+      delete: 'Delete',
+      reanalyze: 'Re-analyze',
+      expand: 'Expand analysis',
+      collapse: 'Collapse',
+      statusPending: 'Analyzing',
+      statusProcessing: 'Analyzing',
+      statusCompleted: 'Analyzed',
+      statusFailed: 'Analysis failed',
+      pickTemplate: 'Pick template',
+      autoMatchPage: 'Auto-match page',
+      editStyle: 'Edit text template',
+      stylePlaceholder: 'Enter a text-style note for this page…',
+      saveStyle: 'Save',
+      unconfirmed: 'Unconfirmed',
+      noDescHint: 'This page has no description, cannot auto-match',
+      page: 'Page {{num}}',
+      currentStyle: 'Text template',
+      confirmDelete: 'Deleting this template will clear pages that reference it. Continue?',
+      confirmDeleteTitle: 'Confirm delete template',
+      deletedCleared: 'Template deleted, {{count}} page(s) reset',
+      saved: 'Saved',
+      matchDone: 'Auto-match completed',
+      pageMatchDone: 'Page matched',
+      matchFailed: 'Auto-match failed',
+      waitForPages: 'Pages are still being generated. Wait for page descriptions before auto-matching',
+      waitForDescriptions: 'Complete every page description before auto-matching',
+      waitForTemplates: 'Templates are still being analyzed. Wait for all analyses to finish',
+      needAnalyzedTemplate: 'At least one successfully analyzed template is required for auto-match',
+      loading: 'Loading…',
+      matchedOfTotal: '{{matched}}/{{total}} matched',
+      usedByPages: 'Used by {{count}} page(s)',
+      autoMatched: 'Auto-matched',
+      manualPicked: 'Manually picked',
+      templateRef: 'Template #{{num}}',
     },
   },
   en: {
@@ -193,7 +193,7 @@ export const TemplateSetupPage: React.FC = () => {
   const [switchOpen, setSwitchOpen] = useState(false);
   const [hoveredAssetId, setHoveredAssetId] = useState<string | null>(null);
 
-  // 加载项目 + 模板库
+  // Loading items + Template Library
   useEffect(() => {
     if (!projectId) return;
     if (!currentProject || currentProject.id !== projectId) {
@@ -230,7 +230,7 @@ export const TemplateSetupPage: React.FC = () => {
     };
   }, [projectId, currentProject?.id, hasAnalyzingAssets, loadTemplateAssets]);
 
-  // 路由守卫：统一模板模式直接跳预览（决策 6）
+  // Route guards： a single template model for direct jump preview (decision-making) 6）
   useEffect(() => {
     if (currentProject && currentProject.id === projectId && currentProject.template_mode === 'single') {
       navigate(`/project/${projectId}/preview`, { replace: true });
@@ -384,7 +384,7 @@ export const TemplateSetupPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-background-primary flex flex-col">
-      {/* 顶栏 */}
+      {/* Topbar */}
       <header className="bg-white dark:bg-background-secondary shadow-sm border-b border-gray-200 dark:border-border-primary px-3 md:px-6 py-2 md:py-3 flex-shrink-0">
         <div className="flex items-center justify-between gap-2 md:gap-4">
           <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
@@ -458,7 +458,7 @@ export const TemplateSetupPage: React.FC = () => {
 
       <main className="flex-1 p-3 md:p-6 overflow-y-auto min-h-0">
         <div className="mx-auto grid max-w-7xl grid-cols-1 items-start gap-5 lg:grid-cols-12">
-          {/* 左栏：模板库 */}
+          {/* Left Bar： Template Library */}
           <section className="space-y-3 lg:col-span-5">
             <div className="flex min-h-[32px] flex-wrap items-center justify-between gap-2">
               <div className="flex items-baseline gap-2">
@@ -623,7 +623,7 @@ export const TemplateSetupPage: React.FC = () => {
             )}
           </section>
 
-          {/* 右栏：页面列表 */}
+          {/* Right Bar： Page List */}
           <section className="space-y-3 lg:col-span-7">
             <div className="flex min-h-[32px] flex-wrap items-center gap-2">
               <h2 className="text-sm font-semibold text-gray-800 dark:text-foreground-primary">

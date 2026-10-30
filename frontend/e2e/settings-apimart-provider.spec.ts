@@ -50,7 +50,7 @@ for (const existing of [false, true]) {
     if (existing) {
       await expect(page.locator('[data-provider="openai"]')).toHaveAttribute('aria-checked', 'true');
       await expect(page.getByTestId('global-api-config-section').locator('input').first()).toHaveValue(APIMART_BASE_URL);
-      await page.getByRole('button', { name: '保存设置', exact: true }).click();
+      await page.getByRole('button', { name: 'Save Settings', exact: true }).click();
       await expect.poll(() => savedPayload?.api_base_url).toBe(APIMART_BASE_URL);
       expect(savedPayload?.ai_provider_format).toBe('openai');
       expect(savedPayload?.image_model).toBe('saved-image');

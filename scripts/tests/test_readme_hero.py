@@ -35,7 +35,7 @@ class TextFallbackTests(unittest.TestCase):
 class PageThemeTests(unittest.TestCase):
     def test_grouped_images_keep_one_link_per_theme_and_round_trip_destination(self):
         url = hero.REPO+'#-%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95'
-        body = '<a href="'+url+'">'+hero.i18n.theme_picture('icon-light.svg', 'icon-dark.svg', '')+hero.i18n.theme_picture('./assets/buttons/deploy-zh.svg', './assets/buttons/deploy-zh-dark.svg', '部署方法')+'</a>'
+        body = '<a href="'+url+'">'+hero.i18n.theme_picture('icon-light.svg', 'icon-dark.svg', '')+hero.i18n.theme_picture('./assets/buttons/deploy-zh.svg', './assets/buttons/deploy-zh-dark.svg', 'Method of deployment')+'</a>'
         result = hero.i18n.css_themed_images(body)
         self.assertNotIn('<picture>', result)
         self.assertEqual(result.count('<a '), 2)

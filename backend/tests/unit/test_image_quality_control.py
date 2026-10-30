@@ -123,7 +123,7 @@ def test_image_quality_control_fails_without_returning_unreviewed_image():
         generated.append(True)
         return _image('red')
 
-    with pytest.raises(ImageQualityControlError, match='图片质量控制未通过'):
+    with pytest.raises(ImageQualityControlError, match='Photo quality control not passed'):
         generate_image_until_quality_passes(
             generate,
             ai_service,

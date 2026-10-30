@@ -4,22 +4,22 @@ import { Button, useToast, Modal } from '@/components/shared';
 import { useT } from '@/hooks/useT';
 import { listMaterials, uploadMaterial, listProjects, deleteMaterial, type Material } from '@/api/endpoints';
 
-// MaterialSelector 组件自包含翻译
+// MaterialSelector Component contains translation
 const materialSelectorI18n = {
   zh: {
     material: {
-      selectTitle: "选择素材", totalMaterials: "共 {{count}} 个素材", noMaterials: "暂无素材",
-      selectedCount: "已选择 {{count}} 个", allMaterials: "所有素材", unassociated: "未关联项目",
-      currentProject: "当前项目", viewMoreProjects: "+ 查看更多项目...", uploadFile: "上传文件",
-      previewMaterial: "预览素材", deleteMaterial: "删除素材", closePreview: "关闭预览",
-      canUploadOrGenerate: "可以上传图片或通过素材生成功能创建素材",
-      canUploadImages: "可以上传图片作为素材",
-      generateMaterial: "生成素材",
+      selectTitle: "Select Material", totalMaterials: "{{count}} materials", noMaterials: "No materials",
+      selectedCount: "{{count}} selected", allMaterials: "All Materials", unassociated: "Unassociated",
+      currentProject: "Current Project", viewMoreProjects: "+ View more projects...", uploadFile: "Upload File",
+      previewMaterial: "Preview Material", deleteMaterial: "Delete Material", closePreview: "Close Preview",
+      canUploadOrGenerate: "You can upload images or create materials through the material generator",
+      canUploadImages: "You can upload images as materials",
+      generateMaterial: "Generate Material",
       messages: {
-        loadMaterialFailed: "加载素材失败", unsupportedFormat: "不支持的图片格式",
-        uploadSuccess: "素材上传成功", uploadFailed: "上传素材失败",
-        cannotDelete: "无法删除：缺少素材ID", deleteSuccess: "素材已删除", deleteFailed: "删除素材失败",
-        selectAtLeastOne: "请至少选择一个素材", maxSelection: "最多只能选择 {{count}} 个素材"
+        loadMaterialFailed: "Failed to load materials", unsupportedFormat: "Unsupported image format",
+        uploadSuccess: "Material uploaded successfully", uploadFailed: "Failed to upload material",
+        cannotDelete: "Cannot delete: Missing material ID", deleteSuccess: "Material deleted", deleteFailed: "Failed to delete material",
+        selectAtLeastOne: "Please select at least one material", maxSelection: "Maximum {{count}} materials can be selected"
       }
     }
   },
@@ -185,7 +185,7 @@ export const MaterialSelector: React.FC<MaterialSelectorProps> = ({
         targetProjectId,
         true
       );
-      
+
       if (response.data) {
         show({ message: t('material.messages.uploadSuccess'), type: 'success' });
         loadMaterials();
@@ -291,7 +291,7 @@ export const MaterialSelector: React.FC<MaterialSelectorProps> = ({
                     {t('material.currentProject')}{projects.find(p => p.project_id === projectId) ? `: ${renderProjectLabel(projects.find(p => p.project_id === projectId)!)}` : ''}
                   </option>
                 )}
-                
+
                 {showAllProjects ? (
                   <>
                     <option disabled>───────────</option>
@@ -307,7 +307,7 @@ export const MaterialSelector: React.FC<MaterialSelectorProps> = ({
                   )
                 )}
               </select>
-              
+
               <Button
                 variant="ghost"
                 size="sm"
@@ -317,7 +317,7 @@ export const MaterialSelector: React.FC<MaterialSelectorProps> = ({
               >
                 {t('common.refresh')}
               </Button>
-              
+
               <label className="inline-block cursor-pointer">
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-foreground-secondary bg-white dark:bg-background-secondary border border-gray-300 dark:border-border-primary rounded-md hover:bg-gray-50 dark:hover:bg-background-hover disabled:opacity-50 disabled:cursor-not-allowed">
                   <Upload size={16} />
@@ -331,7 +331,7 @@ export const MaterialSelector: React.FC<MaterialSelectorProps> = ({
                   disabled={isUploading}
                 />
               </label>
-              
+
               {projectId && (
                 <Button
                   variant="ghost"
@@ -342,7 +342,7 @@ export const MaterialSelector: React.FC<MaterialSelectorProps> = ({
                   {t('material.generateMaterial')}
                 </Button>
               )}
-              
+
               {selectedMaterials.size > 0 && (
                 <Button variant="ghost" size="sm" onClick={handleClear}>
                   {t('common.clearSelection')}
@@ -425,7 +425,7 @@ export const MaterialSelector: React.FC<MaterialSelectorProps> = ({
                 </label>
               </div>
             )}
-            
+
             <div className="flex justify-end gap-3">
               <Button variant="ghost" onClick={onClose}>
                 {t('common.cancel')}
@@ -441,7 +441,7 @@ export const MaterialSelector: React.FC<MaterialSelectorProps> = ({
           </div>
         </div>
       </Modal>
-      
+
       {projectId && (
         <MaterialGeneratorModal
           projectId={projectId}

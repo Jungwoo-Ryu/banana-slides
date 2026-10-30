@@ -1,13 +1,13 @@
-"""Migration 019 backfill 单测：验证存量项目的 template_image_path / template_style 被同步到页级。
+"""Migration 019 backfill Single measurement： validation of stock items template_image_path / template_style Synchronized to Page Level。
 
-这是 Phase A 的关键约束（spec §2.4）：升级到 019 时，存量项目应：
-- 若 template_image_path 文件存在：创建一条 ProjectTemplateAsset，所有页 template_asset_id 指向它
-- 若 template_image_path 文件丢失：跳过 asset 创建（warning log），不阻塞迁移
-- 若 template_style 非空：所有页 template_style_text = 项目级值
-- 所有项目 template_mode 默认 'single'
+It’s... Phase A Key constraints（spec §2.4）：Upgrade to 019 at which time the stock item should：
+- If template_image_path File Exists： Create a ProjectTemplateAsset，All pages template_asset_id Point it.
+- If template_image_path File Missing： Skip asset Create（warning log），Unblocked migration
+- If template_style Non-empty： all pages template_style_text = Project Level Value
+- All items template_mode Default 'single'
 
-测试方法：手工建一个临时 sqlite 数据库，跑 alembic upgrade 到 018，注入存量数据，
-再升级到 019，验证 backfill 结果。
+Test method： Manual construction of a temporary sqlite Database, run. alembic upgrade Present. 018，Injecting stock data，
+I’ll upgrade it again. 019，Authentication backfill Result。
 """
 
 import os
@@ -34,14 +34,14 @@ def _make_alembic_config(db_url: str) -> Config:
 
 @pytest.fixture
 def fresh_db(tmp_path, monkeypatch):
-    """提供一个走到 018 head 的空 sqlite 数据库 + UPLOAD_FOLDER。"""
+    """Provide an empty SQLite database at revision 018 and an UPLOAD_FOLDER."""
     upload_dir = tmp_path / 'uploads'
     upload_dir.mkdir()
     monkeypatch.setenv('UPLOAD_FOLDER', str(upload_dir))
 
     db_path = tmp_path / 'test_019.db'
     db_url = f'sqlite:///{db_path}'
-    # env.py 通过 create_app() 读 SQLALCHEMY_DATABASE_URI，而 app.py 让 DATABASE_URL 覆盖它
+    # env.py Pass. create_app() Read it. SQLALCHEMY_DATABASE_URI，And... app.py Jean. DATABASE_URL Cover it.
     monkeypatch.setenv('DATABASE_URL', db_url)
 
     cfg = _make_alembic_config(db_url)
@@ -75,7 +75,7 @@ def _seed_project(conn, *, template_image_path=None, template_style=None,
 
 
 def _create_template_file(upload_dir: Path, project_id: str, filename='template.png') -> str:
-    """在 upload_dir/<project_id>/template/<filename> 建一个像样的图片文件，返回相对路径。"""
+    """Yes. upload_dir/<project_id>/template/<filename> Build a decent picture file, return relative path。"""
     target_dir = upload_dir / project_id / 'template'
     target_dir.mkdir(parents=True, exist_ok=True)
     target = target_dir / filename
@@ -92,7 +92,7 @@ def test_backfill_creates_asset_when_template_image_exists(fresh_db):
         conn.execute(
             'UPDATE projects SET template_image_path = ?, template_style = ? '
             'WHERE id = ?',
-            (rel_path, '极简风格', proj_id),
+            (rel_path, 'Extremely simple style', proj_id),
         )
         conn.commit()
     finally:
@@ -102,7 +102,7 @@ def test_backfill_creates_asset_when_template_image_exists(fresh_db):
 
     conn = sqlite3.connect(db_path)
     try:
-        # 一条 asset 被创建
+        # One. asset Created
         assets = conn.execute(
             'SELECT id, project_id, image_path, source, analysis_status '
             'FROM project_template_assets WHERE project_id = ?',
@@ -114,7 +114,7 @@ def test_backfill_creates_asset_when_template_image_exists(fresh_db):
         assert source == 'upload'
         assert status == 'pending'
 
-        # 所有页指向该 asset 且文字模板被同步
+        # All pages point to that asset and text templates are synchronized
         rows = conn.execute(
             'SELECT template_asset_id, template_style_text, template_selection_source '
             'FROM pages WHERE project_id = ?',
@@ -123,10 +123,10 @@ def test_backfill_creates_asset_when_template_image_exists(fresh_db):
         assert len(rows) == len(page_ids)
         for tpl_id, tpl_style, src in rows:
             assert tpl_id == asset_id
-            assert tpl_style == '极简风格'
+            assert tpl_style == 'Extremely simple style'
             assert src == 'batch_apply'
 
-        # 项目 template_mode = single
+        # Item template_mode = single
         mode = conn.execute(
             'SELECT template_mode FROM projects WHERE id = ?', (proj_id,)
         ).fetchone()[0]
@@ -140,7 +140,7 @@ def test_backfill_skips_asset_when_template_file_missing(fresh_db, caplog):
     conn = sqlite3.connect(db_path)
     try:
         proj_id, page_ids = _seed_project(conn, page_count=2)
-        # 写入路径但不建文件
+        # Write Path without File
         conn.execute(
             'UPDATE projects SET template_image_path = ? WHERE id = ?',
             (f'{proj_id}/template/missing.png', proj_id),
@@ -158,7 +158,7 @@ def test_backfill_skips_asset_when_template_file_missing(fresh_db, caplog):
             'SELECT COUNT(*) FROM project_template_assets WHERE project_id = ?',
             (proj_id,),
         ).fetchone()[0]
-        assert assets == 0  # 文件丢失：不创建 asset
+        assert assets == 0  # File Missing： Do Not Create asset
 
         rows = conn.execute(
             'SELECT template_asset_id, template_style_text '
@@ -179,7 +179,7 @@ def test_backfill_handles_style_only_project(fresh_db):
         proj_id, page_ids = _seed_project(conn)
         conn.execute(
             'UPDATE projects SET template_style = ? WHERE id = ?',
-            ('仅文字模板', proj_id),
+            ('Text Templates Only', proj_id),
         )
         conn.commit()
     finally:
@@ -193,7 +193,7 @@ def test_backfill_handles_style_only_project(fresh_db):
             'SELECT COUNT(*) FROM project_template_assets WHERE project_id = ?',
             (proj_id,),
         ).fetchone()[0]
-        assert assets == 0  # 没有图片，不应该创建 asset
+        assert assets == 0  # No pictures, shouldn’t create asset
 
         rows = conn.execute(
             'SELECT template_asset_id, template_style_text, template_selection_source '
@@ -202,14 +202,14 @@ def test_backfill_handles_style_only_project(fresh_db):
         ).fetchall()
         for tpl_id, tpl_style, src in rows:
             assert tpl_id is None
-            assert tpl_style == '仅文字模板'
+            assert tpl_style == 'Text Templates Only'
             assert src == 'batch_apply'
     finally:
         conn.close()
 
 
 def test_backfill_leaves_clean_projects_untouched(fresh_db):
-    """既无 template_image_path 也无 template_style 的项目，所有页保持 NULL。"""
+    """None. template_image_path None. template_style , all pages maintained NULL。"""
     db_path, db_url, upload_dir, cfg = fresh_db
     conn = sqlite3.connect(db_path)
     try:
@@ -235,7 +235,7 @@ def test_backfill_leaves_clean_projects_untouched(fresh_db):
         for tpl_id, tpl_style, src in rows:
             assert tpl_id is None
             assert tpl_style is None
-            assert src is None  # 未被 backfill 触碰
+            assert src is None  # Not backfill Touch.
 
         mode = conn.execute(
             'SELECT template_mode FROM projects WHERE id = ?', (proj_id,)
@@ -252,17 +252,17 @@ def test_downgrade_reverts_schema(fresh_db):
 
     conn = sqlite3.connect(db_path)
     try:
-        # project_template_assets 表被删
+        # project_template_assets The table was deleted.
         tables = {r[0] for r in conn.execute(
             "SELECT name FROM sqlite_master WHERE type='table'"
         )}
         assert 'project_template_assets' not in tables
 
-        # projects.template_mode 被删
+        # projects.template_mode Deleted
         cols = {r[1] for r in conn.execute("PRAGMA table_info('projects')")}
         assert 'template_mode' not in cols
 
-        # pages 5 列被删
+        # pages 5 Column deleted
         page_cols = {r[1] for r in conn.execute("PRAGMA table_info('pages')")}
         for col in ('template_asset_id', 'template_style_text',
                     'template_selection_source', 'template_match_reason',

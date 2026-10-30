@@ -255,9 +255,9 @@ function createTray() {
   tray.setToolTip('Banana Slides');
 
   const contextMenu = Menu.buildFromTemplate([
-    { label: '显示主窗口', click: () => { mainWindow?.show(); mainWindow?.focus(); } },
+    { label: 'Show main window', click: () => { mainWindow?.show(); mainWindow?.focus(); } },
     { type: 'separator' },
-    { label: '退出', click: () => { isQuitting = true; app.quit(); } },
+    { label: 'Exit', click: () => { isQuitting = true; app.quit(); } },
   ]);
   tray.setContextMenu(contextMenu);
   tray.on('double-click', () => { mainWindow?.show(); mainWindow?.focus(); });
@@ -291,10 +291,10 @@ async function installDownloadedUpdate() {
 async function showDownloadedUpdateDialog(checkResult) {
   const result = await dialog.showMessageBox(mainWindow, {
     type: 'info',
-    title: '更新已就绪',
-    message: `新版本 v${checkResult.update.version} 已下载完成`,
-    detail: '重启 Banana Slides 即可完成更新。',
-    buttons: ['重启并更新', '稍后重启'],
+    title: 'Update is ready',
+    message: `New Version v${checkResult.update.version} Download completed`,
+    detail: 'Restart Banana Slides Can not open message。',
+    buttons: ['Restart and Update', 'Restart later.'],
     defaultId: 0,
     cancelId: 1,
   });
@@ -312,14 +312,14 @@ async function showManualUpdateDialog() {
     }
 
     if (checkResult.update) {
-      const primaryAction = checkResult.canAutoUpdate ? '下载更新' : '前往下载';
+      const primaryAction = checkResult.canAutoUpdate ? 'Download Update' : 'Go to Download';
       const releaseNotes = checkResult.update.notes.trim();
       const result = await dialog.showMessageBox(mainWindow, {
         type: 'info',
-        title: '发现新版本',
-        message: `新版本 v${checkResult.update.version} 可用`,
+        title: 'New version found',
+        message: `New Version v${checkResult.update.version} Available`,
         ...(releaseNotes ? { detail: releaseNotes.substring(0, 300) } : {}),
-        buttons: [primaryAction, '查看完整更新日志', '稍后更新'],
+        buttons: [primaryAction, 'View Full Update Log', 'Update later'],
         defaultId: 0,
         cancelId: 2,
       });
@@ -340,15 +340,15 @@ async function showManualUpdateDialog() {
 
     await dialog.showMessageBox(mainWindow, {
       type: 'info',
-      title: '检查更新',
-      message: '当前已是最新版本',
+      title: 'Check for updates',
+      message: 'It’s the latest version.',
     });
   } catch (error) {
     log.error('[main] Failed to check for updates:', error);
     await dialog.showMessageBox(mainWindow, {
       type: 'error',
-      title: '检查更新失败',
-      message: '无法连接更新服务，请检查网络后重试',
+      title: 'Check update failed',
+      message: 'Could not connect to update service. Check the network and try again',
     });
   }
 }
@@ -359,78 +359,78 @@ function createAppMenu() {
     ...(isMac ? [{
       label: app.name,
       submenu: [
-        { label: '关于 Banana Slides', role: 'about' },
+        { label: 'About Banana Slides', role: 'about' },
         { type: 'separator' },
-        { label: '隐藏', role: 'hide' },
-        { label: '隐藏其他', role: 'hideOthers' },
-        { label: '全部显示', role: 'unhide' },
+        { label: 'Hide', role: 'hide' },
+        { label: 'Hide Other', role: 'hideOthers' },
+        { label: 'Show All', role: 'unhide' },
         { type: 'separator' },
-        { label: '退出', role: 'quit' },
+        { label: 'Exit', role: 'quit' },
       ],
     }] : []),
     {
-      label: '文件',
+      label: 'Documentation',
       submenu: [
         ...(!isMac ? [
           { type: 'separator' },
-          { label: '退出', role: 'quit' },
+          { label: 'Exit', role: 'quit' },
         ] : [
-          { label: '关闭窗口', role: 'close' },
+          { label: 'Close Window', role: 'close' },
         ]),
       ],
     },
     {
-      label: '编辑',
+      label: 'Edit',
       submenu: [
-        { label: '撤销', role: 'undo' },
-        { label: '重做', role: 'redo' },
+        { label: 'Undo', role: 'undo' },
+        { label: 'Redo', role: 'redo' },
         { type: 'separator' },
-        { label: '剪切', role: 'cut' },
-        { label: '复制', role: 'copy' },
-        { label: '粘贴', role: 'paste' },
-        { label: '全选', role: 'selectAll' },
+        { label: 'Cut', role: 'cut' },
+        { label: 'Copy', role: 'copy' },
+        { label: 'Paste', role: 'paste' },
+        { label: 'Select All', role: 'selectAll' },
       ],
     },
     {
-      label: '视图',
+      label: 'View',
       submenu: [
-        { label: '放大', role: 'zoomIn', accelerator: 'CmdOrCtrl+=' },
-        { label: '缩小', role: 'zoomOut', accelerator: 'CmdOrCtrl+-' },
-        { label: '重置缩放', role: 'resetZoom', accelerator: 'CmdOrCtrl+0' },
+        { label: 'Zoom In', role: 'zoomIn', accelerator: 'CmdOrCtrl+=' },
+        { label: 'Zoom Out', role: 'zoomOut', accelerator: 'CmdOrCtrl+-' },
+        { label: 'Reset Scale', role: 'resetZoom', accelerator: 'CmdOrCtrl+0' },
         { type: 'separator' },
-        { label: '全屏', role: 'togglefullscreen' },
+        { label: 'Fullscreen', role: 'togglefullscreen' },
         { type: 'separator' },
-        { label: '重新加载', role: 'reload' },
-        { label: '强制重新加载', role: 'forceReload' },
-        { label: '开发者工具', role: 'toggleDevTools' },
+        { label: 'Reload', role: 'reload' },
+        { label: 'Force reloading', role: 'forceReload' },
+        { label: 'Developer tool', role: 'toggleDevTools' },
       ],
     },
     {
-      label: '窗口',
+      label: 'Window',
       submenu: [
-        { label: '最小化', role: 'minimize' },
+        { label: 'Minimize', role: 'minimize' },
         ...(isMac ? [
           { type: 'separator' },
-          { label: '前置全部窗口', role: 'front' },
+          { label: 'Preset All Window', role: 'front' },
         ] : [
-          { label: '关闭', role: 'close' },
+          { label: 'Close', role: 'close' },
         ]),
       ],
     },
     {
-      label: '帮助',
+      label: 'Help',
       submenu: [
         {
-          label: '检查更新...',
+          label: 'Check for updates...',
           click: showManualUpdateDialog,
         },
         { type: 'separator' },
         {
-          label: '关于',
+          label: 'About',
           click: () => {
             dialog.showMessageBox(mainWindow, {
               type: 'info',
-              title: '关于 Banana Slides',
+              title: 'About Banana Slides',
               message: `Banana Slides v${app.getVersion()}`,
               detail: 'AI-Native Presentation Generator',
             });
@@ -501,7 +501,7 @@ function setupIPC() {
   });
   ipcMain.handle('choose-data-storage-directory', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
-      title: '选择数据存储位置',
+      title: 'Select Data Storage Location',
       defaultPath: activeDataRoot,
       properties: ['openDirectory', 'createDirectory'],
     });
@@ -538,7 +538,7 @@ function setupIPC() {
     return { success: true, restarting: true };
   });
 
-  // 原生下载对话框：前端传入绝对 URL + 建议文件名
+  // Native Download Dialogue： The frontend goes absolute URL + Suggested filename
   ipcMain.handle('download-file', async (_, { url, filename }) => {
     const currentWindow = mainWindow;
     if (!currentWindow || currentWindow.isDestroyed()) return { success: false };
@@ -546,7 +546,7 @@ function setupIPC() {
     const downloadUrl = createUniqueDownloadUrl(url);
     const { filePath: savePath, canceled } = await dialog.showSaveDialog(currentWindow, {
       defaultPath: filename || 'download',
-      filters: [{ name: '所有文件', extensions: [ext, '*'] }],
+      filters: [{ name: 'All Files', extensions: [ext, '*'] }],
     });
     if (canceled || !savePath) return { success: false, canceled: true };
     if (currentWindow.isDestroyed()) return { success: false };
@@ -564,18 +564,18 @@ function setupIPC() {
       log.error('[main] Download failed:', { url: downloadUrl, savePath, ...result });
       if (!currentWindow.isDestroyed()) {
         const localizedError = {
-          interrupted: '下载被中断，请重试。',
-          timeout: '下载超时，请重试。',
-          missing: '目标文件没有写入。',
-          empty: '目标文件为空。',
-          failed: '文件复制或下载失败。',
-          cancelled: '下载已取消。',
+          interrupted: 'Download aborted, please try again。',
+          timeout: 'Download timeout, please try again。',
+          missing: 'Target file not written。',
+          empty: 'Destination file is empty。',
+          failed: 'File copying or downloading failed。',
+          cancelled: 'Download canceled。',
         }[result.state];
         await dialog.showMessageBox(currentWindow, {
           type: 'error',
-          title: '保存失败',
-          message: '文件没有保存成功',
-          detail: `${localizedError || result.error || '下载失败'}\n\n目标位置：${savePath}`,
+          title: 'Save Failed',
+          message: 'File not saved successfully',
+          detail: `${localizedError || result.error || 'Download failed'}\n\n Target position：${savePath}`,
         });
       }
     } else {
@@ -593,10 +593,10 @@ async function selectRecoveryDataRoot(startupError) {
     if (!skipErrorDialog) {
       const choice = await dialog.showMessageBox(parentWindow, {
         type: 'error',
-        title: '无法访问数据存储位置',
-        message: 'Banana Slides 无法访问已配置的数据存储位置。',
+        title: 'Cannot access data storage location',
+        message: 'Banana Slides Unable to access configured data storage locations。',
         detail: error.message,
-        buttons: ['选择其他位置', '退出'],
+        buttons: ['Select another position', 'Exit'],
         defaultId: 0,
         cancelId: 1,
         noLink: true,
@@ -606,11 +606,11 @@ async function selectRecoveryDataRoot(startupError) {
     skipErrorDialog = false;
 
     const selection = await dialog.showOpenDialog(parentWindow, {
-      title: '选择数据存储位置',
+      title: 'Select Data Storage Location',
       properties: ['openDirectory', 'createDirectory'],
     });
     if (selection.canceled || !selection.filePaths[0]) {
-      error = new Error('尚未选择可用的数据存储位置。');
+      error = new Error('No available data storage location has been selected。');
       continue;
     }
     try {
@@ -618,10 +618,10 @@ async function selectRecoveryDataRoot(startupError) {
       if (!inspection.hasDatabase) {
         const confirmation = await dialog.showMessageBox(parentWindow, {
           type: 'warning',
-          title: '确认使用新的数据位置',
-          message: '所选目录中没有 Banana Slides 数据库。',
-          detail: '继续后将把此位置作为新的空数据目录使用。应用不会移动或删除原目录中的任何数据。',
-          buttons: ['使用此位置', '重新选择'],
+          title: 'Confirm new data locations',
+          message: 'Not in Selected Directory Banana Slides Database。',
+          detail: 'Continue to use this position as a new empty data directory. Application does not move or delete any data from the original directory。',
+          buttons: ['Use this position', 'Reselect'],
           defaultId: 1,
           cancelId: 1,
           noLink: true,
@@ -689,7 +689,7 @@ async function bootstrap() {
   } catch (err) {
     log.error('[main] Startup failed:', err);
     if (splashWindow) splashWindow.close();
-    dialog.showErrorBox('启动失败', `后端服务启动失败：${err.message}`);
+    dialog.showErrorBox('Starting Failed', `Backend service startup failed：${err.message}`);
     app.quit();
   }
 }

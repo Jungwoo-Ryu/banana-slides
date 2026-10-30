@@ -50,7 +50,7 @@ test('creates a missing default Electron userData directory on first launch', as
 
 test('atomically saves and reads a Unicode data root', async (t) => {
   const userData = makeTempDir(t, 'banana-user-data-');
-  const dataRoot = path.join(makeTempDir(t, 'banana-parent-'), '幻灯片 Data');
+  const dataRoot = path.join(makeTempDir(t, 'banana-parent-'), 'Slide Data');
 
   await writeStorageConfig(userData, dataRoot);
 

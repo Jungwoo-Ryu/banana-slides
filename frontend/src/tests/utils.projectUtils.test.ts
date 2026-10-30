@@ -4,59 +4,59 @@ import { parseMarkdownPages } from '@/utils/projectUtils';
 describe('parseMarkdownPages', () => {
   test('imports sentence-style outline and required page text markers', () => {
     const pages = parseMarkdownPages(`
-## 第 1 页: 市场机会
+## Page 1 Page: Market opportunities
 
-> 章节: 行业分析
+> Section: Industry analysis
 
-这一页说明市场规模增长、竞争格局分散，以及企业级机会正在放大。
+This page shows growing market size, fragmented competition patterns and growing enterprise-level opportunities。
 
-**页面描述：**
---- 页面文字 ---
+**Page description：**
+--- SLIDE_TEXT ---
 
-### 市场机会正在快速放大
+### Market opportunities are expanding rapidly.
 
-- 企业级场景增速高于消费级场景
+- Enterprise-level scenes are growing faster than consumer-level scenes
 
---- 页面文字结束 ---
+--- SLIDE_TEXT_END ---
 
-视觉元素：增长曲线、对比数据卡片
-视觉焦点：企业级增速
+Visual elements：Growth curve, comparative data cards
+Visual focus：Enterprise rate of growth
 `);
 
     expect(pages).toHaveLength(1);
-    expect(pages[0].title).toBe('市场机会');
-    expect(pages[0].part).toBe('行业分析');
-    expect(pages[0].points).toEqual(['这一页说明市场规模增长、竞争格局分散，以及企业级机会正在放大。']);
-    expect(pages[0].text).toContain('--- 页面文字 ---');
-    expect(pages[0].text).toContain('--- 页面文字结束 ---');
+    expect(pages[0].title).toBe('Market opportunities');
+    expect(pages[0].part).toBe('Industry analysis');
+    expect(pages[0].points).toEqual(['This page shows growing market size, fragmented competition patterns and growing enterprise-level opportunities。']);
+    expect(pages[0].text).toContain('--- SLIDE_TEXT ---');
+    expect(pages[0].text).toContain('--- SLIDE_TEXT_END ---');
     expect(pages[0].extra_fields).toEqual({
-      '视觉元素': '增长曲线、对比数据卡片',
-      '视觉焦点': '企业级增速',
+      'Visual elements': 'Growth curve, comparative data cards',
+      'Visual focus': 'Enterprise rate of growth',
     });
   });
 
   test('imports outline content with or without markdown bullet prefixes', () => {
     const pages = parseMarkdownPages(`
-## 第 1 页: 英伟达发家史
+## Page 1 Page: Yin Weidar’s history.
 
-**大纲要点：**
+**Outline points：**
 
-用一句话点明全篇主线。
-* 英伟达把GPU一步步变成AI时代的基础设施。
-+ CUDA建立软件生态壁垒。
-- 数据中心成为第二增长曲线。
+Let’s just say one word about the main line.。
+* Ying Wei Dynasty. GPU One step at a time. AI The Infrastructure of the Age。
++ CUDA Create software ecological barriers。
+- Data centres become the second growth curve。
 
-**页面描述：**
---- 页面文字 ---
-英伟达发家史
---- 页面文字结束 ---
+**Page description：**
+--- SLIDE_TEXT ---
+Yin Weidar’s history.
+--- SLIDE_TEXT_END ---
 `);
 
     expect(pages[0].points).toEqual([
-      '用一句话点明全篇主线。',
-      '英伟达把GPU一步步变成AI时代的基础设施。',
-      'CUDA建立软件生态壁垒。',
-      '数据中心成为第二增长曲线。',
+      'Let’s just say one word about the main line.。',
+      'Ying Wei Dynasty. GPU One step at a time. AI The Infrastructure of the Age。',
+      'CUDA Create software ecological barriers。',
+      'Data centres become the second growth curve。',
     ]);
   });
 });

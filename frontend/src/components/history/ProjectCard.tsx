@@ -5,10 +5,10 @@ import { Card } from '@/components/shared';
 import { getProjectTitle, getFirstPageImage, formatDate, getStatusText, getStatusColor } from '@/utils/projectUtils';
 import type { Project } from '@/types';
 
-// ProjectCard 组件自包含翻译
+// ProjectCard Component contains translation
 const projectCardI18n = {
   zh: {
-    projectCard: { pages: "{{count}} 页", page: "第 {{num}} 页" }
+    projectCard: { pages: "{{count}} pages", page: "Page {{num}}" }
   },
   en: {
     projectCard: { pages: "{{count}} pages", page: "Page {{num}}" }
@@ -45,18 +45,18 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   isBatchMode,
 }) => {
   const t = useT(projectCardI18n);
-  // 检测屏幕尺寸，只在非手机端加载图片（必须在早期返回之前声明hooks）
+  // Test screen size, only load pictures on non-cellular end (must be stated before early return) hooks）
   const [shouldLoadImage, setShouldLoadImage] = useState(false);
-  
+
   useEffect(() => {
     const checkScreenSize = () => {
       // sm breakpoint is 640px
       setShouldLoadImage(window.innerWidth >= 640);
     };
-    
+
     checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
-    
+
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
@@ -67,20 +67,20 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   const pageCount = project.pages?.length || 0;
   const statusText = getStatusText(project);
   const statusColor = getStatusColor(project);
-  
+
   const firstPageImage = shouldLoadImage ? getFirstPageImage(project) : null;
 
   return (
     <Card
       className={`p-3 md:p-6 transition-all ${
-        isSelected 
-          ? 'border-2 border-banana-500 bg-banana-50 dark:bg-background-secondary' 
+        isSelected
+          ? 'border-2 border-banana-500 bg-banana-50 dark:bg-background-secondary'
           : 'hover:shadow-lg border border-gray-200 dark:border-border-primary'
       } ${isBatchMode ? 'cursor-default' : 'cursor-pointer'}`}
       onClick={() => onSelect(project)}
     >
       <div className="flex items-start gap-3 md:gap-4">
-        {/* 复选框 */}
+        {/* Checkbox */}
         <div className="pt-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
           <input
             type="checkbox"
@@ -89,8 +89,8 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             className="w-4 h-4 text-banana-600 border-gray-300 dark:border-border-primary rounded focus:ring-banana-500 cursor-pointer"
           />
         </div>
-        
-        {/* 中间：项目信息 */}
+
+        {/* Intermediate： project information */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 md:gap-3 mb-2 flex-wrap">
             {isEditing ? (
@@ -105,10 +105,10 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
-              <h3 
+              <h3
                 className={`text-base md:text-lg font-semibold text-gray-900 dark:text-foreground-primary truncate flex-1 min-w-0 ${
-                  isBatchMode 
-                    ? 'cursor-default' 
+                  isBatchMode
+                    ? 'cursor-default'
                     : 'cursor-pointer hover:text-banana-600 transition-colors'
                 }`}
                 onClick={(e) => onStartEdit(e, project)}
@@ -132,8 +132,8 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             </span>
           </div>
         </div>
-        
-        {/* 右侧：图片预览 */}
+
+        {/* Right： Image Preview */}
         <div className="hidden sm:block w-40 h-24 md:w-64 md:h-36 rounded-lg overflow-hidden bg-gray-100 dark:bg-background-secondary border border-gray-200 dark:border-border-primary flex-shrink-0">
           {firstPageImage ? (
             <img
@@ -147,8 +147,8 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
             </div>
           )}
         </div>
-        
-        {/* 右侧：操作按钮 */}
+
+        {/* Right： Operation button */}
         <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 flex-shrink-0">
           <button
             onClick={(e) => onDelete(e, project)}

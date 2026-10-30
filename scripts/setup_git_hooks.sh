@@ -1,79 +1,79 @@
 #!/bin/bash
-# 设置Git Hooks
+# Settings Git Hooks
 
 set -e
 
 echo "================================="
-echo "设置Git Hooks"
+echo "Settings Git Hooks"
 echo "================================="
 echo ""
-echo "ℹ️  注意: README 自动翻译已迁移到 GitHub Actions"
+echo "ℹ️  Attention.: README Autotranslation moved to GitHub Actions"
 echo ""
 
-# 检查是否在项目根目录
+# Check if it’s in the root directory
 if [ ! -d ".git" ]; then
-    echo "错误: 请在项目根目录运行此脚本"
+    echo "Error: Please run this script in the root directory"
     exit 1
 fi
 
-# 创建.githooks目录（如果不存在）
+# Create.githooks Contents (if not available)）
 if [ ! -d ".githooks" ]; then
-    echo "错误: .githooks目录不存在"
+    echo "Error: .githooks Directory does not exist"
     exit 1
 fi
 
-# 检查是否有启用的 hooks
+# Check if enabled hooks
 if [ -f ".githooks/pre-commit.disabled" ]; then
-    echo "发现已禁用的 pre-commit hook"
+    echo "Disabled pre-commit hook"
     echo ""
-    echo "README 翻译现在由 GitHub Actions 自动处理："
-    echo "  - 推送到主分支时自动翻译"
-    echo "  - 不阻塞本地提交"
-    echo "  - 节省 API 调用"
+    echo "README Translator now by GitHub Actions Autoprocessing："
+    echo "  - Autotranslator when pushed to main branch"
+    echo "  - Do not block local submission"
+    echo "  - Savings API Call"
     echo ""
-    read -p "是否要重新启用 pre-commit hook？(不推荐) [y/N]: " -n 1 -r
+    read -p "Whether to restart pre-commit hook？(Not recommended) [y/N]: " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         mv .githooks/pre-commit.disabled .githooks/pre-commit
-        echo "✅ Pre-commit hook 已启用"
+        echo "✅ Pre-commit hook Enabled"
     else
-        echo "✅ 保持 GitHub Actions 方案（推荐）"
+        echo "✅ Hold GitHub Actions Programme (recommended)）"
         echo ""
-        echo "手动翻译命令: uv run python scripts/translate_readme.py"
+        echo "Manual Translation Commands: uv run python scripts/translate_readme.py"
         exit 0
     fi
 fi
 
-# 配置Git使用自定义hooks目录
+# Configuration Git Use custom hooks Contents
 if [ -f ".githooks/pre-commit" ]; then
-    echo "配置Git使用.githooks目录..."
+    echo "Configuration Git Usage.githooks Contents..."
     git config core.hooksPath .githooks
 
-    # 确保hooks有执行权限
-    echo "设置hooks执行权限..."
+    # Ensure hooks There are enforcement powers.
+    echo "Settings hooks Enforcement authority..."
     chmod +x .githooks/pre-commit
 
     echo ""
     echo "================================="
-    echo "✅ Git Hooks设置完成！"
+    echo "✅ Git Hooks Settings completed！"
     echo "================================="
     echo ""
-    echo "已启用的功能："
-    echo "  • pre-commit: 当README.md修改时自动翻译到README_EN.md"
+    echo "Enabled："
+    echo "  • pre-commit: when README.md Autotranslation on change to README_EN.md"
     echo ""
-    echo "提示："
-    echo "  - 修改README.md并提交时，会自动翻译README_EN.md"
-    echo "  - 需要在.env中配置GOOGLE_API_KEY"
-    echo "  - 如果翻译失败，不会阻止提交"
-    echo "  - 每次提交可能需要等待 30-60 秒"
+    echo "Hint："
+    echo "  - Modify README.md When submitted, translate automatically README_EN.md"
+    echo "  - Yes, I do..env Medium Configuration GOOGLE_API_KEY"
+    echo "  - If the translation fails, it won’t stop the submission."
+    echo "  - Each submission may require waiting 30-60 sec"
 else
     echo ""
     echo "================================="
-    echo "✅ 无需设置 Git Hooks"
+    echo "✅ No Settings Git Hooks"
     echo "================================="
     echo ""
-    echo "README 翻译由 GitHub Actions 自动处理"
-    echo "查看详情: .githooks/README.md"
+    echo "README Translation by GitHub Actions Autoprocessing"
+    echo "View Details: .githooks/README.md"
 fi
 
 echo ""

@@ -35,9 +35,9 @@ class SyncTests(unittest.TestCase):
                             for name in ['demo', 'docs', 'desktop', 'deploy'])
         self.source = {
             'hero': '<!-- readme:languages -->\n<!-- /readme:languages -->\n'
-                    f'<!-- readme:actions -->\n{actions}\n<!-- /readme:actions -->\n介绍。\n\n',
-            'install': '## 安装\n\n使用 `uv`。\n\n```bash\n# setup\nuv sync\n```\n\n',
-            'usage': '## 使用\n\n打开项目。\n\n',
+                    f'<!-- readme:actions -->\n{actions}\n<!-- /readme:actions -->\n Introduction。\n\n',
+            'install': '## Install\n\n Usage `uv`。\n\n```bash\n# setup\nuv sync\n```\n\n',
+            'usage': '## Usage\n\n Open Item。\n\n',
         }
         self.write_source()
         self.calls = []
@@ -47,7 +47,7 @@ class SyncTests(unittest.TestCase):
 
     def fake(self, source, previous, target, language):
         self.calls.append((language['code'], source, previous, target))
-        return source.replace('安装', 'Install').replace('使用', 'Usage').replace('介绍', 'Introduction')
+        return source.replace('Install', 'Install').replace('Usage', 'Usage').replace('Introduction', 'Introduction')
 
     def run_sync(self, **kwargs):
         return syncer.sync(self.root, translator=self.fake, **kwargs)
@@ -65,7 +65,7 @@ class SyncTests(unittest.TestCase):
         before = (self.root / 'README_EN.md').read_text()
         self.calls.clear()
         old = self.source['usage']
-        self.source['usage'] += '新功能。\n\n'
+        self.source['usage'] += 'New function。\n\n'
         self.write_source()
         self.assertEqual(self.run_sync()['calls'], 2)
         self.assertTrue(all(call[2] == old for call in self.calls))
@@ -75,9 +75,9 @@ class SyncTests(unittest.TestCase):
 
     def test_rename_move_add_delete_use_ids_not_titles_or_positions(self):
         self.run_sync()
-        self.source['usage'] = self.source['usage'].replace('## 使用', '## 新标题')
+        self.source['usage'] = self.source['usage'].replace('## Usage', '## New Title')
         self.source = {'hero': self.source['hero'], 'usage': self.source['usage'],
-                       'new': '## 新标题\n\nNew section.\n\n'}
+                       'new': '## New Title\n\nNew section.\n\n'}
         self.write_source()
         self.assertEqual(self.run_sync()['calls'], 4)
         self.assertEqual(list(syncer.blocks((self.root / 'README_EN.md').read_text())), ['hero', 'usage', 'new'])
@@ -89,7 +89,7 @@ class SyncTests(unittest.TestCase):
     def test_existing_editorial_changes_are_preserved(self):
         self.run_sync()
         path = self.root / 'README_EN.md'
-        path.write_text(path.read_text().replace('打开项目。', 'Carefully edited English wording.'))
+        path.write_text(path.read_text().replace('Open Item。', 'Carefully edited English wording.'))
         before = path.read_text()
         self.assertEqual(self.run_sync()['calls'], 0)
         self.assertEqual(path.read_text(), before)
@@ -195,7 +195,7 @@ class SyncTests(unittest.TestCase):
         self.assertEqual((self.root / syncer.STATE).read_bytes(), previous_state)
 
     def test_korean_particle_cannot_become_part_of_raw_url(self):
-        source = '详情 https://example.com/121\n[链接](https://example.com/docs)\n'
+        source = 'Details https://example.com/121\n[Link](https://example.com/docs)\n'
         masked, values = syncer.protect(source)
         output = '자세한 내용은 ⟦R0000⟧를 확인하세요.\n[문서](⟦R0001⟧)\n'
         restored = syncer.restore(syncer.separate_raw_urls(output, masked, values), values)

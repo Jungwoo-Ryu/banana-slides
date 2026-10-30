@@ -92,7 +92,7 @@ test.describe('Home outline SSE handoff', () => {
     await page.route('**/api/projects/*/generate/outline/stream', async (route) => {
       streamCalled = true
       const projectId = new URL(route.request().url()).pathname.split('/')[3]
-      const pages = [{ index: 0, title: 'SSE 大纲页', points: ['进入大纲页后生成'] }]
+      const pages = [{ index: 0, title: 'SSE Outline Page', points: ['Generate after entering the outline page'] }]
 
       await new Promise(resolve => setTimeout(resolve, 300))
       await route.fulfill({
@@ -108,13 +108,13 @@ test.describe('Home outline SSE handoff', () => {
     })
 
     await page.goto('/')
-    await page.getByRole('button', { name: /从大纲生成|From Outline/ }).click()
-    await page.getByRole('textbox').fill('第一页\n- 进入大纲页后生成')
-    await page.getByRole('button', { name: /下一步|Next/ }).click()
+    await page.getByRole('button', { name: /\u4ece\u5927\u7eb2\u751f\u6210|From Outline/ }).click()
+    await page.getByRole('textbox').fill('Page I\n- Generate after entering the outline page')
+    await page.getByRole('button', { name: /\u4e0b\u4e00\u6b65|Next/ }).click()
 
     await expect(page).toHaveURL(/\/project\/project-1\/outline/)
     await expect(page.locator('.animate-pulse').first()).toBeVisible()
-    await expect(page.getByText('SSE 大纲页')).toBeVisible({ timeout: 5000 })
+    await expect(page.getByText('SSE Outline Page')).toBeVisible({ timeout: 5000 })
     expect(streamCalled).toBe(true)
     expect(syncCalled).toBe(false)
   })
@@ -128,10 +128,10 @@ test.describe('Home outline SSE handoff', () => {
       const projectId = new URL(route.request().url()).pathname.split('/')[3]
       const pages = [{
         index: 0,
-        title: '描述拆分页',
-        points: ['同一页的大纲'],
-        description_text: '--- 页面文字 ---\n- 同一页的描述\n\n--- 页面文字结束 ---',
-        extra_fields: { '视觉元素': '关键指标卡片' },
+        title: 'Description Split Pages',
+        points: ['Outline on the same page'],
+        description_text: '--- SLIDE_TEXT ---\n- Description on the same page\n\n--- SLIDE_TEXT_END ---',
+        extra_fields: { 'Visual elements': 'Key indicators card' },
       }]
 
       await route.fulfill({
@@ -147,12 +147,12 @@ test.describe('Home outline SSE handoff', () => {
     })
 
     await page.goto('/')
-    await page.getByRole('button', { name: /从描述生成|From Description/ }).click()
-    await page.getByRole('textbox').fill('第一页：同一页的大纲和描述')
-    await page.getByRole('button', { name: /下一步|Next/ }).click()
+    await page.getByRole('button', { name: /\u4ece\u63cf\u8ff0\u751f\u6210|From Description/ }).click()
+    await page.getByRole('textbox').fill('Page 1： Outline and description of the same page')
+    await page.getByRole('button', { name: /\u4e0b\u4e00\u6b65|Next/ }).click()
 
     await expect(page).toHaveURL(/\/project\/project-1\/outline/)
-    await expect(page.getByText('描述拆分页')).toBeVisible({ timeout: 5000 })
+    await expect(page.getByText('Description Split Pages')).toBeVisible({ timeout: 5000 })
     expect(streamCalled).toBe(true)
     expect(syncDescriptionCalled).toBe(false)
   })

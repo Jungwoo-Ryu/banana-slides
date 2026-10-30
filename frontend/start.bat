@@ -1,30 +1,30 @@
 @echo off
 echo ====================================
-echo 蕉幻 (Banana Slides) 前端启动脚本
+echo Banana Slides Frontend Start Script
 echo ====================================
 echo.
 
-echo [1/3] 检查依赖...
+echo [1/3] Check dependencies...
 if not exist "node_modules\" (
-    echo 未检测到依赖，正在安装...
+    echo Dependency not detected, installation under way...
     call npm install
     if errorlevel 1 (
-        echo 依赖安装失败，请手动运行: npm install
+        echo Dependency installation failed; run this command manually: npm install
         pause
         exit /b 1
     )
 ) else (
-    echo 依赖已存在
+    echo Dependencies are already installed
 )
 
 echo.
-echo [2/3] 检查环境变量...
+echo [2/3] Check environment variables...
 echo.
-echo [3/3] 启动开发服务器...
-echo 前端将运行在 http://localhost:3011
-echo 请确保后端服务已启动在 http://localhost:5011
+echo [3/3] Start development server...
+echo The frontend will run on http://localhost:3011
+echo Make sure the back-end service is active. http://localhost:5011
 echo.
-echo 按 Ctrl+C 可以停止服务器
+echo Press Ctrl+C to stop the server.
 echo.
 
 call npm run dev

@@ -34,22 +34,22 @@ def test_image_prompt_field_names_fallback_to_default_when_not_set(client):
     with client.application.app_context():
         fields = get_image_prompt_field_names()
         assert fields == set(Settings.DEFAULT_IMAGE_PROMPT_FIELDS)
-        assert '演讲者备注' not in fields
+        assert 'Speaker notes' not in fields
 
 
 def test_append_extra_fields_filters_by_allowlist(client):
-    _set_image_prompt_fields(client, json.dumps(['视觉元素', '视觉焦点']))
+    _set_image_prompt_fields(client, json.dumps(['Visual elements', 'Visual focus']))
 
     with client.application.app_context():
         desc_content = {
             'extra_fields': {
-                '视觉元素': '蓝色配色',
-                '演讲者备注': '右下角证明内容',
+                'Visual elements': 'Blue Color',
+                'Speaker notes': 'Prove content in the lower right corner',
             }
         }
-        result = _append_extra_fields('页面正文', desc_content)
-        assert '视觉元素：蓝色配色' in result
-        assert '演讲者备注' not in result
+        result = _append_extra_fields('Page Body', desc_content)
+        assert 'Visual elements: Blue Color' in result
+        assert 'Speaker notes' not in result
 
 
 def test_append_extra_fields_respects_empty_allowlist(client):
@@ -58,12 +58,12 @@ def test_append_extra_fields_respects_empty_allowlist(client):
     with client.application.app_context():
         desc_content = {
             'extra_fields': {
-                '视觉元素': '蓝色配色',
-                '视觉焦点': '中心人物',
+                'Visual elements': 'Blue Color',
+                'Visual focus': 'The centerman.',
             }
         }
-        result = _append_extra_fields('页面正文', desc_content)
-        assert result == '页面正文'
+        result = _append_extra_fields('Page Body', desc_content)
+        assert result == 'Page Body'
 
 
 def test_append_extra_fields_uses_prefetched_allowlist(monkeypatch):
@@ -77,35 +77,35 @@ def test_append_extra_fields_uses_prefetched_allowlist(monkeypatch):
 
     desc_content = {
         'extra_fields': {
-            '视觉元素': '蓝色配色',
-            '演讲者备注': '不要进入图片提示词',
+            'Visual elements': 'Blue Color',
+            'Speaker notes': 'Do not enter a graphic hint',
         }
     }
 
-    result = _append_extra_fields('页面正文', desc_content, {'视觉元素'})
-    assert '视觉元素：蓝色配色' in result
-    assert '演讲者备注' not in result
+    result = _append_extra_fields('Page Body', desc_content, {'Visual elements'})
+    assert 'Visual elements: Blue Color' in result
+    assert 'Speaker notes' not in result
 
 
 def test_append_extra_fields_handles_missing_description_text():
-    result = _append_extra_fields(None, {'extra_fields': {'视觉元素': '蓝色配色'}}, {'视觉元素'})
+    result = _append_extra_fields(None, {'extra_fields': {'Visual elements': 'Blue Color'}}, {'Visual elements'})
 
-    assert result == '视觉元素：蓝色配色'
+    assert result == 'Visual elements: Blue Color'
 
 
 def test_append_extra_fields_handles_missing_description_content():
-    result = _append_extra_fields('页面正文', None, {'视觉元素'})
+    result = _append_extra_fields('Page Body', None, {'Visual elements'})
 
-    assert result == '页面正文'
+    assert result == 'Page Body'
 
 
 def test_append_extra_fields_keeps_zero_values():
     result = _append_extra_fields(
-        '页面正文',
-        {'extra_fields': {'数量': 0, '空白': '   ', '缺失': None}},
-        {'数量', '空白', '缺失'},
+        'Page Body',
+        {'extra_fields': {'Number': 0, 'Space': '   ', 'Missing': None}},
+        {'Number', 'Space', 'Missing'},
     )
 
-    assert '数量：0' in result
-    assert '空白' not in result
-    assert '缺失' not in result
+    assert 'Number: 0' in result
+    assert 'Space' not in result
+    assert 'Missing' not in result

@@ -63,10 +63,10 @@ def _get_required_project_content(data, creation_type):
 def _get_project_reference_files_content(project_id: str) -> list:
     """
     Get reference files content for a project
-    
+
     Args:
         project_id: Project ID
-        
+
     Returns:
         List of dicts with 'filename' and 'content' keys
     """
@@ -74,7 +74,7 @@ def _get_project_reference_files_content(project_id: str) -> list:
         project_id=project_id,
         parse_status='completed'
     ).all()
-    
+
     files_content = []
     for ref_file in reference_files:
         if ref_file.markdown_content:
@@ -82,48 +82,48 @@ def _get_project_reference_files_content(project_id: str) -> list:
                 'filename': ref_file.filename,
                 'content': ref_file.markdown_content
             })
-    
+
     return files_content
 
 
 def _reconstruct_outline_from_pages(pages: list) -> list:
     """
     Reconstruct outline structure from Page objects
-    
+
     Args:
         pages: List of Page objects ordered by order_index
-        
+
     Returns:
         Outline structure (list) with optional part grouping
     """
     outline = []
     current_part = None
     current_part_pages = []
-    
+
     for page in pages:
         outline_content = page.get_outline_content()
         if not outline_content:
             continue
-            
+
         page_data = outline_content.copy()
-        
-        # 如果当前页面属于一个 part
+
+        # If the current page belongs to one part
         if page.part:
-            # 如果这是新的 part，先保存之前的 part（如果有）
+            # If it’s new... part，Save the previous one first. part（If there is one...）
             if current_part and current_part != page.part:
                 outline.append({
                     "part": current_part,
                     "pages": current_part_pages
                 })
                 current_part_pages = []
-            
+
             current_part = page.part
-            # 移除 part 字段，因为它在顶层
+            # Remove part field because it’s on the top floor
             if 'part' in page_data:
                 del page_data['part']
             current_part_pages.append(page_data)
         else:
-            # 如果当前页面不属于任何 part，先保存之前的 part（如果有）
+            # If the current page does not belong part，Save the previous one first. part（If there is one...）
             if current_part:
                 outline.append({
                     "part": current_part,
@@ -131,17 +131,17 @@ def _reconstruct_outline_from_pages(pages: list) -> list:
                 })
                 current_part = None
                 current_part_pages = []
-            
-            # 直接添加页面
+
+            # Add Page Directly
             outline.append(page_data)
-    
-    # 保存最后一个 part（如果有）
+
+    # Save Last part（If there is one...）
     if current_part:
         outline.append({
             "part": current_part,
             "pages": current_part_pages
         })
-    
+
     return outline
 
 
@@ -194,7 +194,7 @@ def _smart_merge_pages(project_id, pages_data):
 def list_projects():
     """
     GET /api/projects - Get all projects (for history)
-    
+
     Query params:
     - limit: number of projects to return (default: 50, max: 100)
     - offset: offset for pagination (default: 0)
@@ -224,7 +224,7 @@ def list_projects():
             'limit': limit,
             'offset': offset
         })
-    
+
     except Exception as e:
         logger.error(f"list_projects failed: {str(e)}", exc_info=True)
         return error_response('SERVER_ERROR', str(e), 500)
@@ -234,7 +234,7 @@ def list_projects():
 def create_project():
     """
     POST /api/projects - Create a new project
-    
+
     Request body:
     {
         "creation_type": "idea|outline|descriptions",
@@ -246,16 +246,16 @@ def create_project():
     """
     try:
         data = request.get_json()
-        
+
         if not data:
             return bad_request("Request body is required")
-        
+
         # creation_type is required
         if 'creation_type' not in data:
             return bad_request("creation_type is required")
-        
+
         creation_type = data.get('creation_type')
-        
+
         if creation_type not in ['idea', 'outline', 'descriptions', 'blank']:
             return bad_request("Invalid creation_type")
 
@@ -268,7 +268,7 @@ def create_project():
             if not isinstance(template_style, str):
                 return bad_request("template_style must be a string")
             template_style = template_style.strip() or None
-        
+
         # Validate and set aspect ratio if provided
         image_aspect_ratio = '16:9'
         if 'image_aspect_ratio' in data:
@@ -287,22 +287,22 @@ def create_project():
             image_aspect_ratio=image_aspect_ratio,
             status='DRAFT'
         )
-        
+
         db.session.add(project)
         db.session.commit()
-        
+
         return success_response({
             'project_id': project.id,
             'status': project.status,
             'pages': []
         }, status_code=201)
-    
+
     except BadRequest as e:
         # Handle JSON parsing errors (invalid JSON body)
         db.session.rollback()
         logger.warning(f"create_project: Invalid JSON body - {str(e)}")
         return bad_request("Invalid JSON in request body")
-    
+
     except Exception as e:
         db.session.rollback()
         error_trace = traceback.format_exc()
@@ -321,12 +321,12 @@ def get_project(project_id):
             .options(joinedload(Project.pages))\
             .filter(Project.id == project_id)\
             .first()
-        
+
         if not project:
             return not_found('Project')
-        
+
         return success_response(project.to_dict(include_pages=True))
-    
+
     except Exception as e:
         logger.error(f"get_project failed: {str(e)}", exc_info=True)
         return error_response('SERVER_ERROR', str(e), 500)
@@ -336,7 +336,7 @@ def get_project(project_id):
 def update_project(project_id):
     """
     PUT /api/projects/{project_id} - Update project
-    
+
     Request body:
     {
         "idea_prompt": "...",
@@ -349,16 +349,16 @@ def update_project(project_id):
             .options(joinedload(Project.pages))\
             .filter(Project.id == project_id)\
             .first()
-        
+
         if not project:
             return not_found('Project')
-        
+
         data = request.get_json()
 
         # Update project_title if provided
         if 'project_title' in data:
             project.project_title = data['project_title']
-        
+
         # Update idea_prompt if provided
         if 'idea_prompt' in data:
             project.idea_prompt = data['idea_prompt']
@@ -380,11 +380,11 @@ def update_project(project_id):
             project.outline_requirements = data['outline_requirements']
         if 'description_requirements' in data:
             project.description_requirements = data['description_requirements']
-        
+
         # Update template_style if provided
         if 'template_style' in data:
             project.template_style = data['template_style']
-        
+
         # Update aspect ratio if provided
         if 'image_aspect_ratio' in data:
             try:
@@ -401,7 +401,7 @@ def update_project(project_id):
             project.export_allow_partial = data['export_allow_partial']
         if 'enable_icon_subject_extraction' in data:
             project.enable_icon_subject_extraction = bool(data['enable_icon_subject_extraction'])
-        
+
         # Update page order if provided
         if 'pages_order' in data:
             pages_order = data['pages_order']
@@ -410,20 +410,20 @@ def update_project(project_id):
                 Page.id.in_(pages_order),
                 Page.project_id == project_id
             ).all()
-            
+
             # Create page_id -> page mapping for O(1) lookup
             pages_map = {page.id: page for page in pages_to_update}
-            
+
             # Batch update order
             for index, page_id in enumerate(pages_order):
                 if page_id in pages_map:
                     pages_map[page_id].order_index = index
-        
+
         project.updated_at = datetime.utcnow()
         db.session.commit()
-        
+
         return success_response(project.to_dict(include_pages=True))
-    
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"update_project failed: {str(e)}", exc_info=True)
@@ -437,21 +437,21 @@ def delete_project(project_id):
     """
     try:
         project = Project.query.get(project_id)
-        
+
         if not project:
             return not_found('Project')
-        
+
         # Delete project files
         from services import FileService
         file_service = FileService(current_app.config['UPLOAD_FOLDER'])
         file_service.delete_project_files(project_id)
-        
+
         # Delete project from database (cascade will delete pages and tasks)
         db.session.delete(project)
         db.session.commit()
-        
+
         return success_response(message="Project deleted successfully")
-    
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"delete_project failed: {str(e)}", exc_info=True)
@@ -475,17 +475,17 @@ def generate_outline(project_id):
     """
     try:
         project = Project.query.get(project_id)
-        
+
         if not project:
             return not_found('Project')
-        
+
         # Get singleton AI service instance
         ai_service = get_ai_service()
-        
+
         # Get request data and language parameter
         data = request.get_json() or {}
         language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'zh'))
-        
+
         # Get reference files content and create project context
         reference_files_content = _get_project_reference_files_content(project_id)
         if reference_files_content:
@@ -494,36 +494,36 @@ def generate_outline(project_id):
                 logger.info(f"  - {rf['filename']}: {len(rf['content'])} characters")
         else:
             logger.info(f"No reference files found for project {project_id}")
-        
-        # 根据项目类型选择不同的处理方式
+
+        # Selecting different treatments according to project type
         if project.creation_type == 'outline':
-            # 从大纲生成：解析用户输入的大纲文本
+            # Generate outline text from outline： parse user input
             if not project.outline_text:
                 return bad_request("outline_text is required for outline type project")
-            
+
             # Create project context and parse outline text into structured format
             project_context = ProjectContext(project, reference_files_content)
             outline = ai_service.parse_outline_text(project_context, language=language)
         elif project.creation_type == 'descriptions':
-            # 从描述生成：从 description_text 提取大纲结构（仅大纲，不含页面描述）
+            # Generate from description： from description_text Extract outline structure (arguments only, without page description)）
             if not project.description_text:
                 return bad_request("description_text is required for descriptions type project")
 
             project_context = ProjectContext(project, reference_files_content)
             outline = ai_service.parse_description_to_outline(project_context, language=language)
         else:
-            # 一句话生成：从idea生成大纲
+            # Generate a sentence from： idea Generate Outline
             idea_prompt = data.get('idea_prompt') or project.idea_prompt
-            
+
             if not idea_prompt:
                 return bad_request("idea_prompt is required")
-            
+
             project.idea_prompt = idea_prompt
-            
+
             # Create project context and generate outline from idea
             project_context = ProjectContext(project, reference_files_content)
             outline = ai_service.generate_outline(project_context, language=language)
-        
+
         # Flatten outline to pages and smart merge with existing
         pages_data = ai_service.flatten_outline(outline)
         pages_list = _smart_merge_pages(project_id, pages_data)
@@ -534,16 +534,16 @@ def generate_outline(project_id):
         else:
             project.status = 'OUTLINE_GENERATED'
         project.updated_at = datetime.utcnow()
-        
+
         db.session.commit()
-        
-        logger.info(f"大纲生成完成: 项目 {project_id}, 创建了 {len(pages_list)} 个页面")
-        
+
+        logger.info(f"Outline generation complete: Item {project_id}, It’s been created. {len(pages_list)} Pages")
+
         # Return pages
         return success_response({
             'pages': [page.to_dict() for page in pages_list]
         })
-    
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"generate_outline failed: {str(e)}", exc_info=True)
@@ -639,7 +639,7 @@ def generate_outline_stream(project_id):
                 proj.updated_at = datetime.utcnow()
                 db.session.commit()
 
-                logger.info(f"流式大纲生成完成: 项目 {project_id}, {len(pages_list)} 个页面")
+                logger.info(f"Fluid outline generation complete: Item {project_id}, {len(pages_list)} Pages")
 
                 yield _sse_event('done', {
                     'total': len(pages_list),
@@ -653,7 +653,7 @@ def generate_outline_stream(project_id):
                 except Exception as rollback_exc:
                     logger.warning(f"Session rollback failed: {rollback_exc}", exc_info=True)
                 logger.error(f"generate_outline_stream failed: {str(e)}", exc_info=True)
-                yield _sse_event('error', {'message': '生成过程中发生内部错误'})
+                yield _sse_event('error', {'message': 'Internal error occurred during generation'})
 
     return Response(
         stream_with_context(sse_generate()),
@@ -675,73 +675,73 @@ def _sse_event(event: str, data: dict) -> str:
 def generate_from_description(project_id):
     """
     POST /api/projects/{project_id}/generate/from-description - Generate outline and page descriptions from description text
-    
+
     This endpoint:
     1. Parses the description_text to extract outline structure
     2. Splits the description_text into individual page descriptions
     3. Creates pages with both outline and description content filled
     4. Sets project status to DESCRIPTIONS_GENERATED
-    
+
     Request body (optional):
     {
         "description_text": "...",  # if not provided, uses project.description_text
         "language": "zh"  # output language: zh, en, ja, auto
     }
     """
-    
+
     try:
         project = Project.query.get(project_id)
-        
+
         if not project:
             return not_found('Project')
-        
+
         if project.creation_type != 'descriptions':
             return bad_request("This endpoint is only for descriptions type projects")
-        
+
         # Get description text and language
         data = request.get_json() or {}
         description_text = data.get('description_text') or project.description_text
         language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'zh'))
-        
+
         if not description_text:
             return bad_request("description_text is required")
-        
+
         project.description_text = description_text
-        
+
         # Get singleton AI service instance
         ai_service = get_ai_service()
-        
+
         # Get reference files content and create project context
         reference_files_content = _get_project_reference_files_content(project_id)
         project_context = ProjectContext(project, reference_files_content)
-        
-        logger.info(f"开始从描述生成大纲和页面描述: 项目 {project_id}")
-        
+
+        logger.info(f"Start generating outline and page description from description: Item {project_id}")
+
         # Step 1: Parse description to outline
-        logger.info("Step 1: 解析描述文本到大纲结构...")
+        logger.info("Step 1: Parsing description text to outline structure...")
         outline = ai_service.parse_description_to_outline(project_context, language=language)
-        logger.info(f"大纲解析完成，共 {len(ai_service.flatten_outline(outline))} 页")
-        
+        logger.info(f"Outline resolution complete. {len(ai_service.flatten_outline(outline))} Page")
+
         # Step 2: Split description into page descriptions
-        logger.info("Step 2: 切分描述文本到每页描述...")
+        logger.info("Step 2: Split description text to page description...")
         page_descriptions = ai_service.parse_description_to_page_descriptions(project_context, outline, language=language)
-        logger.info(f"描述切分完成，共 {len(page_descriptions)} 页")
-        
+        logger.info(f"Description cut is complete. All right. {len(page_descriptions)} Page")
+
         # Step 3: Flatten outline to pages
         pages_data = ai_service.flatten_outline(outline)
-        
+
         if len(pages_data) != len(page_descriptions):
-            logger.warning(f"页面数量不匹配: 大纲 {len(pages_data)} 页, 描述 {len(page_descriptions)} 页")
-            # 取较小的数量，避免索引错误
+            logger.warning(f"The number of pages does not match: Outline {len(pages_data)} Page, Description {len(page_descriptions)} Page")
+            # Take smaller numbers to avoid index errors
             min_count = min(len(pages_data), len(page_descriptions))
             pages_data = pages_data[:min_count]
             page_descriptions = page_descriptions[:min_count]
-        
+
         # Step 4: Delete existing pages (using ORM session to trigger cascades)
         old_pages = Page.query.filter_by(project_id=project_id).all()
         for old_page in old_pages:
             db.session.delete(old_page)
-        
+
         # Step 5: Create pages with both outline and description
         pages_list = []
         for i, (page_data, page_desc) in enumerate(zip(pages_data, page_descriptions)):
@@ -749,39 +749,39 @@ def generate_from_description(project_id):
                 project_id=project_id,
                 order_index=i,
                 part=page_data.get('part'),
-                status='DESCRIPTION_GENERATED'  # 直接设置为已生成描述
+                status='DESCRIPTION_GENERATED'  # Set Directly to Generated Description
             )
-            
+
             # Set outline content
             page.set_outline_content({
                 'title': page_data.get('title'),
                 'points': page_data.get('points', [])
             })
-            
+
             # Set description content
             desc_content = {
                 "text": page_desc,
                 "generated_at": datetime.utcnow().isoformat()
             }
             page.set_description_content(desc_content)
-            
+
             db.session.add(page)
             pages_list.append(page)
-        
+
         # Update project status
         project.status = 'DESCRIPTIONS_GENERATED'
         project.updated_at = datetime.utcnow()
-        
+
         db.session.commit()
-        
-        logger.info(f"从描述生成完成: 项目 {project_id}, 创建了 {len(pages_list)} 个页面，已填充大纲和描述")
-        
+
+        logger.info(f"Finish from Description Generation: Item {project_id}, It’s been created. {len(pages_list)} pages, filled with outline and description")
+
         # Return pages
         return success_response({
             'pages': [page.to_dict() for page in pages_list],
             'status': 'DESCRIPTIONS_GENERATED'
         })
-    
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"generate_from_description failed: {str(e)}", exc_info=True)
@@ -792,7 +792,7 @@ def generate_from_description(project_id):
 def generate_descriptions(project_id):
     """
     POST /api/projects/{project_id}/generate/descriptions - Generate descriptions
-    
+
     Request body:
     {
         "max_workers": 5,
@@ -801,31 +801,31 @@ def generate_descriptions(project_id):
     """
     try:
         project = Project.query.get(project_id)
-        
+
         if not project:
             return not_found('Project')
-        
+
         if not project.pages:
             return bad_request("Project must have outline generated first")
 
         # IMPORTANT: Expire cached objects to ensure fresh data
         db.session.expire_all()
-        
+
         # Get pages
         pages = Page.query.filter_by(project_id=project_id).order_by(Page.order_index).all()
-        
+
         if not pages:
             return bad_request("No pages found for project")
-        
+
         # Reconstruct outline from pages with part structure
         outline = _reconstruct_outline_from_pages(pages)
-        
+
         data = request.get_json() or {}
-        # 从配置中读取默认并发数，如果请求中提供了则使用请求的值
+        # Read the default simultaneous number from the configuration and use the requested value if the request provides
         max_workers = data.get('max_workers', current_app.config.get('MAX_DESCRIPTION_WORKERS', 5))
         language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'zh'))
         detail_level = data.get('detail_level', 'default')
-        
+
         # Create task
         task = Task(
             project_id=project_id,
@@ -837,20 +837,20 @@ def generate_descriptions(project_id):
             'completed': 0,
             'failed': 0
         })
-        
+
         db.session.add(task)
         db.session.commit()
-        
+
         # Get singleton AI service instance
         ai_service = get_ai_service()
-        
+
         # Get reference files content and create project context
         reference_files_content = _get_project_reference_files_content(project_id)
         project_context = ProjectContext(project, reference_files_content)
-        
+
         # Get app instance for background task
         app = current_app._get_current_object()
-        
+
         # Submit background task
         task_manager.submit_task(
             task.id,
@@ -864,17 +864,17 @@ def generate_descriptions(project_id):
             language,
             detail_level
         )
-        
+
         # Update project status
         project.status = 'GENERATING_DESCRIPTIONS'
         db.session.commit()
-        
+
         return success_response({
             'task_id': task.id,
             'status': 'GENERATING_DESCRIPTIONS',
             'total_pages': len(pages)
         }, status_code=202)
-    
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"generate_descriptions failed: {str(e)}", exc_info=True)
@@ -960,14 +960,14 @@ def generate_descriptions_stream(project_id):
                         'extra_fields': result.get('extra_fields'),
                     })
 
-                # 检查是否所有页面都已生成描述
+                # Check if all pages have generated descriptions
                 missing = [p for p in pages if p.status == 'GENERATING_DESCRIPTION']
                 if missing:
                     for p in missing:
-                        # 有旧描述的保留，无描述的恢复 DRAFT
+                        # Reservations with old descriptions, non-described reinstatements DRAFT
                         p.status = 'DESCRIPTION_GENERATED' if p.description_content else 'DRAFT'
                         p.updated_at = datetime.utcnow()
-                    logger.warning(f"流式描述生成不完整: {len(missing)}/{len(pages)} 页未生成")
+                    logger.warning(f"Flow description generation incomplete: {len(missing)}/{len(pages)} Page not generated")
 
                 proj.status = 'DESCRIPTIONS_GENERATED'
                 proj.updated_at = datetime.utcnow()
@@ -978,7 +978,7 @@ def generate_descriptions_stream(project_id):
                 yield _sse_event('done', {
                     'total': len(pages),
                     'pages': [p.to_dict() for p in pages],
-                    **(({'warning': f'{len(missing)} 页描述未生成，请重试'}) if missing else {}),
+                    **(({'warning': f'{len(missing)} Page description not generated, please try again'}) if missing else {}),
                 })
 
             except Exception as e:
@@ -988,14 +988,14 @@ def generate_descriptions_stream(project_id):
                     logger.warning(f"Session rollback failed: {rollback_exc}", exc_info=True)
                 logger.error(f"generate_descriptions_stream failed: {str(e)}", exc_info=True)
 
-                # 恢复未完成页面的状态：已生成描述的保留，未生成的恢复为 DRAFT
+                # Restore unfinished page status： generated the description reservation, not generated restores to DRAFT
                 try:
                     pages = Page.query.filter_by(project_id=project_id).order_by(Page.order_index).all()
                     proj = db.session.get(Project, project_id)
                     has_any_desc = False
                     for page in pages:
                         if page.status == 'GENERATING_DESCRIPTION':
-                            # 如果之前就有描述内容，恢复为 DESCRIPTION_GENERATED
+                            # If there’s a description before, restore it. DESCRIPTION_GENERATED
                             if page.description_content:
                                 page.status = 'DESCRIPTION_GENERATED'
                                 has_any_desc = True
@@ -1010,7 +1010,7 @@ def generate_descriptions_stream(project_id):
                 except Exception as recover_exc:
                     logger.warning(f"Failed to recover page statuses: {recover_exc}", exc_info=True)
 
-                yield _sse_event('error', {'message': '生成过程中发生内部错误'})
+                yield _sse_event('error', {'message': 'Internal error occurred during generation'})
 
     return Response(
         stream_with_context(sse_generate()),
@@ -1038,33 +1038,33 @@ def generate_images(project_id):
     """
     try:
         project = Project.query.get(project_id)
-        
+
         if not project:
             return not_found('Project')
-        
+
         # if project.status not in ['DESCRIPTIONS_GENERATED', 'OUTLINE_GENERATED']:
         #     return bad_request("Project must have descriptions generated first")
-        
+
         # IMPORTANT: Expire cached objects to ensure fresh data
         db.session.expire_all()
-        
+
         data = request.get_json() or {}
-        
+
         # Get page_ids from request body and fetch filtered pages
         selected_page_ids = parse_page_ids_from_body(data)
         pages = get_filtered_pages(project_id, selected_page_ids if selected_page_ids else None)
-        
+
         if not pages:
             return bad_request("No pages found for project")
-        
-        # 检查是否有模板图片或风格描述
+
+        # Check for template pictures or style descriptions
         from services import FileService
         file_service = FileService(current_app.config['UPLOAD_FOLDER'])
         use_template = data.get('use_template', True)
         ref_image_path = None
         if use_template:
             ref_image_path = file_service.get_template_path(project_id)
-        
+
         # Per-page-template (PRD §13): multi-mode projects carry templates on
         # pages, not on the project, so the project-level check alone would
         # wrongly block generation. Allow it when any target page has a
@@ -1074,16 +1074,16 @@ def generate_images(project_id):
             for p in pages
         )
         if not ref_image_path and not project.template_style and not has_page_template:
-            return bad_request("请先上传模板图片或添加风格描述。")
-        
+            return bad_request("Please upload the template pictures or add style descriptions first。")
+
         # Reconstruct outline from pages with part structure
         outline = _reconstruct_outline_from_pages(pages)
-        
-        # 从配置中读取默认并发数，如果请求中提供了则使用请求的值
+
+        # Read the default simultaneous number from the configuration and use the requested value if the request provides
         max_workers = data.get('max_workers', current_app.config.get('MAX_IMAGE_WORKERS', 8))
         use_template = data.get('use_template', True)
         language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'zh'))
-        
+
         # Create task
         task = Task(
             project_id=project_id,
@@ -1095,19 +1095,19 @@ def generate_images(project_id):
             'completed': 0,
             'failed': 0
         })
-        
+
         db.session.add(task)
         db.session.commit()
-        
+
         # Get singleton AI service instance
         ai_service = get_ai_service()
-        
-        # 合并额外要求和风格描述
+
+        # Merge additional requirements and style description
         combined_requirements = project.extra_requirements or ""
         if project.template_style:
-            style_requirement = f"\n\nppt页面风格描述：\n\n{project.template_style}"
+            style_requirement = f"\n\nppt Page Style Description：\n\n{project.template_style}"
             combined_requirements = combined_requirements + style_requirement
-        
+
         # Set all target pages to QUEUED before submitting background task
         # This ensures the status is visible to frontend immediately after API returns
         for page in pages:
@@ -1136,17 +1136,17 @@ def generate_images(project_id):
             selected_page_ids if selected_page_ids else None,
             image_prompt_field_names
         )
-        
+
         # Update project status
         project.status = 'GENERATING_IMAGES'
         db.session.commit()
-        
+
         return success_response({
             'task_id': task.id,
             'status': 'GENERATING_IMAGES',
             'total_pages': len(pages)
         }, status_code=202)
-    
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"generate_images failed: {str(e)}", exc_info=True)
@@ -1160,19 +1160,19 @@ def get_task_status(project_id, task_id):
     """
     try:
         task = Task.query.get(task_id)
-        
+
         if not task or task.project_id != project_id:
             return not_found('Task')
 
-        # 后台任务只存在于本进程内（ThreadPoolExecutor）。进程重启后，
-        # 数据库里的 PENDING/PROCESSING 记录会永远停在最后一次进度上，
-        # 前端就会一直显示"进行中"（例如"88% 构建第 17/24 页"）。
-        # 这里按"任务是否真的还有 worker + 心跳是否新鲜"对账。
+        # Backstage tasks only exist in this process（ThreadPoolExecutor）。After Reactivation Process，
+        # It’s in the database. PENDING/PROCESSING The record will always be on the last progress.，
+        # The front end will always be shown."Ongoing"（For example："88% Build No. 17/24 Page"）。
+        # Here you go."Is the mission really still there? worker + Is the heartbeat fresh?"Reconciliation。
         from services.task_watchdog import localize_watchdog_payload, reconcile_task_for_response
         reconcile_task_for_response(task)
-        
+
         return success_response(localize_watchdog_payload(task.to_dict()))
-    
+
     except Exception as e:
         logger.error(f"get_task_status failed: {str(e)}", exc_info=True)
         return error_response('SERVER_ERROR', str(e), 500)
@@ -1182,43 +1182,43 @@ def get_task_status(project_id, task_id):
 def refine_outline(project_id):
     """
     POST /api/projects/{project_id}/refine/outline - Refine outline based on user requirements
-    
+
     Request body:
     {
-        "user_requirement": "用户要求，例如：增加一页关于XXX的内容",
+        "user_requirement": "User requirements, e.g., one additional page on XXX Contents",
         "language": "zh"  # output language: zh, en, ja, auto
     }
     """
     try:
         project = Project.query.get(project_id)
-        
+
         if not project:
             return not_found('Project')
-        
+
         data = request.get_json()
-        
+
         if not data or not data.get('user_requirement'):
             return bad_request("user_requirement is required")
-        
+
         user_requirement = data['user_requirement']
-        
+
         # IMPORTANT: Expire all cached objects to ensure we get fresh data from database
         # This prevents issues when multiple refine operations are called in sequence
         db.session.expire_all()
-        
+
         # Get current outline from pages
         pages = Page.query.filter_by(project_id=project_id).order_by(Page.order_index).all()
-        
-        # Reconstruct current outline from pages (如果没有页面，使用空列表)
+
+        # Reconstruct current outline from pages (Use empty list if there is no page)
         if not pages:
-            logger.info(f"项目 {project_id} 当前没有页面，将从空开始生成")
-            current_outline = []  # 空大纲
+            logger.info(f"Item {project_id} There is currently no page, which will be generated from empty")
+            current_outline = []  # Empty Outline
         else:
             current_outline = _reconstruct_outline_from_pages(pages)
-        
+
         # Get singleton AI service instance
         ai_service = get_ai_service()
-        
+
         # Get reference files content and create project context
         reference_files_content = _get_project_reference_files_content(project_id)
         if reference_files_content:
@@ -1227,15 +1227,15 @@ def refine_outline(project_id):
                 logger.info(f"  - {rf['filename']}: {len(rf['content'])} characters")
         else:
             logger.info(f"No reference files found for project {project_id}")
-        
+
         project_context = ProjectContext(project.to_dict(), reference_files_content)
-        
+
         # Get previous requirements and language from request
         previous_requirements = data.get('previous_requirements', [])
         language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'zh'))
-        
+
         # Refine outline
-        logger.info(f"开始修改大纲: 项目 {project_id}, 用户要求: {user_requirement}, 历史要求数: {len(previous_requirements)}")
+        logger.info(f"Start modification of outline: Item {project_id}, User Requirements: {user_requirement}, Historical requirements: {len(previous_requirements)}")
         refined_outline = ai_service.refine_outline(
             current_outline=current_outline,
             user_requirement=user_requirement,
@@ -1243,14 +1243,14 @@ def refine_outline(project_id):
             previous_requirements=previous_requirements,
             language=language
         )
-        
+
         # Flatten outline to pages and smart merge with existing
         pages_data = ai_service.flatten_outline(refined_outline)
         pages_list = _smart_merge_pages(project_id, pages_data)
 
         preserved_count = sum(1 for p in pages_list if p.description_content)
         new_count = len(pages_list) - preserved_count
-        logger.info(f"描述匹配完成: 保留了 {preserved_count} 个页面的描述, {new_count} 个页面需要重新生成描述")
+        logger.info(f"Description Match Finished: I’m keeping it. {preserved_count} Description of a page, {new_count} Pages need to be regenerated")
 
         # Update project status
         if preserved_count and all(p.description_content for p in pages_list):
@@ -1258,17 +1258,17 @@ def refine_outline(project_id):
         else:
             project.status = 'OUTLINE_GENERATED'
         project.updated_at = datetime.utcnow()
-        
+
         db.session.commit()
-        
-        logger.info(f"大纲修改完成: 项目 {project_id}, 创建了 {len(pages_list)} 个页面")
-        
+
+        logger.info(f"Outline modifications completed: Item {project_id}, It’s been created. {len(pages_list)} Pages")
+
         # Return pages
         return success_response({
             'pages': [page.to_dict() for page in pages_list],
-            'message': '大纲修改成功'
+            'message': 'Outline modified successfully'
         })
-    
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"refine_outline failed: {str(e)}", exc_info=True)
@@ -1279,58 +1279,58 @@ def refine_outline(project_id):
 def refine_descriptions(project_id):
     """
     POST /api/projects/{project_id}/refine/descriptions - Refine page descriptions based on user requirements
-    
+
     Request body:
     {
-        "user_requirement": "用户要求，例如：让描述更详细一些",
+        "user_requirement": "User requirements, e.g., more detailed description",
         "language": "zh"  # output language: zh, en, ja, auto
     }
     """
     try:
         project = Project.query.get(project_id)
-        
+
         if not project:
             return not_found('Project')
-        
+
         data = request.get_json()
-        
+
         if not data or not data.get('user_requirement'):
             return bad_request("user_requirement is required")
-        
+
         user_requirement = data['user_requirement']
-        
+
         db.session.expire_all()
-        
+
         # Get current pages
         pages = Page.query.filter_by(project_id=project_id).order_by(Page.order_index).all()
-        
+
         if not pages:
-            logger.info(f"项目 {project_id} 当前没有页面，无法修改描述")
+            logger.info(f"Item {project_id} There is currently no page to change the description")
             return bad_request("No pages found for project. Please generate outline first.")
-        
-        # Check if pages have descriptions (允许没有描述，从空开始)
+
+        # Check if pages have descriptions (Allows no description. Start empty.)
         has_descriptions = any(page.description_content for page in pages)
         if not has_descriptions:
-            logger.info(f"项目 {project_id} 当前没有描述，将基于大纲生成新描述")
-        
+            logger.info(f"Item {project_id} No description currently available, new description will be generated based on outline")
+
         # Reconstruct outline from pages
         outline = _reconstruct_outline_from_pages(pages)
-        
+
         # Prepare current descriptions
         current_descriptions = []
         for i, page in enumerate(pages):
             outline_content = page.get_outline_content()
             desc_content = page.get_description_content()
-            
+
             current_descriptions.append({
                 'index': i,
-                'title': outline_content.get('title', '未命名') if outline_content else '未命名',
+                'title': outline_content.get('title', 'Unnamed') if outline_content else 'Unnamed',
                 'description_content': desc_content if desc_content else ''
             })
-        
+
         # Get singleton AI service instance
         ai_service = get_ai_service()
-        
+
         # Get reference files content and create project context
         reference_files_content = _get_project_reference_files_content(project_id)
         if reference_files_content:
@@ -1339,15 +1339,15 @@ def refine_descriptions(project_id):
                 logger.info(f"  - {rf['filename']}: {len(rf['content'])} characters")
         else:
             logger.info(f"No reference files found for project {project_id}")
-        
+
         project_context = ProjectContext(project.to_dict(), reference_files_content)
-        
+
         # Get previous requirements and language from request
         previous_requirements = data.get('previous_requirements', [])
         language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'zh'))
-        
+
         # Refine descriptions
-        logger.info(f"开始修改页面描述: 项目 {project_id}, 用户要求: {user_requirement}, 历史要求数: {len(previous_requirements)}")
+        logger.info(f"Start changing the page description: Item {project_id}, User Requirements: {user_requirement}, Historical requirements: {len(previous_requirements)}")
         refined_descriptions = ai_service.refine_descriptions(
             current_descriptions=current_descriptions,
             user_requirement=user_requirement,
@@ -1356,20 +1356,20 @@ def refine_descriptions(project_id):
             previous_requirements=previous_requirements,
             language=language
         )
-        
-        # 验证返回的描述数量
+
+        # Number of descriptions verified for return
         if len(refined_descriptions) != len(pages):
             error_msg = ""
-            logger.error(f"AI 返回的描述数量不匹配: 期望 {len(pages)} 个页面，实际返回 {len(refined_descriptions)} 个描述。")
-            
-            # 如果 AI 试图增删页面，给出明确提示
+            logger.error(f"AI The number of descriptions returned does not match: Expectations {len(pages)} pages, actually returned {len(refined_descriptions)} A description.。")
+
+            # If... AI Trying to add or delete pages, giving a clear hint
             if len(refined_descriptions) > len(pages):
-                error_msg += " 提示：如需增加页面，请在大纲页面进行操作。"
+                error_msg += " Hint： If you need to add a page, do it on the outline page。"
             elif len(refined_descriptions) < len(pages):
-                error_msg += " 提示：如需删除页面，请在大纲页面进行操作。"
-            
+                error_msg += " Hint： If you want to delete the page, do it on the outline page。"
+
             return bad_request(error_msg)
-        
+
         # Update pages with refined descriptions
         for page, refined_desc in zip(pages, refined_descriptions):
             desc_content = {
@@ -1380,21 +1380,21 @@ def refine_descriptions(project_id):
                 desc_content['extra_fields'] = refined_desc['extra_fields']
             page.set_description_content(desc_content)
             page.status = 'DESCRIPTION_GENERATED'
-        
+
         # Update project status
         project.status = 'DESCRIPTIONS_GENERATED'
         project.updated_at = datetime.utcnow()
-        
+
         db.session.commit()
-        
-        logger.info(f"页面描述修改完成: 项目 {project_id}, 更新了 {len(pages)} 个页面")
-        
+
+        logger.info(f"Page description changes completed: Item {project_id}, It’s updated. {len(pages)} Pages")
+
         # Return pages
         return success_response({
             'pages': [page.to_dict() for page in pages],
-            'message': '页面描述修改成功'
+            'message': 'Page description changes successfully'
         })
-    
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"refine_descriptions failed: {str(e)}", exc_info=True)
@@ -1455,7 +1455,7 @@ def create_ppt_renovation_project():
 
         # Save original file with a standardized name to avoid encoding issues
         # (secure_filename strips non-ASCII chars, causing Chinese filenames like
-        # '演示文稿.pdf' to become 'pdf' with no extension, breaking PDF discovery)
+        # 'Presentation.pdf' to become 'pdf' with no extension, breaking PDF discovery)
         original_ext = file.filename.rsplit('.', 1)[-1].lower()
         safe_name = f'original.{original_ext}'
         original_path = template_dir / safe_name
@@ -1476,13 +1476,13 @@ def create_ppt_renovation_project():
                 logger.info(f"Converted PPTX to PDF: {pdf_path}")
             except subprocess.TimeoutExpired:
                 raise ValueError(
-                    "PPTX 转 PDF 超时，请稍后重试或手动转为 PDF 后上传。"
+                    "PPTX Turn. PDF Overtime, please try again later or manually convert PDF Backup Upload。"
                     if language == 'zh' else
                     "PPTX to PDF conversion timed out. Please retry or convert to PDF manually before uploading."
                 )
             except FileNotFoundError:
                 raise ValueError(
-                    "PPTX 转换需要安装 LibreOffice，但当前环境未检测到。请在本地将 PPTX 转为 PDF 后再上传。"
+                    "PPTX Conversion requires installation LibreOffice，However, the current environment is not detected. PPTX Convert to PDF Later upload。"
                     if language == 'zh' else
                     "PPTX conversion requires LibreOffice, which is not installed. Please convert your PPTX to PDF locally before uploading."
                 )

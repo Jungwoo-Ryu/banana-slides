@@ -54,16 +54,16 @@ def test_generate_single_caption_uses_provider_factory():
         )
 
         mock_provider = MagicMock()
-        mock_provider.generate_with_image.return_value = '示例描述'
+        mock_provider.generate_with_image.return_value = 'Example Description'
 
         with patch('utils.path_utils.find_mineru_file_with_prefix', return_value=Path(image_path)):
             with patch.object(service, '_get_caption_provider', return_value=mock_provider):
                 caption = service._generate_single_caption('/files/mineru/demo.png')
 
-        assert caption == '示例描述'
+        assert caption == 'Example Description'
         mock_provider.generate_with_image.assert_called_once()
         call_args = mock_provider.generate_with_image.call_args
-        assert '描述' in call_args[0][0]
+        assert 'Description' in call_args[0][0]
     finally:
         if os.path.exists(image_path):
             os.remove(image_path)
@@ -104,13 +104,13 @@ def test_generate_single_caption_vertex_uses_provider_factory():
         )
 
         mock_provider = MagicMock()
-        mock_provider.generate_with_image.return_value = '顶点描述'
+        mock_provider.generate_with_image.return_value = 'Toppoint Description'
 
         with patch('utils.path_utils.find_mineru_file_with_prefix', return_value=Path(image_path)):
             with patch.object(service, '_get_caption_provider', return_value=mock_provider):
                 caption = service._generate_single_caption('/files/mineru/demo.png')
 
-        assert caption == '顶点描述'
+        assert caption == 'Toppoint Description'
         mock_provider.generate_with_image.assert_called_once()
     finally:
         if os.path.exists(image_path):
@@ -148,13 +148,13 @@ def test_enhance_markdown_only_captions_local_mineru_images():
         with patch.object(
             service,
             '_generate_captions_parallel',
-            return_value=(['本地图表'], 0),
+            return_value=(['Local Charts'], 0),
         ) as mock_generate:
             enhanced, failed_count = service._enhance_markdown_with_captions(markdown)
 
     assert failed_count == 0
     assert '![](http://127.0.0.1/internal.png)' in enhanced
-    assert '![本地图表](/files/mineru/extract123/images/chart.png)' in enhanced
+    assert '![Local Charts](/files/mineru/extract123/images/chart.png)' in enhanced
     assert '![](data:image/png;base64,AAAA)' in enhanced
     mock_generate.assert_called_once_with(['/files/mineru/extract123/images/chart.png'])
 
@@ -219,8 +219,8 @@ def test_extract_header_footer_reads_layout_from_flask_upload_folder(app, tmp_pa
         '''{
           "pdf_info": [{
             "discarded_blocks": [
-              {"type": "header", "lines": [{"spans": [{"type": "text", "content": "页眉"}]}]},
-              {"type": "footer", "lines": [{"spans": [{"type": "text", "content": "页脚"}]}]},
+              {"type": "header", "lines": [{"spans": [{"type": "text", "content": "Header"}]}]},
+              {"type": "footer", "lines": [{"spans": [{"type": "text", "content": "Footer"}]}]},
               {"type": "footer", "lines": [{"spans": [{"type": "text", "content": "#"}]}]}
             ]
           }]
@@ -233,7 +233,7 @@ def test_extract_header_footer_reads_layout_from_flask_upload_folder(app, tmp_pa
 
         text = FileParserService.extract_header_footer_from_layout('ab2d6b8b')
 
-    assert text == '页眉\n页脚'
+    assert text == 'Header\n Footer'
 
 
 def test_extract_header_footer_returns_empty_for_missing_extract_id(app):

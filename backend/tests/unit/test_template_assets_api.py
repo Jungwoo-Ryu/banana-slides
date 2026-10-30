@@ -58,12 +58,12 @@ def test_upload_template_asset_creates_record_and_enqueues_analyze(
 
     resp = client.post(
         f'/api/projects/{project_id}/template-assets',
-        data={'image': (_png_bytes(), 'cover.png'), 'user_label': '封面'},
+        data={'image': (_png_bytes(), 'cover.png'), 'user_label': 'Cover'},
         content_type='multipart/form-data',
     )
     assert resp.status_code == 201
     payload = resp.get_json()['data']
-    assert payload['asset']['user_label'] == '封面'
+    assert payload['asset']['user_label'] == 'Cover'
     assert payload['asset']['source'] == 'upload'
     assert payload['asset']['analysis_status'] == 'pending'
     assert payload['analyze_task_id']
@@ -180,12 +180,12 @@ def test_patch_template_asset_updates_label_and_marks_user_edited(
 
     resp = client.patch(
         f'/api/projects/{project_id}/template-assets/{asset_id}',
-        json={'user_label': '对比页', 'analysis_json': {'summary': 'hi'},
+        json={'user_label': 'Contrast Pages', 'analysis_json': {'summary': 'hi'},
               'analysis_notes': 'manually adjusted'},
     )
     assert resp.status_code == 200
     asset = resp.get_json()['data']['asset']
-    assert asset['user_label'] == '对比页'
+    assert asset['user_label'] == 'Contrast Pages'
     assert asset['analysis_json'] == {'summary': 'hi'}
     assert asset['analysis_notes'] == 'manually adjusted'
 

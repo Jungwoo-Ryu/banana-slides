@@ -19,43 +19,43 @@ user_style_template_bp = Blueprint('user_style_templates', __name__, url_prefix=
 def upload_template(project_id):
     """
     POST /api/projects/{project_id}/template - Upload template image
-    
+
     Content-Type: multipart/form-data
     Form: template_image=@file.png
     """
     try:
         project = Project.query.get(project_id)
-        
+
         if not project:
             return not_found('Project')
-        
+
         # Check if file is in request
         if 'template_image' not in request.files:
             return bad_request("No file uploaded")
-        
+
         file = request.files['template_image']
-        
+
         if file.filename == '':
             return bad_request("No file selected")
-        
+
         # Validate file extension
         if not allowed_file(file.filename, current_app.config['ALLOWED_EXTENSIONS']):
             return bad_request("Invalid file type. Allowed types: png, jpg, jpeg, gif, webp")
-        
+
         # Save template
         file_service = FileService(current_app.config['UPLOAD_FOLDER'])
         file_path = file_service.save_template_image(file, project_id)
-        
+
         # Update project
         project.template_image_path = file_path
         project.updated_at = datetime.utcnow()
-        
+
         db.session.commit()
-        
+
         return success_response({
             'template_image_url': f'/files/{project_id}/template/{file_path.split("/")[-1]}'
         })
-    
+
     except ValueError as e:
         db.session.rollback()
         return bad_request(str(e))
@@ -71,25 +71,25 @@ def delete_template(project_id):
     """
     try:
         project = Project.query.get(project_id)
-        
+
         if not project:
             return not_found('Project')
-        
+
         if not project.template_image_path:
             return bad_request("No template to delete")
-        
+
         # Delete template file
         file_service = FileService(current_app.config['UPLOAD_FOLDER'])
         file_service.delete_template(project_id)
-        
+
         # Update project
         project.template_image_path = None
         project.updated_at = datetime.utcnow()
-        
+
         db.session.commit()
-        
+
         return success_response(message="Template deleted successfully")
-    
+
     except Exception as e:
         db.session.rollback()
         return error_response('SERVER_ERROR', str(e), 500)
@@ -99,12 +99,12 @@ def delete_template(project_id):
 def get_system_templates():
     """
     GET /api/templates - Get system preset templates
-    
+
     Note: This is a placeholder for future implementation
     """
     # TODO: Implement system templates
     templates = []
-    
+
     return success_response({
         'templates': templates
     })
@@ -166,7 +166,7 @@ def upload_user_template():
         db.session.commit()
 
         return success_response(template.to_dict())
-    
+
     except ValueError as e:
         db.session.rollback()
         return bad_request(str(e))
@@ -175,7 +175,7 @@ def upload_user_template():
         db.session.rollback()
         error_msg = str(e)
         logger.error(f"Error uploading user template: {error_msg}", exc_info=True)
-        # 在开发环境中返回详细错误，生产环境返回通用错误
+        # Return detailed errors in the development environment, return generic errors in the production environment
         if current_app.config.get('DEBUG', False):
             return error_response('SERVER_ERROR', f"{error_msg}\n{traceback.format_exc()}", 500)
         else:
@@ -189,11 +189,11 @@ def list_user_templates():
     """
     try:
         templates = UserTemplate.query.order_by(UserTemplate.created_at.desc()).all()
-        
+
         return success_response({
             'templates': [template.to_dict() for template in templates]
         })
-    
+
     except Exception as e:
         return error_response('SERVER_ERROR', str(e), 500)
 
@@ -205,10 +205,10 @@ def delete_user_template(template_id):
     """
     try:
         template = UserTemplate.query.get(template_id)
-        
+
         if not template:
             return not_found('UserTemplate')
-        
+
         # Delete template file
         file_service = FileService(current_app.config['UPLOAD_FOLDER'])
         file_service.delete_user_template(template_id)

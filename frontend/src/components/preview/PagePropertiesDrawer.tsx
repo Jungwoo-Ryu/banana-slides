@@ -27,42 +27,44 @@ import type { DescriptionContent, Material, Page, TemplateAsset } from '@/types'
 const drawerI18n = {
   zh: {
     props: {
-      title: '页面属性',
-      close: '收起属性面板',
-      open: '展开页面属性',
-      resize: '拖动调整面板宽度',
-      saving: '保存中',
-      saved: '已保存',
-      section: { content: '内容', template: '模板', meta: '信息' },
-      pageTitle: '标题',
-      pageTitlePlaceholder: '输入页面标题',
-      part: '所属章节',
-      partPlaceholder: '未分组',
-      description: '页面描述',
-      descriptionPlaceholder: '输入页面描述, 可包含页面文字、素材、排版设计等信息，支持粘贴图片',
-      notInImagePrompt: '不影响图片生成',
-      narration: '旁白讲稿',
-      narrationHint: '导出讲解视频时朗读，留空则由导出流程自动生成',
-      narrationPlaceholder: '还没有讲稿，可在此撰写',
-      templateChange: '更换',
-      templateLabel: '模板图片',
-      templateStyle: '模板提示词',
-      templateStylePlaceholder: '用文字描述这一页想要的版式与风格',
-      templateNone: '跟随项目模板',
-      templateAuto: 'AI 自动匹配',
-      templateManual: '手动指定',
-      templateBatch: '批量应用',
-      templateSetup: '批量配置模板',
-      pageIndex: '页码',
-      pageIndexValue: '第 {{index}} / {{total}} 页',
-      versions: '图片版本',
-      versionsValue: '{{count}} 个',
-      updatedAt: '更新时间',
-      createdAt: '创建时间',
-      emptyTitle: '没有选中的页面',
-      emptyHint: '在左侧选择一页后即可查看并修改它的属性',
-      templateSaveFailed: '模板保存失败',
-      templateChanged: '已更换这一页的模板',
+      title: 'Page Properties',
+      close: 'Collapse properties panel',
+      open: 'Show page properties',
+      resize: 'Drag to resize the panel',
+      saving: 'Saving',
+      saved: 'Saved',
+      section: { content: 'Content', template: 'Template', meta: 'Info' },
+      pageTitle: 'Title',
+      pageTitlePlaceholder: 'Enter page title',
+      part: 'Section',
+      partPlaceholder: 'Ungrouped',
+      description: 'Description',
+      descriptionPlaceholder:
+        'Enter page description — page text, materials, layout notes; you can paste images',
+      notInImagePrompt: 'Not used in image generation',
+      narration: 'Narration script',
+      narrationHint:
+        'Read aloud when exporting a narration video; leave empty and the export generates one',
+      narrationPlaceholder: 'No script yet — write one here',
+      templateChange: 'Change',
+      templateLabel: 'Template image',
+      templateStyle: 'Template prompt',
+      templateStylePlaceholder: 'Describe the layout and style you want for this page',
+      templateNone: 'Inherits project template',
+      templateAuto: 'AI matched',
+      templateManual: 'Manually set',
+      templateBatch: 'Batch applied',
+      templateSetup: 'Bulk template setup',
+      pageIndex: 'Position',
+      pageIndexValue: 'Page {{index}} of {{total}}',
+      versions: 'Image versions',
+      versionsValue: '{{count}}',
+      updatedAt: 'Updated',
+      createdAt: 'Created',
+      emptyTitle: 'No page selected',
+      emptyHint: 'Pick a slide on the left to view and edit its properties',
+      templateSaveFailed: 'Could not save the template',
+      templateChanged: 'Template changed for this page',
     },
   },
   en: {
@@ -149,7 +151,7 @@ export const getExtraFields = (description?: DescriptionContent | null): Record<
 
   if (!description) return {};
   if (description.extra_fields) return normalize(description.extra_fields);
-  if (description.layout_suggestion) return { 排版建议: toText(description.layout_suggestion) };
+  if (description.layout_suggestion) return { 'Layout suggestions': toText(description.layout_suggestion) };
   return {};
 };
 
@@ -341,7 +343,7 @@ export const PagePropertiesDrawer: React.FC<PagePropertiesDrawerProps> = ({
   ]);
 
   const busy = isSaving || isSavingTemplate;
-  // Surface "已保存" for a moment once the queue drains.
+  // Surface "Saved" for a moment once the queue drains.
   useEffect(() => {
     if (busy) {
       wasSavingRef.current = true;
@@ -578,10 +580,10 @@ export const PagePropertiesDrawer: React.FC<PagePropertiesDrawerProps> = ({
         style={{ width: isOpen ? width : 0 }}
         className={cn(
           'flex min-h-0 flex-shrink-0 flex-col overflow-hidden border-gray-200 bg-white dark:border-border-primary dark:bg-background-secondary',
-          // md+ 桌面布局中抽屉是文档流内的普通兄弟节点，不需要 z-40；否则会盖住顶栏下拉层
+          // md+ Desktop layout drawer is the normal bro node in the file stream. z-40；Otherwise, you’ll cover the top fence and pull down.
           'fixed inset-y-0 right-0 z-40 max-w-[88vw] shadow-2xl md:relative md:z-auto md:max-w-none md:shadow-none',
           !isDragging && 'transition-[width] duration-300 ease-out',
-          // 收起时不能留下 1px 边框，否则预览区右侧会有一条竖线
+          // You can’t stay when it’s closed. 1px Border, or there’ll be a vertical line on the right side of the preview area.
           isOpen ? 'md:border-l' : 'pointer-events-none'
         )}
       >
