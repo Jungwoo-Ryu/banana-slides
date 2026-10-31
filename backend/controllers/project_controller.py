@@ -269,6 +269,9 @@ def create_project():
                 return bad_request("template_style must be a string")
             template_style = template_style.strip() or None
 
+        if not template_style:
+            template_style = current_app.config.get('DESIGN_SYSTEM_PROMPT') or None
+
         # Validate and set aspect ratio if provided
         image_aspect_ratio = '16:9'
         if 'image_aspect_ratio' in data:
@@ -484,7 +487,7 @@ def generate_outline(project_id):
 
         # Get request data and language parameter
         data = request.get_json() or {}
-        language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'zh'))
+        language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'ko'))
 
         # Get reference files content and create project context
         reference_files_content = _get_project_reference_files_content(project_id)
@@ -569,7 +572,7 @@ def generate_outline_stream(project_id):
         return not_found('Project')
 
     data = request.get_json() or {}
-    language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'zh'))
+    language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'ko'))
 
     # Capture app reference for use inside the generator (which runs outside request context)
     app = current_app._get_current_object()
@@ -701,7 +704,7 @@ def generate_from_description(project_id):
         # Get description text and language
         data = request.get_json() or {}
         description_text = data.get('description_text') or project.description_text
-        language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'zh'))
+        language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'ko'))
 
         if not description_text:
             return bad_request("description_text is required")
@@ -823,7 +826,7 @@ def generate_descriptions(project_id):
         data = request.get_json() or {}
         # Read the default simultaneous number from the configuration and use the requested value if the request provides
         max_workers = data.get('max_workers', current_app.config.get('MAX_DESCRIPTION_WORKERS', 5))
-        language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'zh'))
+        language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'ko'))
         detail_level = data.get('detail_level', 'default')
 
         # Create task
@@ -901,7 +904,7 @@ def generate_descriptions_stream(project_id):
         return bad_request("Project must have outline generated first")
 
     data = request.get_json() or {}
-    language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'zh'))
+    language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'ko'))
     detail_level = data.get('detail_level', 'default')
 
     app = current_app._get_current_object()
@@ -957,7 +960,8 @@ def generate_descriptions_stream(project_id):
                         'page_index': idx,
                         'page_id': page.id,
                         'text': desc_content['text'],
-                        'extra_fields': result.get('extra_fields'),
+                        'extra_fields': (page.get_description_content() or {}).get('extra_fields'),
+                        'narration_text': page.narration_text,
                     })
 
                 # Check if all pages have generated descriptions
@@ -1082,7 +1086,7 @@ def generate_images(project_id):
         # Read the default simultaneous number from the configuration and use the requested value if the request provides
         max_workers = data.get('max_workers', current_app.config.get('MAX_IMAGE_WORKERS', 8))
         use_template = data.get('use_template', True)
-        language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'zh'))
+        language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'ko'))
 
         # Create task
         task = Task(
@@ -1232,7 +1236,7 @@ def refine_outline(project_id):
 
         # Get previous requirements and language from request
         previous_requirements = data.get('previous_requirements', [])
-        language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'zh'))
+        language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'ko'))
 
         # Refine outline
         logger.info(f"Start modification of outline: Item {project_id}, User Requirements: {user_requirement}, Historical requirements: {len(previous_requirements)}")
@@ -1344,7 +1348,7 @@ def refine_descriptions(project_id):
 
         # Get previous requirements and language from request
         previous_requirements = data.get('previous_requirements', [])
-        language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'zh'))
+        language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'ko'))
 
         # Refine descriptions
         logger.info(f"Start changing the page description: Item {project_id}, User Requirements: {user_requirement}, Historical requirements: {len(previous_requirements)}")
@@ -1434,12 +1438,12 @@ def create_ppt_renovation_project():
 
         keep_layout = request.form.get('keep_layout', 'false').lower() == 'true'
         template_style = request.form.get('template_style', '').strip() or None
-        language = request.form.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'zh'))
+        language = request.form.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'ko'))
 
         # Create project
         project = Project(
             creation_type='ppt_renovation',
-            template_style=template_style,
+            template_style=template_style or current_app.config.get('DESIGN_SYSTEM_PROMPT') or None,
             status='DRAFT'
         )
         db.session.add(project)
@@ -1603,13 +1607,6 @@ def create_ppt_renovation_project():
         file_parser_service = FileParserService(
             mineru_token=current_app.config['MINERU_TOKEN'],
             mineru_api_base=current_app.config['MINERU_API_BASE'],
-            google_api_key=current_app.config.get('GOOGLE_API_KEY', ''),
-            google_api_base=current_app.config.get('GOOGLE_API_BASE', ''),
-            openai_api_key=current_app.config.get('OPENAI_API_KEY', ''),
-            openai_api_base=current_app.config.get('OPENAI_API_BASE', ''),
-            image_caption_model=current_app.config['IMAGE_CAPTION_MODEL'],
-            provider_format=current_app.config.get('AI_PROVIDER_FORMAT', 'gemini'),
-            lazyllm_image_caption_source=current_app.config.get('IMAGE_CAPTION_MODEL_SOURCE', 'doubao'),
         )
 
         app = current_app._get_current_object()

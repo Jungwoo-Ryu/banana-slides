@@ -110,20 +110,20 @@ describe('DescriptionCard', () => {
       render(<DescriptionCard {...withFields({ 'Visual assets': 'Line Chart', 'Layout and emphasis': 'Left Right Chart' })}
         extraFieldNames={['Visual assets', 'Layout and emphasis', 'Speaker notes']} />)
 
-      expect(screen.getByText('Visual assets')).toBeInTheDocument()
+      expect(screen.getByText('이미지와 소재')).toBeInTheDocument()
       expect(screen.getByText('Line Chart')).toBeInTheDocument()
-      expect(screen.getByText('Layout and emphasis')).toBeInTheDocument()
+      expect(screen.getByText('배치와 강조점')).toBeInTheDocument()
       expect(screen.getByText('Left Right Chart')).toBeInTheDocument()
     })
 
     // Inventory data not migrated： old field names must be displayed as usual, otherwise users will think the content is missing
-    it.each(['Visual elements', 'Visual focus', 'Page layout', 'Layout suggestions'])(
+    it.each([['Visual elements', '시각 자료'], ['Visual focus', '강조할 부분'], ['Page layout', '페이지 배치'], ['Layout suggestions', '배치 제안']])(
       'still renders legacy field %s stored on existing pages',
-      (legacyName) => {
+      (legacyName, label) => {
         render(<DescriptionCard {...withFields({ [legacyName]: 'Stock content' })}
           extraFieldNames={['Visual assets', 'Layout and emphasis', 'Speaker notes']} />)
 
-        expect(screen.getByText(legacyName)).toBeInTheDocument()
+        expect(screen.getByText(label)).toBeInTheDocument()
         expect(screen.getByText('Stock content')).toBeInTheDocument()
       }
     )
@@ -215,9 +215,21 @@ describe('DescriptionCard', () => {
 
     // The textarea value should contain the markdown image link after state update
     await waitFor(() => {
-      const updatedTextarea = screen.getByRole('textbox') as HTMLTextAreaElement
+      const updatedTextarea = screen.getByPlaceholderText('descriptionCard.descriptionPlaceholder') as HTMLTextAreaElement
       expect(updatedTextarea.value).toContain('![screenshot](https://example.com/uploaded-image.png)')
     })
+  })
+
+  it('refreshes a generated script and saves an edited script on blur', () => {
+    const onUpdate = vi.fn()
+    const { rerender } = render(<DescriptionCard {...defaultProps} onUpdate={onUpdate} />)
+    rerender(<DescriptionCard {...defaultProps} onUpdate={onUpdate}
+      page={{ ...mockPage, narration_text: 'Generated narration' }} />)
+    const input = screen.getByRole('textbox', { name: 'TTS 발표 스크립트' })
+    expect(input).toHaveValue('Generated narration')
+    fireEvent.change(input, { target: { value: 'Reviewed narration' } })
+    fireEvent.blur(input)
+    expect(onUpdate).toHaveBeenCalledWith({ narration_text: 'Reviewed narration' })
   })
 
   it('does not trigger upload for non-image paste', () => {

@@ -210,46 +210,17 @@ export interface ApiResponse<T = any> {
 
 // Settings
 export interface Settings {
-  id: number;
-  ai_provider_format: string;
-  api_base_url?: string;
   image_resolution: string;
   image_quality?: string;
   image_aspect_ratio: string;
   max_description_workers: number;
   max_image_workers: number;
-  text_model?: string;
-  image_model?: string;
-  mineru_api_base?: string;
-  image_caption_model?: string;
   output_language: 'ko' | 'en' | 'auto';
-  // Description of generation mode
   description_generation_mode: 'streaming' | 'parallel';
-  // Description of extra fields
   description_extra_fields?: string[];
   image_prompt_extra_fields?: string[];
-  // Reasoning settings (separate text and image controls）
-  enable_text_reasoning: boolean;
   text_max_output_tokens: number;
-  text_thinking_budget: number;
-  enable_image_reasoning: boolean;
-  image_thinking_budget: number;
   enable_image_quality_control: boolean;
-  // LazyLLM Configuration
-  text_model_source?: string;
-  image_model_source?: string;
-  image_caption_model_source?: string;
-  // Per-model API credentials (for gemini/openai per-model overrides)
-  text_api_base_url?: string;
-  image_api_base_url?: string;
-  image_caption_api_base_url?: string;
-  // OpenAI image API protocol
-  openai_image_api_protocol?: string;
-  // OpenAI Codex OAuth
-  // ElevenLabs TTS
-  elevenlabs_enabled: boolean;
-  elevenlabs_api_key_length: number;
-  elevenlabs_voice_id?: string;
-  created_at?: string;
-  updated_at?: string;
+  design_system_prompt?: string;
+  providers?: Record<string, { configured: boolean; deployment?: string; message?: string }>;
 }

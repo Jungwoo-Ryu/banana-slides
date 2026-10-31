@@ -4,44 +4,19 @@ OpenAI SDK implementation for text generation
 import base64
 import logging
 from typing import Generator
-from openai import OpenAI
 from .base import get_text_output_limit, TextProvider, strip_think_tags
-from config import get_config
-from services.http_transport import http_client
 
 logger = logging.getLogger(__name__)
 
 
 class OpenAITextProvider(TextProvider):
-    """Text generation using OpenAI SDK (compatible with Gemini via proxy)"""
+    """Text generation using OpenAI SDK (used by the Azure deployment adapter)"""
     
-    def __init__(self, api_key: str, api_base: str = None, model: str = "gemini-3-flash-preview"):
-        """
-        Initialize OpenAI text provider
-        
-        Args:
-            api_key: API key
-            api_base: API base URL (e.g., https://api.openai.com/v1)
-            model: Model name to use
-        """
-        config = get_config()
-        self.client = OpenAI(
-            api_key=api_key,
-            http_client=http_client(get_config().OPENAI_TIMEOUT),
-            base_url=api_base,
-            timeout=config.OPENAI_TIMEOUT,  # set timeout from config
-            max_retries=config.OPENAI_MAX_RETRIES  # set max retries from config
-        )
-        self.model = model
-        self.request_timeout_seconds = config.OPENAI_TIMEOUT
-        self.max_attempts = config.OPENAI_MAX_RETRIES + 1
-    
-    def _output_limit_params(self) -> dict:
-        # OpenAI reasoning families use max_completion_tokens; compatible
-        # Claude/Gemini and older chat models use max_tokens.
-        model = self.model.lower().rsplit('/', 1)[-1]
-        key = 'max_completion_tokens' if model.startswith(('gpt-5', 'o1', 'o3', 'o4')) else 'max_tokens'
-        return {key: get_text_output_limit()}
+    def __init__(self, *args, **kwargs):
+        raise RuntimeError('Use AzureTextProvider with the company Azure deployment.')
+
+    def _output_limit_params(self):
+        return {'max_completion_tokens': get_text_output_limit()}
 
     def generate_text(self, prompt: str, thinking_budget: int = 0) -> str:
         """

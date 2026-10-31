@@ -15,8 +15,6 @@ class Settings(db.Model):
     __tablename__ = 'settings'
 
     id = db.Column(db.Integer, primary_key=True, default=1)
-    ai_provider_format = db.Column(db.String(20), nullable=True)   # AI Provider format: openai, gemini (NULL=use .env)
-    api_base_url = db.Column(db.String(500), nullable=True)        # API Basis URL
     image_resolution = db.Column(db.String(20), nullable=True)     # Image Clarity: 1K, 2K, 4K (NULL=use .env)
     image_aspect_ratio = db.Column(db.String(10), nullable=True)   # Image Scale: 16:9, 4:3, 1:1 (NULL=use .env)
     image_quality = db.Column(db.String(10), nullable=True)        # Image quality slot: auto/low/medium/high/xhigh/max (NULL=use .env)
@@ -24,18 +22,11 @@ class Settings(db.Model):
     max_image_workers = db.Column(db.Integer, nullable=True)        # Maximum number of worklines for image generation (NULL=use .env)
 
     # Add： Large models and MinerU Relevant visual configuration (can be edited in settings page)）
-    text_model = db.Column(db.String(100), nullable=True)  # Name of the large text model (overrided) Config.TEXT_MODEL）
-    image_model = db.Column(db.String(100), nullable=True)  # Name of the large picture model (overrided) Config.IMAGE_MODEL）
     mineru_api_base = db.Column(db.String(255), nullable=True)  # MinerU Service address (overrided) Config.MINERU_API_BASE）
-    image_caption_model = db.Column(db.String(100), nullable=True)  # Photo Identification Model (overrided) Config.IMAGE_CAPTION_MODEL）
-    output_language = db.Column(db.String(10), nullable=True)  # Output language preference（zh, en, ja, auto）(NULL=use .env)
+    output_language = db.Column(db.String(10), nullable=True)  # Output language preference (ko, en, auto)(NULL=use .env)
 
     # Reasoning settings (separate controls for text and image generation）
-    enable_text_reasoning = db.Column(db.Boolean, nullable=False, default=False)  # Whether or not to open reasoning for text generation
     text_max_output_tokens = db.Column(db.Integer, nullable=True)  # NULL = environment/default 32768
-    text_thinking_budget = db.Column(db.Integer, nullable=False, default=1024)  # Text deduction thinking load (1-8192)
-    enable_image_reasoning = db.Column(db.Boolean, nullable=False, default=False)  # Whether the image generation opens the reasoning
-    image_thinking_budget = db.Column(db.Integer, nullable=False, default=1024)  # Image Logical Thinking Load (1-8192)
     enable_image_quality_control = db.Column(db.Boolean, nullable=False, default=False)  # Whether or not to open a visual inspection before creating a picture library
 
     # Description of generation mode: streaming / parallel (NULL=Default streaming)
@@ -45,26 +36,12 @@ class Settings(db.Model):
     description_extra_fields = db.Column(db.Text, nullable=True)
     image_prompt_extra_fields = db.Column(db.Text, nullable=True)  # JSON array: Which extra fields are brought into the script prompt
 
-    # 100 degrees API Configuration
 
-    # ElevenLabs TTS Configuration
-    elevenlabs_enabled = db.Column(db.Boolean, nullable=False, default=False)
-    elevenlabs_voice_id = db.Column(db.String(100), nullable=True)
+    design_system_prompt = db.Column(db.Text, nullable=True)
 
-    # Provider configuration for each model type（source Optional gemini/openai/lazyllm Vendor Name，NULL=Use global configuration）
-    text_model_source = db.Column(db.String(50), nullable=True)           # Text model provider (gemini, openai, qwen, doubao, deepseek, ...)
-    image_model_source = db.Column(db.String(50), nullable=True)          # Photo model provider
-    image_caption_model_source = db.Column(db.String(50), nullable=True)  # Photo Identification Model Provider
 
-    # Per-model API Certificates (Dann) source Yes. gemini/openai Use of time，NULL=Use global api_key/api_base_url）
-    text_api_base_url = db.Column(db.String(500), nullable=True)
-    image_api_base_url = db.Column(db.String(500), nullable=True)
-    image_caption_api_base_url = db.Column(db.String(500), nullable=True)
 
-    # OpenAI image API protocol: auto (default), images (force images.generate), chat (force chat.completions)
-    openai_image_api_protocol = db.Column(db.String(10), nullable=True)
 
-    # OpenAI Codex OAuth credentials
 
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

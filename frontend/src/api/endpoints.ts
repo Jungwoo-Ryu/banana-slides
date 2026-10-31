@@ -251,6 +251,7 @@ export const generateDescriptions = async (projectId: string, language?: OutputL
  * Fluid Generation Description（SSE）
  */
 export interface DescriptionStreamEvent {
+  narration_text?: string | null;
   page_index: number;
   page_id: string;
   text: string;
@@ -799,41 +800,11 @@ export const deleteExport = async (
  */
 export const exportVideo = async (
   projectId: string,
-  options?: {
-    filename?: string;
-    pageIds?: string[];
-    voice?: string;
-    rate?: string;
-    speed?: number;
-    language?: string;
-    generateNarration?: boolean;
-    enableKenBurns?: boolean;
-    includeNoImagePages?: boolean;
-    presentationTopic?: string;
-    narrationConfig?: {
-      speaker_persona?: string;
-      target_audience?: string;
-      speech_tone?: string;
-      presentation_topic?: string;
-      min_words?: number;
-      max_words?: number;
-    };
-  }
+  options?: { filename?: string; pageIds?: string[]; voice?: string; speed?: number; generateNarration?: boolean }
 ): Promise<ApiResponse<{ task_id: string }>> => {
-  const response = await apiClient.post<
-    ApiResponse<{ task_id: string }>
-  >(`/api/projects/${projectId}/export/video`, {
-    filename: options?.filename,
-    page_ids: options?.pageIds,
-    voice: options?.voice,
-    rate: options?.rate,
-    speed: options?.speed,
-    language: options?.language,
-    generate_narration: options?.generateNarration ?? true,
-    enable_ken_burns: options?.enableKenBurns ?? false,
-    include_no_image_pages: options?.includeNoImagePages ?? false,
-    presentation_topic: options?.presentationTopic,
-    narration_config: options?.narrationConfig,
+  const response = await apiClient.post<ApiResponse<{ task_id: string }>>(`/api/projects/${projectId}/export/video`, {
+    filename: options?.filename, page_ids: options?.pageIds, voice: options?.voice,
+    speed: options?.speed, generate_narration: options?.generateNarration ?? true,
   });
   return response.data;
 };
@@ -1307,10 +1278,7 @@ export const getSettings = async (): Promise<ApiResponse<Settings>> => {
   return response.data;
 };
 
-export const getElevenLabsVoices = async (): Promise<ApiResponse<{ voices: { id: string; name: string; category: string; languages?: string[]; accent?: string | null }[] }>> => {
-  const response = await apiClient.get('/api/settings/elevenlabs-voices');
-  return response.data;
-};
+
 
 /**
  * Update System Settings

@@ -88,6 +88,16 @@ class Page(db.Model):
     def set_description_content(self, data):
         """Set description_content as JSON string"""
         if data:
+            data = dict(data)
+            fields = dict(data.get('extra_fields') or {})
+            script = fields.pop('TTS_SCRIPT', None)
+            if fields:
+                data['extra_fields'] = fields
+            else:
+                data.pop('extra_fields', None)
+            # Preserve user scripts on description regeneration, including deliberate blanks.
+            if self.narration_text is None and isinstance(script, str) and script.strip():
+                self.narration_text = script.strip()[:4000]
             self.description_content = json.dumps(data, ensure_ascii=False)
         else:
             self.description_content = None
@@ -98,7 +108,9 @@ class Page(db.Model):
 
     def set_narration_text(self, text):
         """Set narration text for TTS"""
-        self.narration_text = text if text else None
+        if not isinstance(text, str) or len(text) > 4000:
+            raise ValueError('발표 스크립트는 4000자 이하의 문자열이어야 합니다.')
+        self.narration_text = text
 
     def to_dict(self, include_versions=False):
         """Convert to dictionary"""

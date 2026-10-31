@@ -49,8 +49,6 @@ def test_generate_single_caption_uses_provider_factory():
     try:
         service = FileParserService(
             mineru_token='test-token',
-            image_caption_model='gpt-4.1-mini',
-            provider_format='openai',
         )
 
         mock_provider = MagicMock()
@@ -63,7 +61,8 @@ def test_generate_single_caption_uses_provider_factory():
         assert caption == 'Example Description'
         mock_provider.generate_with_image.assert_called_once()
         call_args = mock_provider.generate_with_image.call_args
-        assert 'Description' in call_args[0][0]
+        assert 'Briefly describe' in call_args[0][0]
+        assert '한국어' in call_args[0][0]
     finally:
         if os.path.exists(image_path):
             os.remove(image_path)
@@ -73,7 +72,6 @@ def test_can_generate_captions_returns_false_when_factory_fails():
     """_can_generate_captions should return False when the provider factory raises."""
     service = FileParserService(
         mineru_token='test-token',
-        provider_format='lazyllm',
     )
     with patch(
         'services.file_parser_service.FileParserService._get_caption_provider',
@@ -86,35 +84,19 @@ def test_can_generate_captions_returns_true_when_factory_succeeds():
     """_can_generate_captions should return True when the provider factory returns a provider."""
     service = FileParserService(
         mineru_token='test-token',
-        provider_format='openai',
     )
     mock_provider = MagicMock()
     with patch.object(service, '_get_caption_provider', return_value=mock_provider):
         assert service._can_generate_captions() is True
 
 
-def test_generate_single_caption_vertex_uses_provider_factory():
-    """Vertex provider should also go through the factory (the original bug)."""
-    image_path = _create_temp_image()
-    try:
-        service = FileParserService(
-            mineru_token='test-token',
-            image_caption_model='gemini-2.0-flash',
-            provider_format='vertex',
-        )
-
-        mock_provider = MagicMock()
-        mock_provider.generate_with_image.return_value = 'Toppoint Description'
-
-        with patch('utils.path_utils.find_mineru_file_with_prefix', return_value=Path(image_path)):
-            with patch.object(service, '_get_caption_provider', return_value=mock_provider):
-                caption = service._generate_single_caption('/files/mineru/demo.png')
-
-        assert caption == 'Toppoint Description'
-        mock_provider.generate_with_image.assert_called_once()
-    finally:
-        if os.path.exists(image_path):
-            os.remove(image_path)
+def test_caption_provider_is_lazy_and_uses_company_azure_factory():
+    with patch('services.ai_providers.get_caption_provider') as factory:
+        service = FileParserService(mineru_token='test-token')
+        factory.assert_not_called()
+        assert service._get_caption_provider() is factory.return_value
+        assert service._get_caption_provider() is factory.return_value
+        factory.assert_called_once_with()
 
 
 @pytest.mark.parametrize('remote_url', [
@@ -123,7 +105,7 @@ def test_generate_single_caption_vertex_uses_provider_factory():
 ])
 def test_generate_single_caption_rejects_remote_urls(remote_url):
     """Uploaded Markdown must not make the backend fetch attacker-controlled URLs."""
-    service = FileParserService(mineru_token='test-token', provider_format='openai')
+    service = FileParserService(mineru_token='test-token')
     mock_provider = MagicMock()
     service._caption_provider = mock_provider
 
@@ -137,7 +119,7 @@ def test_generate_single_caption_rejects_remote_urls(remote_url):
 
 def test_enhance_markdown_only_captions_local_mineru_images():
     """Remote and unsupported image references remain untouched and are never submitted."""
-    service = FileParserService(mineru_token='test-token', provider_format='openai')
+    service = FileParserService(mineru_token='test-token')
     markdown = '\n'.join([
         '![](http://127.0.0.1/internal.png)',
         '![](/files/mineru/extract123/images/chart.png)',
@@ -233,7 +215,7 @@ def test_extract_header_footer_reads_layout_from_flask_upload_folder(app, tmp_pa
 
         text = FileParserService.extract_header_footer_from_layout('ab2d6b8b')
 
-    assert text == 'Header\n Footer'
+    assert text == 'Header\nFooter'
 
 
 def test_extract_header_footer_returns_empty_for_missing_extract_id(app):

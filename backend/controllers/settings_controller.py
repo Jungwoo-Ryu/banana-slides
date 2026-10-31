@@ -30,7 +30,7 @@ def reset_settings():
     for field in FIELD_CONFIG.keys() | EXTRA_FIELDS:
         if not field.startswith('enable_') and not field.endswith('thinking_budget'):
             setattr(preferences, field, None)
-    for field in ('enable_text_reasoning', 'enable_image_reasoning', 'enable_image_quality_control'):
+    for field in ('enable_image_quality_control',):
         setattr(preferences, field, False)
     db.session.commit()
     sync_settings(current_app, preferences)

@@ -7,7 +7,7 @@ ARG APP_COMMIT_SHORT_SHA=
 
 # Build Phase
 # If it’s specified, DOCKER_REGISTRY，Use mirror source; otherwise use official source
-FROM ${DOCKER_REGISTRY:-}node:18-alpine AS builder
+FROM ${DOCKER_REGISTRY:-}node:22.23.4-alpine AS builder
 
 # Restatement ARG（FROM After ARG Inactivated field. Restated.）
 ARG NPM_REGISTRY=
@@ -25,10 +25,14 @@ COPY frontend/package.json ./
 
 # Installation Dependence (if configured) NPM_REGISTRY，Set mirror source first）
 COPY frontend/package-lock.json* ./
-RUN if [ -n "$NPM_REGISTRY" ]; then \
+COPY frontend/.npmrc ./
+COPY scripts/check-node.cjs /scripts/check-node.cjs
+RUN --mount=type=secret,id=proxy_ca \
+    if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi; \
+    if [ -n "$NPM_REGISTRY" ]; then \
         npm config set registry "$NPM_REGISTRY"; \
     fi && \
-    (npm install --frozen-lockfile || npm install)
+    npm ci
 
 # Copy front-end source
 COPY frontend/ ./

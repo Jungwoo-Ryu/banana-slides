@@ -74,10 +74,10 @@ def main():
     os.environ.setdefault('NO_PROXY', 'localhost,127.0.0.1,::1')
     node = shutil.which('node')
     if not node:
-        raise RuntimeError('Node.js 22 LTS 이상을 설치하세요.')
-    major = int(subprocess.check_output([node, '-p', 'process.versions.node.split(".")[0]'], text=True).strip())
-    if major < 22:
-        raise RuntimeError('Node.js 22 이상이 필요합니다.')
+        raise RuntimeError('Node.js 22.23.4 LTS 또는 지원되는 보안 패치 버전을 설치하세요.')
+    version = subprocess.check_output([node, '-p', 'process.versions.node'], text=True).strip()
+    from node_version import require_secure_node
+    require_secure_node(version)
     ports = [int(os.getenv('BACKEND_PORT', '5011')), int(os.getenv('FRONTEND_PORT', '3011'))]
     if len(set(ports)) != 2 or any(not 1 <= p <= 65535 for p in ports):
         raise RuntimeError('백엔드와 프론트엔드는 서로 다른 1~65535 포트를 사용해야 합니다.')

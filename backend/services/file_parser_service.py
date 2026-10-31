@@ -19,36 +19,6 @@ from services.ai_providers.text import strip_think_tags
 logger = logging.getLogger(__name__)
 
 
-def _get_ai_provider_format(provider_format: str = None) -> str:
-    """Get the configured AI provider format
-
-    Priority:
-        1. Provided provider_format parameter
-        2. Flask app.config['AI_PROVIDER_FORMAT'] (from database settings)
-        3. Environment variable AI_PROVIDER_FORMAT
-        4. Default: 'gemini'
-
-    Args:
-        provider_format: Optional provider format string. If not provided, reads from Flask config or environment variable.
-    """
-    if provider_format:
-        return provider_format.lower()
-
-    # Try to get from Flask app config first (database settings)
-    try:
-        from flask import current_app
-        if current_app and hasattr(current_app, 'config'):
-            config_value = current_app.config.get('AI_PROVIDER_FORMAT')
-            if config_value:
-                return str(config_value).lower()
-    except RuntimeError:
-        # Not in Flask application context
-        pass
-
-    # Fallback to environment variable
-    return os.getenv('AI_PROVIDER_FORMAT', 'gemini').lower()
-
-
 def _default_project_root() -> Path:
     current_file = Path(__file__).resolve()
     backend_dir = current_file.parent.parent
@@ -95,40 +65,15 @@ class FileParserService:
     """Service for parsing files using MinerU and enhancing with image captions"""
 
     def __init__(self, mineru_token: str, mineru_api_base: str = "",
-                 google_api_key: str = "", google_api_base: str = "",
-                 openai_api_key: str = "", openai_api_base: str = "",
-                 image_caption_model: str = "gemini-3-flash-preview",
-                 lazyllm_image_caption_source: str = "",
-                 provider_format: str = None,
-                 ai_provider_format: str = None,
                  upload_folder: Optional[Union[os.PathLike, str]] = None,
-                 mineru_model_version: str = "vlm",
-                 ):
-        """
-        Initialize the file parser service
-
-        Args:
-            mineru_token: MinerU API token
-            mineru_api_base: MinerU API base URL
-            google_api_key: Google Gemini API key for image captioning (used when AI_PROVIDER_FORMAT=gemini)
-            google_api_base: Google Gemini API base URL
-            openai_api_key: OpenAI API key for image captioning (used when AI_PROVIDER_FORMAT=openai)
-            openai_api_base: OpenAI API base URL
-            image_caption_model: Model to use for image captioning
-            lazyllm_image_caption_source: image caption model provider for lazyllm
-            provider_format: AI provider format ('gemini' or 'openai'). If not provided, reads from environment variable.
-            ai_provider_format: Backward-compatible alias for provider_format.
-            upload_folder: Upload root for persisted MinerU result files.
-            mineru_model_version: MinerU model version ('vlm' or 'pipeline'). Default is 'vlm'.
-        """
+                 mineru_model_version: str = "vlm"):
+        """Configure document parsing; captions always use the company Azure factory."""
         self.mineru_token = mineru_token
         self.mineru_api_base = mineru_api_base
         self.mineru_model_version = mineru_model_version
         self.get_upload_url_api = f"{mineru_api_base}/api/v4/file-urls/batch"
         self.get_result_api_template = f"{mineru_api_base}/api/v4/extract-results/batch/{{}}"
 
-        self._image_caption_model = image_caption_model
-        self._provider_format = _get_ai_provider_format(provider_format or ai_provider_format)
         self._caption_provider = None
         if upload_folder:
             _resolve_upload_folder(upload_folder)
@@ -142,7 +87,7 @@ class FileParserService:
         """Lazily initialize caption provider via the provider factory"""
         if self._caption_provider is None:
             from services.ai_providers import get_caption_provider
-            self._caption_provider = get_caption_provider(model=self._image_caption_model)
+            self._caption_provider = get_caption_provider()
         return self._caption_provider
 
     def _can_generate_captions(self) -> bool:
@@ -756,7 +701,10 @@ class FileParserService:
                 return ""
 
             # Generate caption via provider factory
-            prompt = "Please describe the main contents of this picture in a short Chinese.。"
+            from services.prompts import LANGUAGE_CONFIG
+            from services.runtime_config import setting
+            language = LANGUAGE_CONFIG.get(setting('OUTPUT_LANGUAGE', 'ko'), LANGUAGE_CONFIG['ko'])
+            prompt = 'Briefly describe the main contents of this picture. ' + language['instruction']
 
             with tempfile.NamedTemporaryFile(prefix='caption_', suffix='.jpg', delete=False) as tmp:
                 temp_path = tmp.name

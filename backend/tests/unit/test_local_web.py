@@ -17,7 +17,7 @@ def test_settings_do_not_store_or_return_credentials(client, monkeypatch):
     assert 'private-test-value' not in response.text
     assert 'api_key' not in Settings.__table__.columns
     assert client.put('/api/settings', json={'api_key': 'must-not-save'}).status_code == 400
-    assert client.put('/api/settings', json={'output_language': 'ko', 'text_model': 'gpt-5.5'}).status_code == 200
+    assert client.put('/api/settings', json={'output_language': 'ko'}).status_code == 200
     assert client.get('/api/settings').json['data']['output_language'] == 'ko'
 
 
@@ -59,14 +59,14 @@ def test_azure_deployment_used_for_text_vision_and_image_edits(tmp_path, monkeyp
         assert 'max_completion_tokens' in call.kwargs
     image=AzureImageProvider('unit-test-key','https://example.openai.azure.com','image-alias','2025-04-01-preview')
     image.client.close(); image.client=MagicMock()
-    payload={'data':[{'b64_json':base64.b64encode(path.read_bytes()).decode()}]}
-    image.client.images.with_raw_response.generate.return_value.json.return_value=payload
-    image.client.images.with_raw_response.edit.return_value.json.return_value=payload
+    payload=SimpleNamespace(data=[SimpleNamespace(b64_json=base64.b64encode(path.read_bytes()).decode())])
+    image.client.images.generate.return_value=payload
+    image.client.images.edit.return_value=payload
     assert image.generate_image('generate',resolution='1K').size==(512,512)
     assert image.generate_image('change selected region',ref_images=[Image.open(path)],resolution='1K').size==(512,512)
-    assert image.client.images.with_raw_response.generate.call_args.kwargs['model']=='image-alias'
-    assert image.client.images.with_raw_response.edit.call_args.kwargs['model']=='image-alias'
-    assert image.client.images.with_raw_response.edit.call_args.kwargs['image']
+    assert image.client.images.generate.call_args.kwargs['model']=='image-alias'
+    assert image.client.images.edit.call_args.kwargs['model']=='image-alias'
+    assert image.client.images.edit.call_args.kwargs['image']
 
 
 def test_azure_image_requires_separate_deployment(app, monkeypatch):

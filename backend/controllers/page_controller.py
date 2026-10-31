@@ -354,7 +354,7 @@ def generate_page_description(project_id, page_id):
 
         data = request.get_json() or {}
         force_regenerate = data.get('force_regenerate', False)
-        language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'zh'))
+        language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'ko'))
         detail_level = data.get('detail_level', 'default')
 
         # Check if already generated
@@ -444,7 +444,7 @@ def generate_page_image(project_id, page_id):
         data = request.get_json() or {}
         use_template = data.get('use_template', True)
         force_regenerate = data.get('force_regenerate', False)
-        language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'zh'))
+        language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'ko'))
 
         # Check if already generated
         if page.generated_image_path and not force_regenerate:
@@ -868,7 +868,7 @@ def regenerate_renovation_page(project_id, page_id):
             return bad_request("This endpoint is only for PPT renovation projects")
 
         data = request.get_json() or {}
-        language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'zh'))
+        language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'ko'))
         keep_layout = data.get('keep_layout', False)
 
         # Find the split PDF for this page
@@ -885,12 +885,6 @@ def regenerate_renovation_page(project_id, page_id):
         file_parser_service = FileParserService(
             mineru_api_base=current_app.config.get('MINERU_API_BASE', ''),
             mineru_token=current_app.config.get('MINERU_TOKEN', ''),
-            google_api_key=current_app.config.get('GOOGLE_API_KEY', ''),
-            ai_provider_format=current_app.config.get('AI_PROVIDER_FORMAT', 'gemini'),
-            openai_api_key=current_app.config.get('OPENAI_API_KEY', ''),
-            openai_api_base=current_app.config.get('OPENAI_API_BASE', ''),
-            image_caption_model=current_app.config.get('IMAGE_CAPTION_MODEL', 'gemini-3-flash-preview'),
-            lazyllm_image_caption_source=current_app.config.get('IMAGE_CAPTION_MODEL_SOURCE', ''),
             upload_folder=current_app.config.get('UPLOAD_FOLDER', 'uploads')
         )
         file_service = FileService(current_app.config['UPLOAD_FOLDER'])
@@ -989,6 +983,8 @@ def update_page_narration(project_id, page_id):
         if not data or 'narration_text' not in data:
             return bad_request("narration_text is required")
 
+        if not isinstance(data['narration_text'], str) or len(data['narration_text']) > 4000:
+            return bad_request('발표 스크립트는 4000자 이하의 문자열이어야 합니다.')
         page.set_narration_text(data['narration_text'])
         page.updated_at = datetime.utcnow()
 
@@ -1029,7 +1025,7 @@ def generate_page_narration(project_id, page_id):
 
         data = request.get_json() or {}
         force_regenerate = data.get('force_regenerate', False)
-        language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'zh'))
+        language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'ko'))
 
         if page.narration_text and not force_regenerate:
             return bad_request("Narration already exists. Set force_regenerate=true to regenerate")
@@ -1113,7 +1109,7 @@ def generate_all_narrations(project_id):
 
         data = request.get_json() or {}
         force_regenerate = data.get('force_regenerate', False)
-        language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'zh'))
+        language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'ko'))
 
         pages = Page.query.filter_by(project_id=project_id).order_by(Page.order_index).all()
         if not pages:

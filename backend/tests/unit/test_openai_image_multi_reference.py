@@ -1,164 +1,47 @@
-"""Regression tests for native OpenAI Images API reference forwarding."""
-
+"""GPT Image 2 reference images remain ordered and isolated to Azure."""
 import base64
 from io import BytesIO
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
-
+from unittest.mock import MagicMock
 import pytest
 from PIL import Image
-
-from services.ai_providers.image.openai_provider import OpenAIImageProvider
-
-
-def _make_b64_png() -> str:
-    image = Image.new('RGB', (16, 16), color='white')
-    buffer = BytesIO()
-    image.save(buffer, format='PNG')
-    return base64.b64encode(buffer.getvalue()).decode()
+from services.ai_providers.image.azure_provider import AzureImageProvider,image_size
 
 
-def _make_provider(model: str = 'gpt-image-2') -> OpenAIImageProvider:
-    client = MagicMock()
-    with patch('services.ai_providers.image.openai_provider.OpenAI'):
-        provider = OpenAIImageProvider(
-            api_key='test',
-            api_base='http://test',
-            model=model,
-            image_api_protocol='auto',
-        )
-    raw_response = MagicMock()
-    raw_response.json.return_value = {'data': [{'b64_json': _make_b64_png(), 'url': None}]}
-    client.images.with_raw_response.edit.return_value = raw_response
-    provider.client = client
-    return provider
+def provider():
+    value=AzureImageProvider.__new__(AzureImageProvider)
+    value.client=MagicMock();value.request_model='company-image';value.image_quality='high'
+    return value
 
 
-def _read_color(image_file: BytesIO) -> tuple[int, int, int]:
-    image_file.seek(0)
-    return Image.open(image_file).convert('RGB').getpixel((0, 0))
+def test_template_and_material_references_are_forwarded_in_order():
+    p=provider();colors=[]
+    def edit(**kwargs):
+        assert kwargs['model']=='company-image' and kwargs['quality']=='high'
+        for _,buffer,_ in kwargs['image']:
+            with Image.open(buffer) as image: colors.append(image.convert('RGB').getpixel((0,0)))
+        buffer=BytesIO();Image.new('RGB',(32,32),'white').save(buffer,format='PNG')
+        return SimpleNamespace(data=[SimpleNamespace(b64_json=base64.b64encode(buffer.getvalue()).decode())])
+    p.client.images.edit.side_effect=edit
+    sources=[Image.new('RGB',(32,32),'red'),Image.new('P',(32,32))]
+    result=p.generate_image('slide',sources)
+    assert result.size==(32,32) and colors[0]==(255,0,0) and len(colors)==2
+    # Caller-owned images stay usable after generation.
+    assert sources[0].getpixel((0,0))==(255,0,0)
 
 
-def test_gpt_image_forwards_template_and_material_references_in_order():
-    provider = _make_provider()
-    template = Image.new('RGB', (8, 8), color='red')
-    user_material = Image.new('RGB', (8, 8), color='blue')
-
-    result = provider.generate_image(
-        prompt='Use the template style and the supplied user material.',
-        ref_images=[template, user_material],
-        aspect_ratio='1:1',
-        resolution='1K',
-    )
-
-    assert isinstance(result, Image.Image)
-    request = provider.client.images.with_raw_response.edit.call_args.kwargs
-    assert isinstance(request['image'], list)
-    assert [image.name for image in request['image']] == ['image_1.png', 'image_2.png']
-    assert [_read_color(image) for image in request['image']] == [
-        (255, 0, 0),
-        (0, 0, 255),
-    ]
+def test_more_than_sixteen_references_are_rejected_before_api_call():
+    p=provider()
+    with pytest.raises(ValueError): p.generate_image('slide',[Image.new('RGB',(16,16))]*17)
+    p.client.images.edit.assert_not_called()
 
 
-def test_gpt_image_keeps_single_reference_proxy_compatible():
-    provider = _make_provider()
-
-    provider.generate_image(
-        prompt='Use this reference.',
-        ref_images=[Image.new('RGB', (8, 8), color='green')],
-        aspect_ratio='1:1',
-        resolution='1K',
-    )
-
-    request = provider.client.images.with_raw_response.edit.call_args.kwargs
-    assert isinstance(request['image'], BytesIO)
-    assert request['image'].name == 'image.png'
+@pytest.mark.parametrize('ratio,resolution',[('16:9','1K'),('9:16','2K'),('1:1','4K'),('3:1','4K')])
+def test_output_size_is_aligned_and_bounded(ratio,resolution):
+    w,h=map(int,image_size(ratio,resolution).split('x'))
+    assert w%16==h%16==0 and max(w,h)<=3840 and w*h<=8_294_400
 
 
-def test_gpt_image_accepts_palette_mode_reference():
-    provider = _make_provider()
-    palette_image = Image.new('P', (8, 8), color=1)
-    palette_image.putpalette([0, 0, 0, 0, 255, 0] + [0, 0, 0] * 254)
-
-    provider.generate_image(
-        prompt='Use this palette image.',
-        ref_images=[palette_image],
-        aspect_ratio='1:1',
-        resolution='1K',
-    )
-
-    request = provider.client.images.with_raw_response.edit.call_args.kwargs
-    assert Image.open(request['image']).mode == 'RGBA'
-
-
-def test_forced_images_protocol_preserves_refs_for_custom_proxy_model():
-    provider = _make_provider(model='custom-image-edit-model')
-    provider.image_api_protocol = 'images'
-
-    provider.generate_image(
-        prompt='Use all references.',
-        ref_images=[
-            Image.new('RGB', (8, 8), color='red'),
-            Image.new('RGB', (8, 8), color='blue'),
-        ],
-        aspect_ratio='1:1',
-        resolution='1K',
-    )
-
-    request = provider.client.images.with_raw_response.edit.call_args.kwargs
-    assert isinstance(request['image'], list)
-    assert len(request['image']) == 2
-
-
-@pytest.mark.parametrize('invalid_size', ['auto', None, '0x1024', '-10x1024'])
-def test_invalid_edit_size_falls_back_to_square(caplog, invalid_size):
-    provider = _make_provider()
-    provider._resolve_size = MagicMock(return_value=invalid_size)
-
-    provider.generate_image(
-        prompt='Use this reference.',
-        ref_images=[Image.new('RGB', (8, 8), color='green')],
-        aspect_ratio='1:1',
-        resolution='1K',
-    )
-
-    request = provider.client.images.with_raw_response.edit.call_args.kwargs
-    assert request['size'] == '1024x1024'
-    assert Image.open(request['image']).size == (1024, 1024)
-    assert "falling back to 1024x1024" in caplog.text
-
-
-def test_gpt_image_rejects_more_than_sixteen_references():
-    provider = _make_provider()
-    references = [Image.new('RGB', (8, 8), color='white') for _ in range(17)]
-
-    with pytest.raises(Exception, match='at most 16 reference images, got 17'):
-        provider.generate_image(
-            prompt='Too many references.',
-            ref_images=references,
-            aspect_ratio='1:1',
-            resolution='1K',
-        )
-
-    provider.client.images.with_raw_response.edit.assert_not_called()
-
-
-def test_dall_e_2_keeps_documented_single_reference_limit(caplog):
-    provider = _make_provider(model='dall-e-2')
-    references = [
-        Image.new('RGB', (8, 8), color='red'),
-        Image.new('RGB', (8, 8), color='blue'),
-    ]
-
-    provider.generate_image(
-        prompt='Use this reference.',
-        ref_images=references,
-        aspect_ratio='1:1',
-        resolution='1K',
-    )
-
-    request = provider.client.images.with_raw_response.edit.call_args.kwargs
-    assert isinstance(request['image'], BytesIO)
-    assert _read_color(request['image']) == (255, 0, 0)
-    assert 'ignoring 1 additional image(s)' in caplog.text
+@pytest.mark.parametrize('ratio',['0:1','nan:1','4:1','invalid'])
+def test_invalid_ratios_are_rejected(ratio):
+    with pytest.raises(ValueError): image_size(ratio,'2K')

@@ -1,6 +1,6 @@
 """
 AI Service - handles all AI model interactions
-Based on demo.py and gemini_genai.py
+Uses company Azure Foundry OpenAI deployments.
 TODO: use structured output API
 """
 import os
@@ -155,7 +155,7 @@ class AIService:
         else:
             self.caption_model = config.IMAGE_CAPTION_MODEL
 
-        # Use provided providers or create from factory based on AI_PROVIDER_FORMAT (from Flask config or env var)
+        # Use injected providers for tests or the company Azure factory.
         self.text_provider = text_provider or DeferredProvider(get_text_provider, self.text_model)
         self.image_provider = image_provider or DeferredProvider(get_image_provider, self.image_model)
         self.caption_provider = caption_provider or DeferredProvider(get_caption_provider, self.caption_model)
@@ -784,11 +784,11 @@ class AIService:
         """
         from models import Settings
         return list(dict.fromkeys(
-            [*cls._get_extra_field_names(), *Settings.LEGACY_FIELD_EQUIV.keys()]
+            [*cls._get_extra_field_names(), *Settings.LEGACY_FIELD_EQUIV.keys(), 'TTS_SCRIPT']
         ))
 
     def generate_page_description(self, project_context: ProjectContext, outline: List[Dict],
-                                 page_outline: Dict, page_index: int, language='zh',
+                                 page_outline: Dict, page_index: int, language='ko',
                                  detail_level: str = 'default') -> Dict:
         """
         Generate description for a single page
@@ -832,7 +832,7 @@ class AIService:
 
     def generate_descriptions_stream(self, project_context: ProjectContext,
                                      outline: List[Dict], flat_pages: List[Dict],
-                                     language: str = 'zh',
+                                     language: str = 'ko',
                                      detail_level: str = 'default'):
         """
         Stream description generation for all pages, yielding each page as it's completed.
@@ -978,7 +978,7 @@ class AIService:
                             page_desc: str, page_index: int,
                             has_material_images: bool = False,
                             extra_requirements: Optional[str] = None,
-                            language='zh',
+                            language='ko',
                             has_template: bool = True,
                             aspect_ratio: str = "16:9",
                             page_style_text: Optional[str] = None) -> str:
@@ -1077,7 +1077,6 @@ class AIService:
                       additional_ref_images: Optional[List[Union[str, Image.Image]]] = None) -> Optional[Image.Image]:
         """
         Generate image using configured image provider
-        Based on gemini_genai.py gen_image()
 
         Args:
             prompt: Image generation prompt
@@ -1218,7 +1217,7 @@ class AIService:
         )
         return self.generate_image(edit_instruction, current_image_path, aspect_ratio, resolution, additional_ref_images)
 
-    def parse_description_to_outline(self, project_context: ProjectContext, language='zh') -> List[Dict]:
+    def parse_description_to_outline(self, project_context: ProjectContext, language='ko') -> List[Dict]:
         """
         Parsing outline structure from description text
 
@@ -1234,7 +1233,7 @@ class AIService:
 
     def parse_description_to_page_descriptions(self, project_context: ProjectContext,
                                                outline: List[Dict],
-                                               language='zh') -> List[str]:
+                                               language='ko') -> List[str]:
         """
         Cut out each page description from the description text
 
@@ -1257,7 +1256,7 @@ class AIService:
     def refine_outline(self, current_outline: List[Dict], user_requirement: str,
                       project_context: ProjectContext,
                       previous_requirements: Optional[List[str]] = None,
-                      language='zh') -> List[Dict]:
+                      language='ko') -> List[Dict]:
         """
         Modify existing outline according to user requirements
 
@@ -1284,7 +1283,7 @@ class AIService:
                            project_context: ProjectContext,
                            outline: List[Dict] = None,
                            previous_requirements: Optional[List[str]] = None,
-                           language='zh') -> List[Dict]:
+                           language='ko') -> List[Dict]:
         """
         Modify existing page descriptions according to user requirements
 
@@ -1334,7 +1333,7 @@ class AIService:
             results.append(result)
         return results
 
-    def extract_page_content(self, markdown_text: str, language: str = 'zh') -> Dict:
+    def extract_page_content(self, markdown_text: str, language: str = 'ko') -> Dict:
         """
         From fileparser Parsed markdown Extracts page structure content from text
 
@@ -1388,7 +1387,7 @@ class AIService:
         """Extract style description from pictures"""
         return self._generate_text_from_image(get_style_extraction_prompt(), image_path)
 
-    def generate_style_from_content(self, content: str, language: str = 'zh') -> str:
+    def generate_style_from_content(self, content: str, language: str = 'ko') -> str:
         """Based on content/Outline Generation PPT Visual Style Description"""
         if not content or not content.strip():
             raise ValueError("Content cannot be empty for style generation")
@@ -1400,7 +1399,7 @@ class AIService:
     # Per-page template (PRD §5.3 / §8) — analysis + auto-match
     # =========================================================================
 
-    def analyze_template(self, image_path: str, language: str = 'zh') -> Dict:
+    def analyze_template(self, image_path: str, language: str = 'ko') -> Dict:
         """
         Analyze a template image into the 9-field schema (PRD §5.3).
 
@@ -1414,7 +1413,7 @@ class AIService:
             return result
         raise ValueError(f"analyze_template expected dict, got {type(result).__name__}")
 
-    def auto_match_templates(self, project_id: str, language: str = 'zh',
+    def auto_match_templates(self, project_id: str, language: str = 'ko',
                               overwrite_existing: bool = True,
                               preserve_non_empty: bool = False) -> List[Dict]:
         """

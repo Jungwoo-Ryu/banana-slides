@@ -2,7 +2,7 @@ import { fieldLabel } from '@/utils/fieldLabels';
 import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, FileText, Sparkles, Download, Upload, ChevronDown, Settings2, X, Plus, HelpCircle, ImageIcon, Layers } from 'lucide-react';
-import logoUrl from '@/assets/logo.png';
+import logoUrl from '@/assets/sola-sun.svg';
 import { useT } from '@/hooks/useT';
 import { MarkdownTextarea, type MarkdownTextareaRef } from '@/components/shared/MarkdownTextarea';
 import PresetCapsules from '@/components/shared/PresetCapsules';
@@ -20,7 +20,7 @@ import { CSS } from '@dnd-kit/utilities';
 // Translation within Component
 const detailI18n = {
   zh: {
-    home: { title: 'Banana Slides' },
+    home: { title: 'Sol.A' },
     detail: {
       title: "Edit Descriptions", pageCount: "{{count}} pages", generateImages: "Generate Images",
       generating: "Generating...", page: "Page {{num}}", titleLabel: "Title",
@@ -76,7 +76,7 @@ const detailI18n = {
     }
   },
   en: {
-    home: { title: 'Banana Slides' },
+    home: { title: 'Sol.A' },
     detail: {
       title: "Edit Descriptions", pageCount: "{{count}} pages", generateImages: "Generate Images",
       generating: "Generating...", page: "Page {{num}}", titleLabel: "Title",

@@ -14,7 +14,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useImagePaste, buildMaterialsMarkdown } from '@/hooks/useImagePaste';
 import type { Material } from '@/types';
 import { useT } from '@/hooks/useT';
-import logoUrl from '@/assets/logo.png';
+import logoUrl from '@/assets/sola-sun.svg';
 import { ASPECT_RATIO_OPTIONS } from '@/config/aspectRatio';
 import { isDesktop } from '@/utils';
 
@@ -35,7 +35,7 @@ const homeI18n = {
       theme: { label: 'Theme', light: 'Light', dark: 'Dark', system: 'System' }
     },
     home: {
-      title: 'Banana Slides',
+      title: 'Sol.A',
       subtitle: 'Vibe your slides like vibe coding',
       tagline: 'AI-native PPT generator powered by nano banana pro',
       features: {
@@ -118,7 +118,7 @@ const homeI18n = {
       theme: { label: 'Theme', light: 'Light', dark: 'Dark', system: 'System' }
     },
     home: {
-      title: 'Banana Slides',
+      title: 'Sol.A',
       subtitle: 'Vibe your slides like vibe coding',
       tagline: 'AI-native PPT generator powered by nano banana pro',
       features: {
@@ -790,12 +790,12 @@ export const Home: React.FC = () => {
             <div className="flex items-center">
               <img
                 src={logoUrl}
-                alt="Banana Slides Banana Slides Logo"
+                alt="Sol.A Sol.A Logo"
                 className="h-10 md:h-12 w-auto rounded-lg object-contain"
               />
             </div>
             <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-banana-600 via-orange-500 to-pink-500 bg-clip-text text-transparent">
-              Banana Slides
+              Sol.A
             </span>
           </div>
           <div className="flex items-center gap-2 md:gap-3">
@@ -947,7 +947,7 @@ export const Home: React.FC = () => {
               backgroundSize: '200% auto',
               animation: 'gradient 3s ease infinite',
             }}>
-              {i18n.language?.startsWith('zh') ? `${t('home.title')} · Banana Slides` : 'Banana Slides'}
+              {i18n.language?.startsWith('zh') ? `${t('home.title')} · Sol.A` : 'Sol.A'}
             </span>
           </h1>
 

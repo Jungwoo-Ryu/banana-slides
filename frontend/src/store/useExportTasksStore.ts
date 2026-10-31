@@ -67,13 +67,11 @@ const t = getT(exportI18n);
 const EXPORT_POLL_INTERVAL_MS = 2000;
 const MAX_POLL_RETRY_DELAY_MS = 30000;
 const MAX_CREATE_CONFIRMATION_RETRIES = 6;
-// It’s written by the back door dog. error_code（See backend/services/task_watchdog.py）。
-// These failed files are completely localized at the front end. + Backend Structured Details Collapse，
-// Without relying on the back-end Chinese sentence (avoiding repetitions due to mixed Chinese-British lines and file drifts)）。
+// Localize watchdog errors from structured codes and details, never raw legacy prose.
 const TASK_INTERRUPTED_CODE = 'TASK_INTERRUPTED';
 const TASK_STALLED_CODE = 'TASK_STALLED';
 
-// Stage name (Chinese) in back-end heartbeat, map cost geochemical; unknown phase does not insert sentence
+// Map known backend heartbeat stages to labels; omit unknown internal stage names.
 const STEP_LABEL_KEYS: Record<string, string> = {
   'Commencement': 'exportStore.stepStarting',
   'Ready.': 'exportStore.stepPreparing',
@@ -333,6 +331,9 @@ export const useExportTasksStore = create<ExportTasksState>()(
       },
 
       pollTask: async (id, projectId, taskId) => {
+        // The UI can mount while task creation is still awaiting its server ID.
+        // Do not let a placeholder poll block the real task poll for the same UI entry.
+        if (!taskId) return;
         const existingTask = get().tasks.find(task => task.id === id);
         if (!existingTask || existingTask.status === 'COMPLETED' || existingTask.status === 'FAILED') {
           return;
@@ -484,7 +485,7 @@ export const useExportTasksStore = create<ExportTasksState>()(
                 monitoring: {
                   state: 'retrying',
                   code: issue.code,
-                  message: `${issue.message}。${t('exportStore.pollRetrying')}。`,
+                  message: `${issue.message} ${t('exportStore.pollRetrying')}.`,
                   consecutiveErrors: consecutivePollErrors,
                   lastErrorAt: new Date().toISOString(),
                   nextRetryAt,
@@ -500,7 +501,7 @@ export const useExportTasksStore = create<ExportTasksState>()(
               monitoring: {
                 state: 'paused',
                 code: issue.code,
-                message: `${issue.message}。${t('exportStore.pollPaused')}。`,
+                message: `${issue.message} ${t('exportStore.pollPaused')}.`,
                 consecutiveErrors: consecutivePollErrors,
                 lastErrorAt: new Date().toISOString(),
                 httpStatus: issue.httpStatus,

@@ -38,13 +38,13 @@ function getNestedValue(obj: NestedRecord, path: string): string | undefined {
  * const homeI18n = {
  *   zh: {
  *     home: {
- *       title: 'Banana Slides',
+ *       title: 'Sol.A',
  *       messages: { success: 'Success' }
  *     }
  *   },
  *   en: {
  *     home: {
- *       title: 'Banana Slides',
+ *       title: 'Sol.A',
  *       messages: { success: 'Success' }
  *     }
  *   }
@@ -52,7 +52,7 @@ function getNestedValue(obj: NestedRecord, path: string): string | undefined {
  *
  * const t = useT(homeI18n);
  *
- * t('home.title')     // Can not open message: "Banana Slides"
+ * t('home.title')     // Can not open message: "Sol.A"
  * t('common.save')    // Not in component, automatic fallback To Global: "Save"
  * ```
  *

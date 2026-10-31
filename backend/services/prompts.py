@@ -225,13 +225,9 @@ EXTRA_FIELD_INSTRUCTIONS = {
 
 def _format_extra_field_instructions(extra_fields: list | None) -> str:
     """Format the list of additional fields into prompt . Preset fields are customised using defined commands/Old fields in common format。"""
-    if not extra_fields:
-        return ''
-    parts = [
-        EXTRA_FIELD_INSTRUCTIONS.get(f, f'{f}: [Guidance for {f}; include only information not covered by other fields.]')
-        for f in extra_fields
-    ]
-    return '\n'.join([''] + parts)  # Lead lead line break
+    parts = [EXTRA_FIELD_INSTRUCTIONS.get(f, f'{f}: [Guidance for {f}; include only information not covered by other fields.]') for f in (extra_fields or [])]
+    parts.append('TTS_SCRIPT: [Write a natural spoken presentation script for this slide in the requested output language, approximately 30-60 seconds, maximum 4000 characters. Explain the slide, do not add unsupported facts. Plain spoken text only, no headings or stage directions. This script must never appear on the slide image.]')
+    return '\n'.join([''] + parts)
 
 
 def _format_reference_files_xml(reference_files_content: Optional[List[Dict[str, str]]]) -> str:

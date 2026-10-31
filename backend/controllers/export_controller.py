@@ -20,7 +20,6 @@ from utils import (
 )
 from services import ExportService, FileService
 from services.ai_service_manager import get_ai_service
-from services.prompts import normalize_narration_generation_config
 
 logger = logging.getLogger(__name__)
 
@@ -569,125 +568,57 @@ def export_editable_pptx(project_id):
 
 @export_bp.route('/<project_id>/export/video', methods=['POST'])
 def export_video(project_id):
-    """
-    POST /api/projects/{project_id}/export/video - Export speaking video (shows)）
-
-    Put Slide Pictures + TTS Synthesize narration as MP4 Video, including Ken Burns Activate。
-
-    Request body (JSON):
-        {
-            "filename": "optional_custom_name.mp4",
-            "page_ids": ["id1", "id2"],          // Optional
-            "voice": "zh-CN-XiaoxiaoNeural",     // Optional TTS Voice
-            "rate": "+0%",                        // Optional Speed
-            "generate_narration": true,            // Automatically generate missing narration (default true）
-            "language": "zh"                       // Optional Output Language
-        }
-
-    Returns:
-        JSON with task_id for polling via /api/projects/{project_id}/tasks/{task_id}
-    """
-    from services.runtime_config import setting
-    if str(setting('TTS_ENABLED', False)).lower() != 'true':
-        return error_response('FEATURE_DISABLED', '동영상 내보내기는 로컬 웹 기본 구성에서 비활성화되어 있습니다.', 400)
+    """Submit one Azure TTS presentation video, with bounded process admission."""
+    from services.tts_video_service import VIDEO_SLOT, VOICES, check_ffmpeg_available
+    from services.ai_providers import _get_model_type_provider_config
+    from services.file_service import FileService
+    from services.task_manager import task_manager, export_video_task
+    import math
+    project = db.session.get(Project, project_id)
+    if not project:
+        return not_found('Project')
+    data = request.get_json(silent=True) or {}
+    if not isinstance(data, dict):
+        return bad_request('내보내기 설정은 JSON 객체여야 합니다.')
     try:
-        project = Project.query.get(project_id)
-
-        if not project:
-            return not_found('Project')
-
-        data = request.get_json() or {}
-
-        # Parameters — Usage secure_filename Prevent Path Walking
-        raw_filename = data.get('filename', f'narration_{project_id}.mp4')
-        filename = secure_filename(raw_filename)
-        if not filename:
-            filename = f'narration_{project_id}.mp4'
-        if not filename.endswith('.mp4'):
-            filename += '.mp4'
-
-        voice = data.get('voice', current_app.config.get('TTS_DEFAULT_VOICE_ZH', 'zh-CN-XiaoxiaoNeural'))
-        rate = data.get('rate', current_app.config.get('TTS_DEFAULT_RATE', '+0%'))
-        try:
-            speed = float(data.get('speed', 1.0))
-        except (TypeError, ValueError):
-            speed = 1.0
-        speed = max(0.7, min(speed, 1.2))
-        generate_narration = data.get('generate_narration', True)
-        enable_ken_burns = data.get('enable_ken_burns', False)
-        include_no_image_pages = data.get('include_no_image_pages', False)
-        language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'zh'))
-        presentation_topic = data.get('presentation_topic') or project.idea_prompt or ''
-        narration_config = normalize_narration_generation_config(
-            data.get('narration_config'),
-            fallback_topic=presentation_topic,
-        )
-
-        # Get Page
-        selected_page_ids = parse_page_ids_from_body(data)
-
-        pages = get_filtered_pages(project_id, selected_page_ids if selected_page_ids else None)
-
-        if not pages:
-            return bad_request("No pages found for project")
-
-        has_images = any(page.generated_image_path for page in pages)
-        if not has_images and not include_no_image_pages:
-            return bad_request("No generated images found for project. Enable 'include pages without images' to export all pages.")
-
-        # Automatically select the default voice according to the language
-        if 'voice' not in data:
-            from services.tts_video_service import get_default_voice
-            voice = get_default_voice(language, dict(current_app.config))
-
-        # Create Task
-        task = Task(
-            project_id=project_id,
-            task_type='EXPORT_VIDEO',
-            status='PENDING',
-        )
+        _get_model_type_provider_config('tts')
+        if not check_ffmpeg_available(current_app.config.get('FFMPEG_PATH', 'ffmpeg')):
+            return bad_request('FFmpeg를 설치하고 FFMPEG_PATH를 설정하세요.')
+        voice = data.get('voice') or current_app.config.get('TTS_VOICE', 'alloy')
+        speed = float(data.get('speed', 1))
+        if voice not in VOICES or not math.isfinite(speed) or not 0.5 <= speed <= 2:
+            return bad_request('음성 또는 읽기 속도 설정이 올바르지 않습니다.')
+        selected = parse_page_ids_from_body(data)
+        pages = get_filtered_pages(project_id, selected if selected else None)
+        if selected and {p.id for p in pages} != set(selected):
+            return bad_request('선택한 페이지가 이 프로젝트에 속하지 않습니다.')
+        if not pages or len(pages) > current_app.config.get('VIDEO_MAX_PAGES', 50):
+            return bad_request('발표 동영상은 1~50페이지를 선택하세요.')
+        if any(not p.generated_image_path for p in pages):
+            return bad_request('선택한 슬라이드의 이미지를 모두 생성하세요.')
+        if any(len(p.narration_text or '') > 4000 for p in pages):
+            return bad_request('페이지별 발표 스크립트는 4000자 이하여야 합니다.')
+    except (ValueError, TypeError) as error:
+        return bad_request(str(error))
+    if not VIDEO_SLOT.acquire(blocking=False):
+        return error_response('VIDEO_BUSY', '다른 발표 동영상을 만들고 있습니다. 완료 후 다시 시도하세요.', 409)
+    try:
+        task = Task(project_id=project_id, task_type='EXPORT_VIDEO', status='PENDING')
         db.session.add(task)
         db.session.commit()
-
-        logger.info(f"Created video export task {task.id} for project {project_id}")
-
-        # Commit Backstage Tasks
-        from services.file_service import FileService
-        from services.task_manager import task_manager, export_video_task
-
-        file_service = FileService(current_app.config['UPLOAD_FOLDER'])
-        app = current_app._get_current_object()
-
-        task_manager.submit_task(
-            task.id,
-            export_video_task,
-            project_id=project_id,
-            filename=filename,
-            file_service=file_service,
-            voice=voice,
-            rate=rate,
-            speed=speed,
-            generate_narration=generate_narration,
-            enable_ken_burns=enable_ken_burns,
-            include_no_image_pages=include_no_image_pages,
-            page_ids=selected_page_ids if selected_page_ids else None,
-            language=language,
-            narration_config=narration_config,
-            app=app,
-        )
-
-        return success_response(
-            data={
-                "task_id": task.id,
-                "voice": voice,
-                "generate_narration": generate_narration,
-                "enable_ken_burns": enable_ken_burns,
-                "include_no_image_pages": include_no_image_pages,
-                "narration_config": narration_config,
-            },
-            message="Video export task created"
-        )
-
-    except Exception as e:
-        logger.exception("Error creating video export task")
-        return error_response('SERVER_ERROR', str(e), 500)
+        filename = secure_filename(str(data.get('filename') or 'sola-presentation')) or 'sola-presentation'
+        task_manager.submit_task(task.id, export_video_task, project_id=project_id,
+            filename=filename, file_service=FileService(current_app.config['UPLOAD_FOLDER']),
+            voice=voice, speed=speed, page_ids=[p.id for p in pages],
+            generate_narration=data.get('generate_narration', True) is True,
+            language=current_app.config.get('OUTPUT_LANGUAGE', 'ko'), app=current_app._get_current_object())
+        return success_response({'task_id': task.id}, status_code=202)
+    except Exception:
+        VIDEO_SLOT.release()
+        db.session.rollback()
+        if 'task' in locals() and task.id:
+            task.status = 'FAILED'
+            task.error_message = '동영상 작업을 시작하지 못했습니다.'
+            db.session.commit()
+        logger.exception('Video submission failed')
+        return error_response('VIDEO_SUBMISSION_FAILED', '동영상 작업을 시작하지 못했습니다.', 500)

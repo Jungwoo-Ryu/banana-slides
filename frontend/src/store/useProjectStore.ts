@@ -103,6 +103,7 @@ interface ProjectState {
   isGlobalLoading: boolean;
   // There are page changes in the tremors queue or backends (used for「Saving/Saved」Hint）
   isSavingPages: boolean;
+  flushPendingPageUpdates: () => Promise<boolean>;
   activeTaskId: string | null;
   taskProgress: { total: number; completed: number } | null;
   error: string | null;
@@ -219,38 +220,39 @@ export const useProjectStore = create<ProjectState>((set, get) => {
   // Otherwise... 1s Continuous editing of multiple fields (or continued editing after cutting pages) will remove previous changes。
   const pendingPageUpdates = new Map<string, { projectId: string; data: any }>();
 
-  const flushPageUpdates = async () => {
+  let activeSave: Promise<boolean> | null = null;
+  const flushPageUpdates = (): Promise<boolean> => {
+    if (activeSave) return activeSave.then(ok => ok && pendingPageUpdates.size ? flushPageUpdates() : ok);
     const entries = Array.from(pendingPageUpdates.entries());
     pendingPageUpdates.clear();
-    if (entries.length === 0) return;
-
-    try {
-      await Promise.all(
-        entries.map(([pageId, { projectId, data }]) => savePageFields(projectId, pageId, data))
-      );
-
-      // API Sync project status to update after successful call updated_at
-      // Picture generation time poll Already 2s Sync, skip to avoid simultaneous competition
-      // The user may have cut the item off in the shivering window, at which point the sync will cover the current item into an old one
-      // The queue may be mixed with multiple project changes.
-      // Is there a copy of the current project, not just the first one?
-      const { syncProject, pageGeneratingTasks, currentProject } = get();
-      const touchedCurrentProject =
-        !!currentProject && entries.some(([, update]) => update.projectId === currentProject.project_id);
-      if (touchedCurrentProject && Object.keys(pageGeneratingTasks).length === 0) {
-        await syncProject(currentProject!.id);
+    if (!entries.length) return Promise.resolve(true);
+    set({ isSavingPages: true });
+    activeSave = (async () => {
+      try {
+        const results = await Promise.allSettled(entries.map(([id, update]) => savePageFields(update.projectId, id, update.data)));
+        const failed = entries.filter((_, index) => results[index].status === 'rejected');
+        for (const [id, update] of failed) {
+          const newer = pendingPageUpdates.get(id);
+          pendingPageUpdates.set(id, { projectId: update.projectId, data: { ...update.data, ...newer?.data } });
+        }
+        if (failed.length) {
+          set({ error: '슬라이드 변경 사항을 저장하지 못했습니다. 연결을 확인하고 다시 시도하세요.' });
+          return false;
+        }
+        const { currentProject, pageGeneratingTasks, syncProject } = get();
+        if (!pendingPageUpdates.size && currentProject && !Object.keys(pageGeneratingTasks).length
+            && entries.some(([, value]) => value.projectId === currentProject.project_id)) {
+          await syncProject(currentProject.id);
+        }
+        return true;
+      } finally {
+        activeSave = null;
+        set({ isSavingPages: pendingPageUpdates.size > 0 });
       }
-    } catch (error: any) {
-      console.error('Failed to save page:', error);
-      // You can add error tips here, but only logs are recorded for the time being in order to avoid frequent tips.
-      // If necessary, through the event system or toast Notify users
-    } finally {
-      // The queue could be this time. flush Period is written again, only when empty is saved is finished
-      if (pendingPageUpdates.size === 0) set({ isSavingPages: false });
-    }
+    })();
+    return activeSave;
   };
-
-  const debouncedFlushPageUpdates = debounce(flushPageUpdates, 1000);
+  const debouncedFlushPageUpdates = debounce(() => { void flushPageUpdates(); }, 1000);
 
   const debouncedUpdatePage = (projectId: string, pageId: string, data: any) => {
     const existing = pendingPageUpdates.get(pageId);
@@ -268,6 +270,10 @@ export const useProjectStore = create<ProjectState>((set, get) => {
   currentProject: null,
   isGlobalLoading: false,
   isSavingPages: false,
+  flushPendingPageUpdates: async () => {
+    while (activeSave || pendingPageUpdates.size) { if (!await flushPageUpdates()) return false; }
+    return true;
+  },
   activeTaskId: null,
   taskProgress: null,
   error: null,
@@ -856,6 +862,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
                   return {
                     ...page,
                     status: 'DESCRIPTION_GENERATED' as const,
+                    narration_text: desc.narration_text ?? page.narration_text,
                     description_content: {
                       text: desc.text,
                       ...(desc.extra_fields ? { extra_fields: desc.extra_fields } : {}),

@@ -1,5 +1,5 @@
 import { fieldLabel } from '@/utils/fieldLabels';
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Edit2, FileText, RefreshCw, Tag, Layout, Image, Focus, MessageSquare, ImageOff } from 'lucide-react';
 import { useT } from '@/hooks/useT';
 import { useImagePaste, buildMaterialsMarkdown } from '@/hooks/useImagePaste';
@@ -89,6 +89,8 @@ export const DescriptionCard: React.FC<DescriptionCardProps> = React.memo(({
 
   const text = getDescriptionText(page.description_content);
   const extraFields = getExtraFields(page.description_content);
+  const [script, setScript] = useState(page.narration_text || '');
+  useEffect(() => { setScript(page.narration_text || ''); }, [page.id, page.narration_text]);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState('');
@@ -237,6 +239,17 @@ export const DescriptionCard: React.FC<DescriptionCardProps> = React.memo(({
           )}
         </div>
 
+        <div className="border-t border-gray-100 dark:border-border-primary p-4">
+          <label className="block text-xs font-medium text-gray-600 dark:text-foreground-secondary">
+            TTS 발표 스크립트
+            <textarea aria-label="TTS 발표 스크립트" data-testid="slide-narration-input" rows={4} maxLength={4000}
+              className="mt-2 w-full rounded-lg border border-gray-200 dark:border-border-primary bg-white dark:bg-background-tertiary p-3 text-sm text-gray-800 dark:text-foreground-primary focus:outline-none focus:ring-2 focus:ring-banana-400"
+              value={script} onChange={e => setScript(e.target.value)}
+              onBlur={() => { if (script !== (page.narration_text || '')) onUpdate({ narration_text: script }); }}
+              placeholder="슬라이드 생성 시 작성된 발표 스크립트를 확인하고 수정하세요." />
+          </label>
+          <p className="mt-1 text-xs text-gray-400">{script.length}/4000 · 입력란을 벗어나면 저장됩니다.</p>
+        </div>
         {/* Operations Bar */}
         <div className="border-t border-gray-100 dark:border-border-primary px-4 py-3 flex justify-end gap-2 mt-auto">
           <Button
@@ -323,6 +336,7 @@ export const DescriptionCard: React.FC<DescriptionCardProps> = React.memo(({
   prev.page.id === next.page.id &&
   prev.page.status === next.page.status &&
   prev.page.part === next.page.part &&
+  prev.page.narration_text === next.page.narration_text &&
   getDescriptionText(prev.page.description_content) === getDescriptionText(next.page.description_content) &&
   getExtraFieldsKey(prev.page.description_content) === getExtraFieldsKey(next.page.description_content) &&
   JSON.stringify(prev.extraFieldNames) === JSON.stringify(next.extraFieldNames) &&

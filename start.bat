@@ -11,7 +11,7 @@ if errorlevel 1 (
 )
 where node >nul 2>&1
 if errorlevel 1 (
-  echo [오류] Node.js 22 LTS 이상을 설치한 뒤 다시 시작하세요.
+  echo [오류] Node.js 22.23.4 LTS 또는 보안 패치 버전을 설치한 뒤 다시 시작하세요.
   pause
   exit /b 1
 )

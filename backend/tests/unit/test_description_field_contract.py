@@ -87,9 +87,9 @@ def test_legacy_field_names_do_not_borrow_new_definitions():
     assert 'Page layout: [Guidance for Page layout' in result
 
 
-def test_empty_field_list_renders_nothing():
-    assert _format_extra_field_instructions([]) == ''
-    assert _format_extra_field_instructions(None) == ''
+def test_script_is_requested_even_without_optional_fields():
+    assert 'TTS_SCRIPT:' in _format_extra_field_instructions([])
+    assert 'TTS_SCRIPT:' in _format_extra_field_instructions(None)
 
 
 # --- Description Generation prompt ---

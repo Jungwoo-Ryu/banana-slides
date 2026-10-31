@@ -42,10 +42,10 @@ const drawerI18n = {
       descriptionPlaceholder:
         'Enter page description — page text, materials, layout notes; you can paste images',
       notInImagePrompt: 'Not used in image generation',
-      narration: 'Narration script',
+      narration: 'TTS 발표 스크립트',
       narrationHint:
-        'Read aloud when exporting a narration video; leave empty and the export generates one',
-      narrationPlaceholder: 'No script yet — write one here',
+        '발표 동영상의 TTS 음성으로 읽을 내용입니다. 저장한 스크립트는 내보낼 때 유지됩니다.',
+      narrationPlaceholder: '이 슬라이드에서 발표할 내용을 입력하세요.',
       templateChange: 'Change',
       templateLabel: 'Template image',
       templateStyle: 'Template prompt',
@@ -84,10 +84,10 @@ const drawerI18n = {
       descriptionPlaceholder:
         'Enter page description — page text, materials, layout notes; you can paste images',
       notInImagePrompt: 'Not used in image generation',
-      narration: 'Narration script',
+      narration: 'TTS 발표 스크립트',
       narrationHint:
-        'Read aloud when exporting a narration video; leave empty and the export generates one',
-      narrationPlaceholder: 'No script yet — write one here',
+        '발표 동영상의 TTS 음성으로 읽을 내용입니다. 저장한 스크립트는 내보낼 때 유지됩니다.',
+      narrationPlaceholder: '이 슬라이드에서 발표할 내용을 입력하세요.',
       templateChange: 'Change',
       templateLabel: 'Template image',
       templateStyle: 'Template prompt',
@@ -265,7 +265,7 @@ export const PagePropertiesDrawer: React.FC<PagePropertiesDrawerProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
-  const [isNarrationOpen, setIsNarrationOpen] = useState(false);
+  const [isNarrationOpen, setIsNarrationOpen] = useState(true);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isMaterialSelectorOpen, setIsMaterialSelectorOpen] = useState(false);
   const wasSavingRef = useRef(false);
@@ -902,6 +902,7 @@ export const PagePropertiesDrawer: React.FC<PagePropertiesDrawerProps> = ({
                       </p>
                       <textarea
                         data-testid="drawer-narration-input"
+                        maxLength={4000}
                         {...focusProps('narration')}
                         value={narration}
                         rows={4}

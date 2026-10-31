@@ -939,7 +939,7 @@ def generate_images_task(task_id: str, project_id: str, ai_service, file_service
                         progress['failed'] = failed
                         # Set a warning when a match is detected first
                         if resolution_mismatched > 0 and 'warning_message' not in progress:
-                            progress['warning_message'] = "The image returns a resolution that does not match the settings and is recommended gemini Format to avoid this problem"
+                            progress['warning_message'] = "생성된 이미지 해상도가 요청한 설정과 다릅니다. 이미지 크기를 확인하세요."
                         task.set_progress(progress)
                         db.session.commit()
                         logger.info(f"Image Progress: {completed}/{len(pages)} pages completed")
@@ -1534,7 +1534,7 @@ def process_ppt_renovation_task(task_id: str, project_id: str, ai_service,
                                 file_service, file_parser_service,
                                 keep_layout: bool = False,
                                 max_workers: int = 5, app=None,
-                                language: str = 'zh'):
+                                language: str = 'ko'):
     """
     Background task for PPT renovation: parse PDF pages → extract content → fill outline + description
 
@@ -2070,351 +2070,74 @@ def export_editable_pptx_with_recursive_analysis_task(
             )
 
 
-def export_video_task(
-    task_id: str,
-    project_id: str,
-    filename: str,
-    file_service,
-    voice: str = 'zh-CN-XiaoxiaoNeural',
-    rate: str = '+0%',
-    speed: float = 1.0,
-    generate_narration: bool = True,
-    enable_ken_burns: bool = False,
-    include_no_image_pages: bool = False,
-    page_ids: list = None,
-    language: str = 'zh',
-    narration_config: dict | None = None,
-    app=None,
-):
-    """
-    Backstage task： Export TTS Broadcast video (MP4)
-
-    Process:
-      0-20%  Generate for Missing Narrative Pages narration_text（AI）
-      20-50% Page-by-page generation TTS Audio（edge-tts）
-      50-90% Create page-by-page Ken Burns Video Snippet（FFmpeg）
-      90-100% Synthetic Final MP4
-    """
-    if app is None:
-        raise ValueError("Flask app instance must be provided")
-
-    with app.app_context():
-        import os
-        from models import Project, Settings
-        from services.tts_video_service import (
-            generate_narration_video,
-            check_ffmpeg_available,
-            check_ffmpeg_ass_filter_available,
-            create_placeholder_frame,
-        )
-
-        # Read ElevenLabs Configuration
-        _settings = Settings.get_settings()
-        elevenlabs_config = None
-        from services.runtime_config import setting, secret
-        if str(setting('TTS_ENABLED', False)).lower() == 'true' and secret('ELEVENLABS_API_KEY'):
-            elevenlabs_config = {
-                'api_key': secret('ELEVENLABS_API_KEY'),
-                'voice_id': voice,
-            }
-        logger.info(f"[export_video] voice={voice!r} elevenlabs_enabled={_settings.elevenlabs_enabled} elevenlabs_config={'set' if elevenlabs_config else 'None'}")
-
-        progress_messages = ["Start exporting lecture videos..."]
-        max_messages = 10
-
-        def progress_callback(step: str, message: str, percent: int):
-            """Progress Review — percent Range Corresponding generate_narration_video Internal progress (20-95%)"""
-            nonlocal progress_messages
-            try:
-                new_message = f"[{step}] {message}"
-                progress_messages.append(new_message)
-                if len(progress_messages) > max_messages:
-                    progress_messages = progress_messages[-max_messages:]
-
-                # Internal 0-100% Map to Total 20-95%
-                mapped_pct = int(20 + percent * 0.75)
-                mapped_pct = min(mapped_pct, 95)
-
-                task = Task.query.get(task_id)
-                if task:
-                    task.set_progress({
-                        "total": 100,
-                        "completed": mapped_pct,
-                        "failed": 0,
-                        "current_step": message,
-                        "percent": mapped_pct,
-                        "messages": progress_messages.copy(),
-                    })
-                    db.session.commit()
-            except Exception as e:
-                logger.warning(f"Update progress failed: {e}")
-
-        try:
-            task = Task.query.get(task_id)
+def export_video_task(task_id, project_id, filename, file_service, voice='alloy', speed=1.0,
+                      page_ids=None, generate_narration=True, language='ko', app=None):
+    """Use saved scripts verbatim; generate only missing scripts; release admission on every exit."""
+    from services.tts_video_service import generate_narration_video, VIDEO_SLOT
+    from utils.user_messages import localize_error
+    try:
+        with app.app_context():
+            task = db.session.get(Task, task_id)
             if not task:
-                logger.error(f"Task {task_id} not found")
                 return
-
-            project = Project.query.get(project_id)
-            if not project:
-                raise ValueError(f"Project {project_id} not found")
-
-            export_allow_partial = project.export_allow_partial or False
-            fail_fast = not export_allow_partial
-            logger.info(f"Video Export Settings: export_allow_partial={export_allow_partial}, fail_fast={fail_fast}")
-
-            task.status = 'PROCESSING'
-            task.set_progress({
-                "total": 100,
-                "completed": 0,
-                "failed": 0,
-                "current_step": "Ready....",
-                "percent": 0,
-                "messages": progress_messages,
-            })
-            db.session.commit()
-
-            # Inspection FFmpeg
-            ffmpeg_path = app.config.get('FFMPEG_PATH', 'ffmpeg')
-            if not check_ffmpeg_available(ffmpeg_path):
-                raise RuntimeError(
-                    "FFmpeg Not installed or absent PATH . Please install FFmpeg To Use Video Export。"
-                )
-
-            progress_callback("Ready.", "FFmpeg Available", 2)
-            if not check_ffmpeg_ass_filter_available(ffmpeg_path):
-                progress_callback("Ready.", "Current FFmpeg Missing ASS Subtitle filters. If you need subtitles, please install them first. libass version", 3)
-
-            # Get Page
-            pages = get_filtered_pages(project_id, page_ids)
-            if not pages:
-                raise ValueError("No exportable pages found")
-
-            # Build Page List： Pictures with actual pictures, no pictures according to options
-            valid_pages = []
-            placeholder_dir = None
-
-            if include_no_image_pages:
-                video_width = app.config.get('VIDEO_OUTPUT_WIDTH', 1920)
-                video_height = app.config.get('VIDEO_OUTPUT_HEIGHT', 1080)
-                placeholder_dir = os.path.join(app.config['UPLOAD_FOLDER'], project_id, 'exports', f'_placeholder_{task_id}')
-                os.makedirs(placeholder_dir, exist_ok=True)
-
-            for page in pages:
-                if page.generated_image_path:
-                    img_path = file_service.get_absolute_path(page.generated_image_path)
-                    if os.path.exists(img_path):
-                        valid_pages.append((page, img_path))
-                        continue
-
-                if include_no_image_pages:
-                    # Generate a frame for uncharted pages
-                    outline_content = page.get_outline_content() or {}
-                    title = outline_content.get('title', f'Page {page.order_index + 1}')
-                    placeholder_path = os.path.join(placeholder_dir, f'placeholder_{page.order_index:03d}.png')
-                    try:
-                        create_placeholder_frame(
-                            placeholder_path, title=title,
-                            width=video_width, height=video_height,
-                            ffmpeg_path=ffmpeg_path,
-                        )
-                        valid_pages.append((page, placeholder_path))
-                    except Exception as e:
-                        logger.warning(f"Failed to generate a placeholder frame (page {page.id}): {e}")
-
-            if not valid_pages:
-                raise ValueError("No exportable pages found (no pictures and no placeholder frame enabled)）")
-
-            progress_callback("Ready.", f"Found it. {len(valid_pages)} Page Slide", 5)
-
-            # ── Step 1: Generate missing verbs ──
-            if generate_narration:
-                from services.prompts import (
-                    get_narration_generation_prompt,
-                    normalize_narration_generation_config,
-                    parse_narration_generation_result,
-                )
-                from services.ai_service_manager import get_ai_service
-
-                ai_service = get_ai_service()
-                narration_generated = 0
-                project_topic = (project.idea_prompt or '').strip() if project else ''
-                normalized_narration_config = normalize_narration_generation_config(
-                    narration_config,
-                    fallback_topic=project_topic,
-                )
-                image_prompt_field_names = get_image_prompt_field_names()
-
-                # Collect pages that need narration generation
-                pages_needing_narration = []  # list of (page, page_index_in_valid, desc_text)
-                for i, (page, _) in enumerate(valid_pages):
-                    desc_content = page.get_description_content()
-                    desc_text = ''
-                    if desc_content:
-                        desc_text = desc_content.get('text', '')
-                        if not desc_text and desc_content.get('text_content'):
-                            tc = desc_content.get('text_content', [])
-                            desc_text = '\n'.join(tc) if isinstance(tc, list) else str(tc)
-                        desc_text = _append_extra_fields(desc_text, desc_content, image_prompt_field_names)
-
-                    outline_content = page.get_outline_content() or {}
-                    if not desc_text:
-                        title = outline_content.get('title', '')
-                        points = outline_content.get('points', [])
-                        if title or points:
-                            desc_text = f'{title}\n' + '\n'.join(f'- {p}' for p in points)
-
-                    if not desc_text:
-                        if fail_fast:
-                            raise RuntimeError(
-                                f"Page {page.order_index + 1} page lacks a description for narration generation; partial results are disabled, so video export cannot proceed。"
-                            )
-                        continue
-
-                    pages_needing_narration.append((page, i + 1, outline_content, desc_text))
-
-                if pages_needing_narration:
-                    progress_callback("Narrator.", f"Generating {len(pages_needing_narration)} Page Narrator...", 5)
-                    try:
-                        prompt_pages = [
-                            {
-                                'page_index': seq,
-                                'title': outline.get('title', ''),
-                                'points': outline.get('points', []),
-                                'description_text': desc_text,
-                            }
-                            for _, seq, outline, desc_text in pages_needing_narration
-                        ]
-                        prompt = get_narration_generation_prompt(
-                            prompt_pages,
-                            language=language,
-                            config=normalized_narration_config,
-                        )
-                        result = ai_service.text_provider.generate_text(prompt)
-                        parsed = parse_narration_generation_result(result)
-
-                        for page, seq, _, _ in pages_needing_narration:
-                            narration = parsed.get(seq, '')
-                            if narration:
-                                page.set_narration_text(narration)
-                                narration_generated += 1
-                            elif fail_fast:
-                                raise RuntimeError(
-                                    f"Page {page.order_index + 1} The result is empty, the current item is not open ”Enable to return to semi-finished products” and the export is stopped。"
-                                )
-                        db.session.commit()
-
-                    except RuntimeError:
-                        raise
-                    except Exception as e:
-                        if fail_fast:
-                            raise RuntimeError(f"Narrative generation failed, export stopped: {e}") from e
-                        logger.warning(f"Batch narration generation failed: {e}")
-
-                progress_callback("Narrator.", f"Generated {narration_generated} Page Narrator", 20)
-
-            progress_callback("Narrator.", "NARRATOR： NARRATOR： Narrating ready.", 20)
-
-            # ── Step 2: Build pages_data ──
-            pages_data = []
-            missing_narration_pages = []
-            for page, img_path in valid_pages:
-                db.session.refresh(page)
-                narration = page.narration_text
-                if not narration or not narration.strip():
-                    missing_narration_pages.append(page.order_index + 1)
-                logger.info(
-                    f"[Video Export] Page {page.order_index + 1}: "
-                    f"title={((page.get_outline_content() or {}).get('title', ''))[:30]}, "
-                    f"narration={narration[:50] if narration else '(None)'}, "
-                    f"image={'There’s a picture.' if page.generated_image_path else 'Place frame'}"
-                )
-                pages_data.append({
-                    'image_path': img_path,
-                    'narration_text': narration,
-                    'page_index': page.order_index,
-                })
-
-            if missing_narration_pages and fail_fast:
-                pages = '、'.join(str(idx) for idx in missing_narration_pages)
-                raise RuntimeError(
-                    f"Narration text is missing for the following pages: {pages} Pages. The current item is not open ”Enable to return semi-finished products” and has stopped exporting。"
-                )
-
-            # ── Step 3: Generate Video ──
-            exports_dir = os.path.join(app.config['UPLOAD_FOLDER'], project_id, 'exports')
-            os.makedirs(exports_dir, exist_ok=True)
-
-            if not filename.endswith('.mp4'):
-                filename += '.mp4'
-
-            output_path = os.path.join(exports_dir, filename)
-            if os.path.exists(output_path):
-                base_name = filename.rsplit('.', 1)[0]
-                timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
-                filename = f"{base_name}_{timestamp}.mp4"
-                output_path = os.path.join(exports_dir, filename)
-
-            video_width = app.config.get('VIDEO_OUTPUT_WIDTH', 1920)
-            video_height = app.config.get('VIDEO_OUTPUT_HEIGHT', 1080)
-            video_fps = app.config.get('VIDEO_FPS', 25)
-            silent_duration = app.config.get('DEFAULT_SILENT_CLIP_DURATION', 3.0)
-
-            generate_narration_video(
-                pages_data=pages_data,
-                output_path=output_path,
-                voice=voice,
-                rate=rate,
-                width=video_width,
-                height=video_height,
-                fps=video_fps,
-                enable_ken_burns=enable_ken_burns,
-                ffmpeg_path=ffmpeg_path,
-                progress_callback=progress_callback,
-                silent_duration=silent_duration,
-                fail_fast=fail_fast,
-                elevenlabs_config=elevenlabs_config,
-                speed=speed,
-            )
-
-            # ── Step 4: Tag complete. ──
-            download_path = f"/files/{project_id}/exports/{filename}"
-            progress_messages.append("Video Export Complete！")
-
-            task = Task.query.get(task_id)
-            if task:
+            try:
+                task.status = 'PROCESSING'
+                db.session.commit()
+                pages = get_filtered_pages(project_id, page_ids)
+                if not pages:
+                    raise ValueError('내보낼 슬라이드가 없습니다.')
+                def progress(step, message, percent):
+                    task.set_progress({'total': 100, 'completed': percent, 'percent': percent,
+                                       'failed': 0, 'current_step': message})
+                    db.session.commit()
+                data = []
+                for index, page in enumerate(pages):
+                    image = file_service.get_absolute_path(page.generated_image_path) if page.generated_image_path else None
+                    if not image or not Path(image).is_file():
+                        raise ValueError(f'{index+1}번 슬라이드 이미지를 먼저 생성하세요.')
+                    if not (page.narration_text or '').strip():
+                        if not generate_narration:
+                            raise ValueError(f'{index+1}번 발표 스크립트를 입력하세요.')
+                        from services.ai_service_manager import get_ai_service
+                        from services.prompts import get_narration_generation_prompt, parse_narration_generation_result
+                        progress('script', f'{index+1}번 발표 스크립트를 생성하고 있습니다.', 1)
+                        content = page.get_description_content() or {}
+                        outline = page.get_outline_content() or {}
+                        prompt = get_narration_generation_prompt([{'page_index': 1, 'title': outline.get('title', ''),
+                            'points': outline.get('points', []), 'description_text': content.get('text', '')}], language=language)
+                        generated = parse_narration_generation_result(get_ai_service().text_provider.generate_text(prompt)).get(1, '')
+                        db.session.refresh(page)
+                        # A user edit made during generation wins over the generated draft.
+                        if not (page.narration_text or '').strip():
+                            page.set_narration_text(generated)
+                            db.session.commit()
+                    if not (page.narration_text or '').strip():
+                        raise ValueError(f'{index+1}번 발표 스크립트를 생성하지 못했습니다.')
+                    data.append({'image_path': image, 'narration_text': page.narration_text})
+                folder = Path(app.config['UPLOAD_FOLDER']) / project_id / 'exports'
+                folder.mkdir(parents=True, exist_ok=True)
+                # Every export has its own name, including concurrent requests/retries.
+                filename = f'{Path(filename).stem}_{task_id}.mp4'
+                generate_narration_video(data, str(folder / filename), voice=voice, speed=speed,
+                                         ffmpeg_path=app.config.get('FFMPEG_PATH', 'ffmpeg'),
+                                         progress_callback=progress)
                 task.status = 'COMPLETED'
                 task.completed_at = datetime.utcnow()
-                task.set_progress({
-                    "total": 100,
-                    "completed": 100,
-                    "failed": 0,
-                    "current_step": "Export complete.",
-                    "percent": 100,
-                    "messages": progress_messages,
-                    "download_url": download_path,
-                    "filename": filename,
-                })
+                task.set_progress({'total': 100, 'completed': 100, 'percent': 100, 'failed': 0,
+                                   'current_step': '발표 동영상을 만들었습니다.', 'filename': filename,
+                                   'download_url': f'/files/{project_id}/exports/{filename}'})
                 db.session.commit()
-                logger.info(f"✅ Tasks {task_id} Completed - Video Exported: {output_path}")
-
-        except Exception as e:
-            import traceback
-            error_detail = traceback.format_exc()
-            logger.error(f"✗ Video Export Task {task_id} Failed: {error_detail}")
-
-            task = Task.query.get(task_id)
-            if task:
-                task.status = 'FAILED'
-                task.error_message = str(e)
-                task.completed_at = datetime.utcnow()
-                db.session.commit()
-
-        finally:
-            # Clear the temporary directory of the occupied frame
-            if placeholder_dir and os.path.exists(placeholder_dir):
-                import shutil
-                shutil.rmtree(placeholder_dir, ignore_errors=True)
+            except Exception as error:
+                db.session.rollback()
+                logger.exception('Azure presentation video export failed')
+                task = db.session.get(Task, task_id)
+                if task:
+                    task.status = 'FAILED'
+                    task.error_message = localize_error(str(error))
+                    task.completed_at = datetime.utcnow()
+                    db.session.commit()
+    finally:
+        VIDEO_SLOT.release()
 
 
 # ============================================================================

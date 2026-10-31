@@ -24,6 +24,19 @@ describe('useExportTasksStore', () => {
     vi.useRealTimers()
   })
 
+  it('waits for the backend task ID before starting a video poll', async () => {
+    const store = useExportTasksStore.getState();
+    store.addTask({ id: 'video-ui', taskId: '', projectId: 'project-a', type: 'video', status: 'PROCESSING' });
+    await store.pollTask('video-ui', 'project-a', '');
+    expect(api.getTaskStatus).not.toHaveBeenCalled();
+    expect(activePolls.has('video-ui')).toBe(false);
+    store.addTask({ id: 'video-ui', taskId: 'video-backend', projectId: 'project-a', type: 'video', status: 'PROCESSING' });
+    vi.mocked(api.getTaskStatus).mockResolvedValue({ data: { status: 'COMPLETED', progress: { download_url: '/files/presentation.mp4' } } } as any);
+    await store.pollTask('video-ui', 'project-a', 'video-backend');
+    expect(api.getTaskStatus).toHaveBeenCalledWith('project-a', 'video-backend');
+    expect(useExportTasksStore.getState().tasks[0].downloadUrl).toBe('/files/presentation.mp4');
+  });
+
   it('clears completed export tasks only for the selected project', () => {
     act(() => {
       useExportTasksStore.getState().addTask({
@@ -343,7 +356,8 @@ describe('useExportTasksStore', () => {
     expect(task.status).toBe('PROCESSING')
     expect(task.monitoring?.state).toBe('paused')
     expect(task.monitoring?.code).toBe('EXPORT_STATUS_CHECK_FAILED')
-    expect(task.monitoring?.message).toMatch(/Cannot read properties/)
+    expect(task.monitoring?.message).toContain('작업을 완료하지 못했습니다.')
+    expect(task.monitoring?.message).not.toContain('Cannot read properties')
     expect(task.completedAt).toBeUndefined()
 
     await act(async () => {
@@ -472,7 +486,7 @@ describe('useExportTasksStore', () => {
 
     expect(task.status).toBe('FAILED')
     expect(task.errorMessage).toContain('Export interrupted')
-    expect(task.errorMessage).toContain('3.5 Hours')
+    expect(task.errorMessage).toContain('3.5 hours')
     // You can’t spell the original text in the back./Bandit.）
     expect(task.errorMessage).not.toContain(RAW_BACKEND_TEXT)
     expect(task.progress?.error_code).toBe('TASK_INTERRUPTED')
@@ -516,10 +530,10 @@ describe('useExportTasksStore', () => {
     })
 
     expect(task.status).toBe('FAILED')
-    expect(task.errorMessage).toContain('Export suspects are stuck')
+    expect(task.errorMessage).toContain('Export looks stuck')
     expect(task.errorMessage).toContain('21 min')
     // Backend stage names will be localized and not inserted directly into the original Chinese tab
-    expect(task.errorMessage).toContain('Build PPTX')
+    expect(task.errorMessage).toContain('building the PPTX')
     expect(task.errorMessage).not.toContain(RAW_BACKEND_TEXT)
   })
 
@@ -559,7 +573,7 @@ describe('useExportTasksStore', () => {
       },
     })
 
-    expect(task.errorMessage).toContain('Export suspects are stuck')
+    expect(task.errorMessage).toContain('Export looks stuck')
     expect(task.errorMessage).not.toContain('Internal Phase Name XYZ')
   })
 

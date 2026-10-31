@@ -15,7 +15,7 @@ import {
   PenLine,
   Wand2,
 } from 'lucide-react';
-import logoUrl from '@/assets/logo.png';
+import logoUrl from '@/assets/sola-sun.svg';
 import { useT } from '@/hooks/useT';
 import { cn } from '@/utils';
 import { getImageUrl } from '@/api/client';
@@ -29,7 +29,7 @@ import type { Task, TemplateAsset } from '@/types';
 
 const i18n = {
   zh: {
-    home: { title: 'Banana Slides' },
+    home: { title: 'Sol.A' },
     ts: {
       title: 'Template Setup',
       back: 'Back',
@@ -84,7 +84,7 @@ const i18n = {
     },
   },
   en: {
-    home: { title: 'Banana Slides' },
+    home: { title: 'Sol.A' },
     ts: {
       title: 'Template Setup',
       back: 'Back',

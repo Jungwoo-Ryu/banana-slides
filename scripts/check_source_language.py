@@ -13,7 +13,7 @@ CJK = re.compile('[\u3400-\u9fff\uf900-\ufaff\U00020000-\U0002fa1f]')
 
 
 def main():
-    names = subprocess.check_output(['git', 'ls-files', '-z'], cwd=ROOT).decode().split('\0')
+    names = subprocess.check_output(['git', 'ls-files', '--cached', '--others', '--exclude-standard', '-z'], cwd=ROOT).decode().split('\0')
     violations = []
     for name in filter(None, names):
         try:

@@ -42,23 +42,15 @@ hiddenimports = [
     'services.pdf_service', 'services.inpainting_service',
     'services.ai_providers',
     'services.ai_providers.text', 'services.ai_providers.text.base',
-    'services.ai_providers.text.genai_provider',
     'services.ai_providers.text.openai_provider',
-    'services.ai_providers.text.anthropic_provider',
-    'services.ai_providers.text.lazyllm_provider',
     'services.ai_providers.text.codex_provider',
     'services.ai_providers.image', 'services.ai_providers.image.base',
-    'services.ai_providers.image.genai_provider',
-    'services.ai_providers.image.openai_provider',
-    'services.ai_providers.image.anthropic_provider',
-    'services.ai_providers.image.lazyllm_provider',
     'services.ai_providers.image.codex_provider',
     'services.ai_providers.image.baidu_inpainting_provider',
     'services.ai_providers.image.gemini_inpainting_provider',
     'services.ai_providers.image.volcengine_inpainting_provider',
     'services.ai_providers.ocr', 'services.ai_providers.ocr.baidu_accurate_ocr_provider',
     'services.ai_providers.ocr.baidu_table_ocr_provider',
-    'services.ai_providers.genai_client', 'services.ai_providers.lazyllm_env',
     'models', 'models.project', 'models.page', 'models.task',
     'models.settings', 'config', 'desktop_bootstrap',
     'utils', 'utils.path_utils', 'utils.image_utils', 'utils.latex_utils',
@@ -70,7 +62,6 @@ hiddenimports = [
     'sqlite3',
     # AI providers
     'google.ai.generativelanguage', 'google.api_core', 'google.auth',
-    'openai', 'anthropic',
     # Document processing
     'pptx.util', 'pptx.dml.color', 'pptx.enum.shapes',
     'PyPDF2', 'img2pdf', 'fitz', 'markdown', 'chardet',
@@ -86,21 +77,14 @@ hiddenimports += collect_submodules('google')
 hiddenimports += collect_submodules('openai')
 # LazyLLM discovers vendor adapters dynamically at runtime. PyInstaller cannot
 # see those imports, so desktop builds must collect the supplier package plus
-# the vendor SDKs that lazyllm.thirdparty loads lazily via importlib
 # (PackageWrapper) - dashscope (qwen), zhipuai (glm), volcenginesdkarkruntime
 # (doubao) and PyJWT (sensenova). Without them the packaged backend re-fails
 # with "Unsupported source: ..." / ModuleNotFoundError at runtime.
-hiddenimports += collect_submodules('lazyllm.module.llms.onlinemodule.supplier')
 _LAZYLLM_VENDOR_SDKS = ('dashscope', 'zhipuai', 'volcenginesdkarkruntime', 'jwt')
-for _lazyllm_sdk in _LAZYLLM_VENDOR_SDKS:
-    if importlib.util.find_spec(_lazyllm_sdk) is None:
         sys.exit(
-            f"ERROR: LazyLLM vendor SDK '{_lazyllm_sdk}' is missing; packaged "
             "backend would fail at runtime for the corresponding vendor "
             "(qwen/glm/doubao/sensenova). Install it and rebuild."
         )
-    hiddenimports += collect_submodules(_lazyllm_sdk)
-hiddenimports += collect_submodules('anthropic')
 hiddenimports += collect_submodules('flask_migrate')
 hiddenimports += collect_submodules('flask_sqlalchemy')
 hiddenimports += collect_submodules('alembic')

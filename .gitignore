@@ -112,3 +112,7 @@ frontend/cap-real.mjs
 *.pem
 backend/instance/
 uploads/
+
+# Sol.A application assets and integration handoff
+!frontend/src/assets/sola-sun.svg
+!sola-integration.md

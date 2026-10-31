@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Home, Trash2, Sun, Moon, AlertTriangle, Inbox } from 'lucide-react';
-import logoUrl from '@/assets/logo.png';
+import logoUrl from '@/assets/sola-sun.svg';
 import { Button, Loading, Card, Pagination, useToast, useConfirm } from '@/components/shared';
 import { ProjectCard } from '@/components/history/ProjectCard';
 import { useProjectStore } from '@/store/useProjectStore';
@@ -16,7 +16,7 @@ import type { Project } from '@/types';
 // Page-specific translation - AI You can see all the files directly.
 const historyI18n = {
   zh: {
-    home: { title: 'Banana Slides', actions: { createProject: 'Create New Project' } },
+    home: { title: 'Sol.A', actions: { createProject: 'Create New Project' } },
     nav: { home: 'Home' },
     settings: { language: { label: 'Interface Language' }, theme: { light: 'Light', dark: 'Dark' } },
     history: {
@@ -44,7 +44,7 @@ const historyI18n = {
     },
   },
   en: {
-    home: { title: 'Banana Slides', actions: { createProject: 'Create New Project' } },
+    home: { title: 'Sol.A', actions: { createProject: 'Create New Project' } },
     nav: { home: 'Home' },
     settings: { language: { label: 'Interface Language' }, theme: { light: 'Light', dark: 'Dark' } },
     history: {

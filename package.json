@@ -22,9 +22,14 @@
     "build": "docker compose build",
     "start": "docker compose up -d",
     "stop": "docker compose down",
-    "quick-check": "npm run lint && npm run test:frontend && npm run test:backend"
+    "quick-check": "npm run lint && npm run test:frontend && npm run test:backend",
+    "predev": "node scripts/check-node.cjs",
+    "prebuild": "node scripts/check-node.cjs",
+    "pretest": "node scripts/check-node.cjs",
+    "pretest:e2e": "node scripts/check-node.cjs",
+    "preinstall": "node scripts/check-node.cjs"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.23.4 <23 || >=24.22.1 <25 || >=26.12.1 <27"
   }
 }

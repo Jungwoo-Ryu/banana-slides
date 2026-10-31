@@ -2,14 +2,13 @@ import { generateUuid } from '@/utils/uuid';
 // TODO: split components
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { useT } from '@/hooks/useT';
 import { devLog } from '@/utils/logger';
 
 // Translation within Component
 const previewI18n = {
   zh: {
-    home: { title: 'Banana Slides' },
+    home: { title: 'Sol.A' },
     nav: { home: 'Home', materialGenerate: 'Generate Material' },
     slidePreview: {
       pageGenerating: "This page is generating, please wait...", generationStarted: "Image generation started, please wait...",
@@ -33,7 +32,6 @@ const previewI18n = {
       exportVideo: "Export as Narration Video",
       videoSettingsLoading: "Loading video settings...",
       videoSettingsLoadFailed: "Could not load video export settings. Please retry before exporting.",
-      videoVoicesLoadFailed: "Could not load the ElevenLabs voice list. Please try again later.",
       pptxExportTitle: "PPTX Export Settings",
       pptxExportSubtitle: "Confirm playback settings before exporting this PPTX.",
       pptxTransitionToggle: "Enable slide transitions",
@@ -68,9 +66,6 @@ const previewI18n = {
       videoNarrationMaxWords: "Max words",
       videoNarrationSummaryLabel: "Current strategy",
       videoNarrationGenerateMissing: "Auto-generate narration for slides that are missing it",
-      videoUseElevenLabs: "Use ElevenLabs text-to-speech",
-      videoElevenLabsNoKey: "No ElevenLabs API Key configured — voice synthesis will not work.",
-      videoElevenLabsGoSettings: "Go to Settings",
       videoEnableKenBurns: "Enable camera motion",
       videoKenBurnsTip: "Adds slow zoom or pan animation to each slide for a more dynamic video",
       videoIncludeNoImage: "Include pages without images (placeholder frames)",
@@ -127,7 +122,7 @@ const previewI18n = {
       generationFailed: "Generation failed",
       qualityControl: "Quality Control",
       qualityControlDesc: "Review after generation; save only passing versions",
-      qualityControlTooltip: "When this is on, Banana Slides generates the image first but does not save it right away. It checks for unreadable text, strange text, rough-looking visuals, or a result that is far from your request. If something looks wrong, it tries again up to 3 times. Only a checked image is saved as a new version. If it still fails, you will be asked to adjust your description.",
+      qualityControlTooltip: "When this is on, Sol.A generates the image first but does not save it right away. It checks for unreadable text, strange text, rough-looking visuals, or a result that is far from your request. If something looks wrong, it tries again up to 3 times. Only a checked image is saved as a new version. If it still fails, you will be asked to adjust your description.",
       qualityControlOn: "On",
       qualityControlOff: "Off",
       qualityControlSaved: "Quality control setting saved",
@@ -147,7 +142,7 @@ const previewI18n = {
     }
   },
   en: {
-    home: { title: 'Banana Slides' },
+    home: { title: 'Sol.A' },
     nav: { home: 'Home', materialGenerate: 'Generate Material' },
     slidePreview: {
       pageGenerating: "This page is generating, please wait...", generationStarted: "Image generation started, please wait...",
@@ -171,7 +166,6 @@ const previewI18n = {
       exportVideo: "Export as Narration Video",
       videoSettingsLoading: "Loading video settings...",
       videoSettingsLoadFailed: "Could not load video export settings. Please retry before exporting.",
-      videoVoicesLoadFailed: "Could not load the ElevenLabs voice list. Please try again later.",
       pptxExportTitle: "PPTX Export Settings",
       pptxExportSubtitle: "Confirm playback settings before exporting this PPTX.",
       pptxTransitionToggle: "Enable slide transitions",
@@ -206,9 +200,6 @@ const previewI18n = {
       videoNarrationMaxWords: "Max words",
       videoNarrationSummaryLabel: "Current strategy",
       videoNarrationGenerateMissing: "Auto-generate narration for slides that are missing it",
-      videoUseElevenLabs: "Use ElevenLabs text-to-speech",
-      videoElevenLabsNoKey: "No ElevenLabs API Key configured — voice synthesis will not work.",
-      videoElevenLabsGoSettings: "Go to Settings",
       videoEnableKenBurns: "Enable camera motion",
       videoKenBurnsTip: "Adds slow zoom or pan animation to each slide for a more dynamic video",
       videoIncludeNoImage: "Include pages without images (placeholder frames)",
@@ -265,7 +256,7 @@ const previewI18n = {
       generationFailed: "Generation failed",
       qualityControl: "Quality Control",
       qualityControlDesc: "Review after generation; save only passing versions",
-      qualityControlTooltip: "When this is on, Banana Slides generates the image first but does not save it right away. It checks for unreadable text, strange text, rough-looking visuals, or a result that is far from your request. If something looks wrong, it tries again up to 3 times. Only a checked image is saved as a new version. If it still fails, you will be asked to adjust your description.",
+      qualityControlTooltip: "When this is on, Sol.A generates the image first but does not save it right away. It checks for unreadable text, strange text, rough-looking visuals, or a result that is far from your request. If something looks wrong, it tries again up to 3 times. Only a checked image is saved as a new version. If it still fails, you will be asked to adjust your description.",
       qualityControlOn: "On",
       qualityControlOff: "Off",
       qualityControlSaved: "Quality control setting saved",
@@ -312,7 +303,7 @@ import {
   Presentation,
   AlertTriangle,
 } from 'lucide-react';
-import logoUrl from '@/assets/logo.png';
+import logoUrl from '@/assets/sola-sun.svg';
 import { Button, Loading, Modal, Textarea, useToast, useConfirm, MaterialSelector, ProjectSettingsModal, ExportTasksPanel, TextStyleSelector } from '@/components/shared';
 import { SwitchToSingleModeDialog } from '@/components/template/SwitchToSingleModeDialog';
 import { MaterialGeneratorModal } from '@/components/shared/MaterialGeneratorModal';
@@ -327,58 +318,11 @@ import { PagePropertiesDrawer, clampWidth, readStoredDrawerWidth } from '@/compo
 import { useProjectStore } from '@/store/useProjectStore';
 import { useExportTasksStore, type ExportTaskType } from '@/store/useExportTasksStore';
 import { getImageUrl } from '@/api/client';
-import { getPageImageVersions, setCurrentImageVersion, updateProject, uploadTemplate, exportPPTX as apiExportPPTX, exportPDF as apiExportPDF, exportImages as apiExportImages, exportEditablePPTX as apiExportEditablePPTX, exportVideo as apiExportVideo, getSettings, getElevenLabsVoices, updateSettings } from '@/api/endpoints';
-import type { ImageVersion, DescriptionContent, ExportExtractorMethod, ExportInpaintMethod, Page, NarrationConfig } from '@/types';
+import { getPageImageVersions, setCurrentImageVersion, updateProject, uploadTemplate, exportPPTX as apiExportPPTX, exportPDF as apiExportPDF, exportImages as apiExportImages, exportEditablePPTX as apiExportEditablePPTX, exportVideo as apiExportVideo, getSettings, updateSettings } from '@/api/endpoints';
+import type { ImageVersion, DescriptionContent, ExportExtractorMethod, ExportInpaintMethod, Page } from '@/types';
 import { normalizeErrorMessage } from '@/utils';
 
-const VIDEO_VOICE_OPTIONS = [
-  { group: 'Chinese', voices: [
-    { id: 'zh-CN-XiaoxiaoNeural', label: 'Hey, hey, hey.）', lang: 'zh' },
-    { id: 'zh-CN-YunxiNeural', label: 'Yun-hye!）', lang: 'zh' },
-    { id: 'zh-CN-YunjianNeural', label: 'Yun Jian (male voice)）', lang: 'zh' },
-    { id: 'zh-CN-XiaoyiNeural', label: 'Xiaoyi!）', lang: 'zh' },
-  ]},
-  { group: 'English', voices: [
-    { id: 'en-US-JennyNeural', label: 'Jenny (Female)', lang: 'en' },
-    { id: 'en-US-GuyNeural', label: 'Guy (Male)', lang: 'en' },
-    { id: 'en-US-AriaNeural', label: 'Aria (Female)', lang: 'en' },
-    { id: 'en-US-DavisNeural', label: 'Davis (Male)', lang: 'en' },
-  ]},
-  { group: 'Japanese', voices: [
-    { id: 'ja-JP-NanamiNeural', label: 'Nanami（Woman.）', lang: 'ja' },
-    { id: 'ja-JP-KeitaNeural', label: 'Keita（Men’s voices）', lang: 'ja' },
-  ]},
-];
-
-const NARRATION_PERSONA_OPTIONS = [
-  { value: 'charismatic keynote speaker', zh: 'Speaker', en: 'Keynote speaker' },
-  { value: 'knowledgeable and patient university professor', zh: 'University professor', en: 'University professor' },
-  { value: 'confident corporate executive', zh: 'Corporate executives', en: 'Corporate executive' },
-  { value: 'engaging online content creator', zh: 'From Media Talker', en: 'Content creator' },
-];
-
-const NARRATION_AUDIENCE_OPTIONS = [
-  { value: 'the general public with no technical background', zh: 'General public', en: 'General public' },
-  { value: 'industry experts and seasoned professionals', zh: 'Industry specialists', en: 'Industry experts' },
-  { value: 'potential investors and venture capitalists', zh: 'Investors and VC', en: 'Investors and VCs' },
-  { value: 'internal team members and employees', zh: 'Internal team members', en: 'Internal team' },
-];
-
-const NARRATION_TONE_OPTIONS = [
-  { value: 'inspiring, passionate, and persuasive', zh: 'Passionate.', en: 'Inspiring and persuasive' },
-  { value: 'analytical, data-driven, and highly professional', zh: 'Rational data stream', en: 'Analytical and professional' },
-  { value: 'storytelling-focused, emotional, and captivating', zh: 'Story immersion', en: 'Storytelling and emotional' },
-  { value: 'conversational, witty, and approachable', zh: 'Easy chat.', en: 'Conversational and witty' },
-];
-
-const DEFAULT_VIDEO_NARRATION_CONFIG: NarrationConfig = {
-  speaker_persona: 'knowledgeable and patient university professor',
-  target_audience: 'the general public with no technical background',
-  speech_tone: 'analytical, data-driven, and highly professional',
-  presentation_topic: '',
-  min_words: 100,
-  max_words: 200,
-};
+const VIDEO_VOICES = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'nova', 'onyx', 'sage', 'shimmer'];
 
 type PptxTransitionEffect =
   | 'fade'
@@ -520,7 +464,6 @@ const VersionHistoryMenu: React.FC<{
 export const SlidePreview: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { i18n } = useTranslation();
   const t = useT(previewI18n);
   const { projectId } = useParams<{ projectId: string }>();
   const fromHistory = (location.state as any)?.from === 'history';
@@ -607,31 +550,14 @@ export const SlidePreview: React.FC = () => {
   const [showExportTasksPanel, setShowExportTasksPanel] = useState(false);
   const [showPptxExportDialog, setShowPptxExportDialog] = useState(false);
   const [showVideoExportDialog, setShowVideoExportDialog] = useState(false);
-  const [isPreparingVideoExport, setIsPreparingVideoExport] = useState(false);
   const [showEditablePptxDialog, setShowEditablePptxDialog] = useState(false);
   const [editablePptxDialogIconTransparent, setEditablePptxDialogIconTransparent] = useState(true);
   const [pptxTransitionsEnabled, setPptxTransitionsEnabled] = useState(false);
   const [pptxTransitionEffects, setPptxTransitionEffects] = useState<PptxTransitionEffect[]>(['fade']);
-  const [videoEnableKenBurns, setVideoEnableKenBurns] = useState(false);
-  const [videoIncludeNoImage, setVideoIncludeNoImage] = useState(false);
-  const [videoVoice, setVideoVoice] = useState('zh-CN-XiaoxiaoNeural');
-  const [videoSpeed, setVideoSpeed] = useState<number>(() => {
-    const stored = parseFloat(localStorage.getItem('videoSpeed') || '');
-    return Number.isFinite(stored) && stored >= 0.7 && stored <= 1.2 ? stored : 1.0;
-  });
-  const [elevenLabsEnabled, setElevenLabsEnabled] = useState(() => localStorage.getItem('elevenLabsEnabled') === 'true');
-  const [elevenLabsVoiceId, setElevenLabsVoiceId] = useState(() => localStorage.getItem('elevenLabsVoiceId') || '');
-  const [elevenLabsApiKeyConfigured, setElevenLabsApiKeyConfigured] = useState(false);
-  const [elevenLabsVoices, setElevenLabsVoices] = useState<{ id: string; name: string; languages?: string[]; accent?: string | null }[]>([]);
-  const [elevenLabsVoicesLoading, setElevenLabsVoicesLoading] = useState(false);
-  const [outputLanguage, setOutputLanguage] = useState<string>('zh');
+  const [videoVoice, setVideoVoice] = useState('alloy');
+  const [videoSpeed, setVideoSpeed] = useState(1.0);
   const [imageQualityControlEnabled, setImageQualityControlEnabled] = useState(false);
   const [isSavingImageQualityControl, setIsSavingImageQualityControl] = useState(false);
-  useEffect(() => { localStorage.setItem('elevenLabsEnabled', String(elevenLabsEnabled)); }, [elevenLabsEnabled]);
-  useEffect(() => { if (elevenLabsVoiceId) localStorage.setItem('elevenLabsVoiceId', elevenLabsVoiceId); }, [elevenLabsVoiceId]);
-  useEffect(() => { localStorage.setItem('videoSpeed', String(videoSpeed)); }, [videoSpeed]);
-  const [videoNarrationConfig, setVideoNarrationConfig] = useState<NarrationConfig>(DEFAULT_VIDEO_NARRATION_CONFIG);
-  const [videoShowAdvancedNarration, setVideoShowAdvancedNarration] = useState(false);
   // Multiplely select the relevant state
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const [selectedPageIds, setSelectedPageIds] = useState<Set<string>>(new Set());
@@ -858,16 +784,6 @@ export const SlidePreview: React.FC = () => {
     [currentProject?.pages]
   );
 
-  useEffect(() => {
-    if (!currentProject) return;
-    const fallbackTopic = currentProject.idea_prompt?.trim()
-      || currentProject.pages.find(page => page.outline_content?.title)?.outline_content?.title
-      || '';
-    setVideoNarrationConfig(prev => ({
-      ...prev,
-      presentation_topic: prev.presentation_topic || fallbackTopic,
-    }));
-  }, [currentProject]);
 
   // Loading project data & User Templates
   useEffect(() => {
@@ -1660,6 +1576,12 @@ export const SlidePreview: React.FC = () => {
     setExportMenuOpen(false);
     if (!projectId) return;
 
+    if (!await useProjectStore.getState().flushPendingPageUpdates()) {
+      show({ message: '변경 사항을 먼저 저장해야 내보낼 수 있습니다.', type: 'error' });
+      return;
+    }
+
+    if (type === 'video' || type === 'editable-pptx') setShowExportTasksPanel(true);
     const pageIds = getSelectedPageIdsForExport();
     const exportTaskId = `export-${Date.now()}`;
 
@@ -1732,21 +1654,8 @@ export const SlidePreview: React.FC = () => {
 
         show({ message: t('slidePreview.exportStarted'), type: 'success' });
 
-        const activeVoice = elevenLabsEnabled ? elevenLabsVoiceId : videoVoice;
-        const voiceLang = elevenLabsEnabled ? 'zh' : (VIDEO_VOICE_OPTIONS.flatMap(g => g.voices).find(v => v.id === videoVoice)?.lang || 'zh');
         const response = await apiExportVideo(projectId, {
-          pageIds,
-          enableKenBurns: videoEnableKenBurns,
-          includeNoImagePages: videoIncludeNoImage,
-          voice: activeVoice,
-          speed: videoSpeed,
-          language: voiceLang,
-          generateNarration: true,
-          presentationTopic: videoNarrationConfig.presentation_topic,
-          narrationConfig: {
-            ...videoNarrationConfig,
-            presentation_topic: videoNarrationConfig.presentation_topic,
-          },
+          pageIds, voice: videoVoice, speed: videoSpeed, generateNarration: true,
         });
         const taskId = response.data?.task_id;
 
@@ -1827,57 +1736,9 @@ export const SlidePreview: React.FC = () => {
     }
   };
 
-  const handleOpenVideoExport = async () => {
-    if (isPreparingVideoExport) return;
-
-    setIsPreparingVideoExport(true);
-    try {
-      const res = await getSettings();
-      if (!showExportMenuRef.current) return;
-      if (!res || res.success === false || !res.data) {
-        throw new Error('Settings response did not contain usable data');
-      }
-
-      const hasKey = (res.data.elevenlabs_api_key_length ?? 0) > 0;
-      setElevenLabsApiKeyConfigured(hasKey);
-      setOutputLanguage((res.data.output_language as string | undefined) || 'zh');
-      if (!hasKey) setElevenLabsEnabled(false);
-
-      if (hasKey && elevenLabsEnabled && elevenLabsVoices.length === 0) {
-        setElevenLabsVoicesLoading(true);
-        try {
-          const voicesRes = await getElevenLabsVoices();
-          if (!showExportMenuRef.current) return;
-          const voices = voicesRes?.data?.voices ?? [];
-          setElevenLabsVoices(voices);
-          if (voices.length > 0 && !voices.some(voice => voice.id === elevenLabsVoiceId)) {
-            setElevenLabsVoiceId(voices[0].id);
-          }
-        } catch (error: any) {
-          if (!showExportMenuRef.current) return;
-          show({
-            message: error?.response?.data?.error?.message
-              || error?.response?.data?.message
-              || error?.message
-              || t('preview.videoVoicesLoadFailed'),
-            type: 'error',
-          });
-        } finally {
-          setElevenLabsVoicesLoading(false);
-        }
-      }
-
-      if (!showExportMenuRef.current) return;
-      setVideoIncludeNoImage(false);
-      setExportMenuOpen(false);
-      setShowVideoExportDialog(true);
-    } catch (error) {
-      if (!showExportMenuRef.current) return;
-      console.error('Failed to load video export settings:', error);
-      show({ message: t('preview.videoSettingsLoadFailed'), type: 'error' });
-    } finally {
-      setIsPreparingVideoExport(false);
-    }
+  const handleOpenVideoExport = () => {
+    setExportMenuOpen(false);
+    setShowVideoExportDialog(true);
   };
 
   const handleRefresh = useCallback(async () => {
@@ -2108,17 +1969,6 @@ export const SlidePreview: React.FC = () => {
   const exportRangeMissingTip = exportMissingImageCount > 0
     ? t('preview.disabledExportTip', { count: exportMissingImageCount })
     : undefined;
-  const isEnglishUi = i18n.language?.startsWith('en');
-  const getNarrationOptionLabel = (options: Array<{ value: string; zh: string; en: string }>, value: string) => {
-    const match = options.find(item => item.value === value);
-    return match ? (isEnglishUi ? match.en : match.zh) : value;
-  };
-  const narrationSummary = [
-    videoNarrationConfig.presentation_topic,
-    `${t('preview.videoNarrationPersona')} · ${getNarrationOptionLabel(NARRATION_PERSONA_OPTIONS, videoNarrationConfig.speaker_persona)}`,
-    `${t('preview.videoNarrationAudience')} · ${getNarrationOptionLabel(NARRATION_AUDIENCE_OPTIONS, videoNarrationConfig.target_audience)}`,
-    `${t('preview.videoNarrationTone')} · ${getNarrationOptionLabel(NARRATION_TONE_OPTIONS, videoNarrationConfig.speech_tone)}`,
-  ].filter(Boolean).join(' / ');
 
   return (
     <div className="h-screen bg-gray-50 dark:bg-background-primary flex flex-col overflow-hidden">
@@ -2372,13 +2222,12 @@ export const SlidePreview: React.FC = () => {
                 </button>
                 <button
                   onClick={handleOpenVideoExport}
-                  hidden
-                  disabled={isPreparingVideoExport}
+                  disabled={!exportRangeHasAllImages}
                   className="w-full px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-background-hover transition-colors text-sm disabled:cursor-wait disabled:opacity-70"
                 >
                   <span className="flex items-center gap-2">
-                    {isPreparingVideoExport && <Loader2 size={14} className="animate-spin" />}
-                    {isPreparingVideoExport ? t('preview.videoSettingsLoading') : t('preview.exportVideo')}
+
+                    TTS로 발표 미디어 생성하기
                   </span>
                 </button>
               </div>
@@ -2476,269 +2325,13 @@ export const SlidePreview: React.FC = () => {
       {/* Video Export Settings Blast Window */}
       {showVideoExportDialog && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowVideoExportDialog(false)}>
-          <div className="bg-white dark:bg-background-secondary rounded-2xl shadow-xl p-6 w-[680px] max-w-[96vw] max-h-[88vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold">{t('preview.videoExportTitle')}</h3>
-            <p className="text-sm text-gray-500 dark:text-foreground-tertiary mt-1 mb-5">{t('preview.videoExportSubtitle')}</p>
-            <div className="space-y-5">
-              <div className="rounded-xl border border-gray-200 dark:border-border-primary p-4 space-y-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <div className="text-sm font-medium">{t('preview.videoNarrationPresetTitle')}</div>
-                    <div className="text-xs text-gray-500 dark:text-foreground-tertiary mt-1">{t('preview.videoNarrationAdvancedHint')}</div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setVideoShowAdvancedNarration(prev => !prev)}
-                    className="text-sm text-banana-600 hover:text-banana-700"
-                  >
-                    {videoShowAdvancedNarration ? t('preview.videoNarrationCollapse') : t('preview.videoNarrationAdvanced')}
-                  </button>
-                </div>
-                <div className="rounded-lg border border-gray-200 dark:border-border-primary px-3 py-2 text-sm text-gray-700 dark:text-foreground-secondary">
-                  <span className="font-medium mr-2">{t('preview.videoNarrationSummaryLabel')}</span>
-                  <span>{narrationSummary}</span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">{t('preview.videoNarrationPersona')}</label>
-                    <select
-                      value={videoNarrationConfig.speaker_persona}
-                      onChange={e => setVideoNarrationConfig(prev => ({ ...prev, speaker_persona: e.target.value }))}
-                      className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-border-primary rounded-lg bg-white dark:bg-background-primary focus:outline-none focus:ring-2 focus:ring-banana-400"
-                    >
-                      {NARRATION_PERSONA_OPTIONS.map(option => (
-                        <option key={option.value} value={option.value}>
-                          {isEnglishUi ? option.en : option.zh}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">{t('preview.videoNarrationAudience')}</label>
-                    <select
-                      value={videoNarrationConfig.target_audience}
-                      onChange={e => setVideoNarrationConfig(prev => ({ ...prev, target_audience: e.target.value }))}
-                      className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-border-primary rounded-lg bg-white dark:bg-background-primary focus:outline-none focus:ring-2 focus:ring-banana-400"
-                    >
-                      {NARRATION_AUDIENCE_OPTIONS.map(option => (
-                        <option key={option.value} value={option.value}>
-                          {isEnglishUi ? option.en : option.zh}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">{t('preview.videoNarrationTone')}</label>
-                    <select
-                      value={videoNarrationConfig.speech_tone}
-                      onChange={e => setVideoNarrationConfig(prev => ({ ...prev, speech_tone: e.target.value }))}
-                      className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-border-primary rounded-lg bg-white dark:bg-background-primary focus:outline-none focus:ring-2 focus:ring-banana-400"
-                    >
-                      {NARRATION_TONE_OPTIONS.map(option => (
-                        <option key={option.value} value={option.value}>
-                          {isEnglishUi ? option.en : option.zh}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5">{t('preview.videoVoiceLabel')}</label>
-                    {elevenLabsEnabled ? (
-                      (() => {
-                        const targetLang = (outputLanguage || 'zh').toLowerCase();
-                        const matched = elevenLabsVoices.filter(v => (v.languages || []).some(l => l.toLowerCase() === targetLang));
-                        const noMatch = !elevenLabsVoicesLoading && elevenLabsVoices.length > 0 && matched.length === 0;
-                        const list = matched.length > 0 ? matched : elevenLabsVoices;
-                        return (
-                          <>
-                            <select
-                              value={elevenLabsVoiceId}
-                              onChange={e => setElevenLabsVoiceId(e.target.value)}
-                              disabled={elevenLabsVoicesLoading}
-                              className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-border-primary rounded-lg bg-white dark:bg-background-primary focus:outline-none focus:ring-2 focus:ring-banana-400 disabled:opacity-60"
-                            >
-                              {elevenLabsVoicesLoading ? (
-                                <option>{isEnglishUi ? 'Loading voices…' : 'Loading sound list…'}</option>
-                              ) : elevenLabsVoices.length === 0 ? (
-                                <option>{isEnglishUi ? 'No voices available' : 'No sound available for now.'}</option>
-                              ) : list.map(v => {
-                                const langs = (v.languages || []).join(', ');
-                                const meta = [langs, v.accent].filter(Boolean).join(' · ');
-                                return (
-                                  <option key={v.id} value={v.id}>
-                                    {meta ? `${v.name} (${meta})` : v.name}
-                                  </option>
-                                );
-                              })}
-                            </select>
-                            {noMatch && (
-                              <div className="mt-2 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
-                                {isEnglishUi
-                                  ? `No ElevenLabs voice in your account supports the target language "${targetLang}". Showing all voices as fallback — generated audio may not sound natural.`
-                                  : `No target language supported under current account"${targetLang}"It’s... ElevenLabs Sound, all sound is shown as the bottom——The resulting voice may not be natural.。`}
-                              </div>
-                            )}
-                          </>
-                        );
-                      })()
-                    ) : (
-                      <select
-                        value={videoVoice}
-                        onChange={e => setVideoVoice(e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-border-primary rounded-lg bg-white dark:bg-background-primary focus:outline-none focus:ring-2 focus:ring-banana-400"
-                      >
-                        {VIDEO_VOICE_OPTIONS.map(group => (
-                          <optgroup key={group.group} label={group.group}>
-                            {group.voices.map(v => (
-                              <option key={v.id} value={v.id}>{v.label}</option>
-                            ))}
-                          </optgroup>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1.5 flex items-center justify-between">
-                      <span>{t('preview.videoSpeedLabel')}</span>
-                      <span className="text-xs font-mono text-gray-500 dark:text-text-secondary">{videoSpeed.toFixed(2)}×</span>
-                    </label>
-                    <input
-                      type="range"
-                      min={0.7}
-                      max={1.2}
-                      step={0.05}
-                      value={videoSpeed}
-                      onChange={e => setVideoSpeed(parseFloat(e.target.value))}
-                      className="w-full accent-banana-400"
-                    />
-                    <p className="mt-1 text-xs text-gray-500 dark:text-text-secondary">{t('preview.videoSpeedHint')}</p>
-                  </div>
-                </div>
-                {videoShowAdvancedNarration && (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1.5">{t('preview.videoNarrationTopic')}</label>
-                      <input
-                        type="text"
-                        value={videoNarrationConfig.presentation_topic}
-                        onChange={e => setVideoNarrationConfig(prev => ({ ...prev, presentation_topic: e.target.value }))}
-                        placeholder={t('preview.videoNarrationTopicPlaceholder')}
-                        className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-border-primary rounded-lg bg-white dark:bg-background-primary focus:outline-none focus:ring-2 focus:ring-banana-400"
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium mb-1.5">{t('preview.videoNarrationMinWords')}</label>
-                        <input
-                          type="number"
-                          min={30}
-                          max={300}
-                          value={videoNarrationConfig.min_words}
-                          onChange={e => setVideoNarrationConfig(prev => ({ ...prev, min_words: Number(e.target.value) || 30 }))}
-                          className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-border-primary rounded-lg bg-white dark:bg-background-primary focus:outline-none focus:ring-2 focus:ring-banana-400"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-1.5">{t('preview.videoNarrationMaxWords')}</label>
-                        <input
-                          type="number"
-                          min={30}
-                          max={300}
-                          value={videoNarrationConfig.max_words}
-                          onChange={e => setVideoNarrationConfig(prev => ({ ...prev, max_words: Number(e.target.value) || 30 }))}
-                          className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-border-primary rounded-lg bg-white dark:bg-background-primary focus:outline-none focus:ring-2 focus:ring-banana-400"
-                        />
-                      </div>
-                    </div>
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={elevenLabsEnabled}
-                        onChange={async e => {
-                          setElevenLabsEnabled(e.target.checked);
-                          if (e.target.checked && elevenLabsVoices.length === 0) {
-                            setElevenLabsVoicesLoading(true);
-                            try {
-                              const res = await getElevenLabsVoices();
-                              const voices = res.data?.voices ?? [];
-                              setElevenLabsVoices(voices);
-                              if (voices.length > 0 && !elevenLabsVoiceId) {
-                                setElevenLabsVoiceId(voices[0].id);
-                              }
-                            } catch (err: any) {
-                              console.error('[ElevenLabs] Failed to fetch sound list', err);
-                              show({ message: err?.response?.data?.message || err?.message || 'Access ElevenLabs Sound List Failed', type: 'error' });
-                            }
-                            setElevenLabsVoicesLoading(false);
-                          }
-                        }}
-                        className="w-4 h-4 rounded border-gray-300 text-banana-500 focus:ring-banana-500"
-                      />
-                      <span className="text-sm">{t('preview.videoUseElevenLabs')}</span>
-                    </label>
-                    {elevenLabsEnabled && !elevenLabsApiKeyConfigured && (
-                      <div className="flex items-center gap-2 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
-                        <span>{t('preview.videoElevenLabsNoKey')}</span>
-                        <button
-                          type="button"
-                          onClick={() => { setShowVideoExportDialog(false); navigate('/settings', { state: { from: location.pathname } }); }}
-                          className="underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-300 shrink-0"
-                        >
-                          {t('preview.videoElevenLabsGoSettings')}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="space-y-3">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={videoEnableKenBurns}
-                    onChange={e => setVideoEnableKenBurns(e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-300 text-banana-500 focus:ring-banana-500"
-                  />
-                  <span className="text-sm">{t('preview.videoEnableKenBurns')}</span>
-                  <span className="relative group">
-                    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gray-200 dark:bg-gray-600 text-[10px] text-gray-500 dark:text-gray-300 cursor-help">?</span>
-                    <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 px-2.5 py-1.5 text-xs text-white bg-gray-800 dark:bg-gray-700 rounded-md whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50">
-                      {t('preview.videoKenBurnsTip')}
-                    </span>
-                  </span>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={videoIncludeNoImage}
-                    onChange={e => setVideoIncludeNoImage(e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-300 text-banana-500 focus:ring-banana-500"
-                  />
-                  <span className="text-sm">{t('preview.videoIncludeNoImage')}</span>
-                </label>
-                {!exportRangeHasAllImages && (
-                  <div className="rounded-[8px] border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-                    {t('preview.videoMissingImagesWarning', { count: exportMissingImageCount })}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => setShowVideoExportDialog(false)}
-                className="px-4 py-2 text-sm text-gray-600 dark:text-foreground-tertiary hover:bg-gray-100 dark:hover:bg-background-hover rounded-lg transition-colors"
-              >
-                {t('preview.videoCancel')}
-              </button>
-              <button
-                onClick={() => { setShowVideoExportDialog(false); handleExport('video'); }}
-                disabled={!exportRangeHasAllImages && !videoIncludeNoImage}
-                title={!exportRangeHasAllImages && !videoIncludeNoImage ? exportRangeMissingTip : undefined}
-                className="px-4 py-2 text-sm bg-banana-500 text-white rounded-lg hover:bg-banana-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                {t('preview.videoStartExport')}
-              </button>
-            </div>
+          <div role="dialog" aria-label="TTS 발표 미디어 생성" className="bg-white dark:bg-background-secondary rounded-2xl p-6 w-full max-w-lg mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold">TTS로 발표 미디어 생성하기</h3>
+            <p className="mt-2 text-sm text-gray-500">선택한 슬라이드와 저장된 발표 스크립트로 MP4 동영상을 만듭니다. 스크립트가 없는 페이지만 AI가 작성합니다. 음성은 사내 Azure Foundry에서 합성한 AI 음성입니다.</p>
+            <label className="block mt-5 text-sm">음성<select aria-label="발표 음성" className="block mt-2 w-full rounded-lg border p-2 dark:bg-background-tertiary" value={videoVoice} onChange={e => setVideoVoice(e.target.value)}>{VIDEO_VOICES.map(v => <option key={v} value={v}>{v}</option>)}</select></label>
+            <label className="block mt-4 text-sm">읽기 속도: {videoSpeed.toFixed(1)}배<input aria-label="읽기 속도" className="block mt-2 w-full" type="range" min="0.5" max="2" step="0.1" value={videoSpeed} onChange={e => setVideoSpeed(Number(e.target.value))} /></label>
+            <p className="mt-4 text-xs text-gray-500">페이지별 음성 길이에 맞춰 재생됩니다. 완료된 파일은 내보내기 작업에서 다운로드하세요.</p>
+            <div className="mt-6 flex justify-end gap-3"><Button variant="ghost" onClick={() => setShowVideoExportDialog(false)}>취소</Button><Button disabled={!exportRangeHasAllImages} onClick={() => { setShowVideoExportDialog(false); handleExport('video'); }}>발표 동영상 생성</Button></div>
           </div>
         </div>
       )}

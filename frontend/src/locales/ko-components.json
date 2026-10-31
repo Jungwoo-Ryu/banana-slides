@@ -36,9 +36,9 @@
   "props.description": "설명",
   "props.descriptionPlaceholder": "페이지 문구, 자료, 배치 요청을 입력하세요. 이미지를 붙여넣을 수 있습니다.",
   "props.notInImagePrompt": "이미지 생성에는 사용하지 않음",
-  "props.narration": "발표 대본",
-  "props.narrationHint": "설명 동영상의 음성에 사용합니다. 비워두면 내보낼 때 생성합니다.",
-  "props.narrationPlaceholder": "발표 대본을 작성하세요.",
+  "props.narration": "TTS 발표 스크립트",
+  "props.narrationHint": "발표 동영상에서 읽을 내용입니다. 저장한 스크립트는 내보낼 때 유지됩니다.",
+  "props.narrationPlaceholder": "이 슬라이드에서 발표할 내용을 입력하세요.",
   "props.templateChange": "변경",
   "props.templateLabel": "템플릿 이미지",
   "props.templateStyle": "템플릿 요청",
@@ -754,9 +754,6 @@
   "preview.videoNarrationMaxWords": "최대 단어 수",
   "preview.videoNarrationSummaryLabel": "현재 구성",
   "preview.videoNarrationGenerateMissing": "내레이션이 없는 페이지는 자동으로 생성",
-  "preview.videoUseElevenLabs": "ElevenLabs 음성 합성 사용",
-  "preview.videoElevenLabsNoKey": "ElevenLabs API 키가 설정되지 않았습니다",
-  "preview.videoElevenLabsGoSettings": "설정으로 이동",
   "preview.videoEnableKenBurns": "카메라 움직임 사용",
   "preview.videoKenBurnsTip": "슬라이드를 천천히 확대하거나 이동합니다",
   "preview.videoIncludeNoImage": "이미지가 없는 페이지도 포함",
@@ -1027,5 +1024,5 @@
   "projectSettings.allowPartialResultWarning": "일부 내용이나 스타일이 누락될 수 있습니다. 결과를 확인하세요.",
   "projectSettings.saveExportSettings": "내보내기 설정 저장",
   "projectSettings.tip": "안내",
-  "home.title": "Banana Slides"
+  "home.title": "Sol.A"
 }

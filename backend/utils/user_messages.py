@@ -16,7 +16,7 @@ def localize_error(message):
     if any(term in text.lower() for term in ('connect', 'network', 'proxy')) and not re.search('[가-힣]', text):
         return '서비스에 연결할 수 없습니다. 주소와 프록시 설정을 확인하세요.'
     # Korean application validation messages are safe when no embedded payload exists.
-    if re.search('[가-힣]', text) and not re.search(r'https?://|Bearer |sk-|Traceback|\{', text):
+    if re.search('[가-힣]', text) and not re.search(r'https?://|Bearer |sk-|Traceback|\{|[\u3400-\u9fff]', text):
         return text[:400]
     field = re.match(r'^(idea_prompt|outline_text|description_text|template_style|pages)(?:\[\d+\])?\b', text)
     if field:
@@ -45,7 +45,7 @@ def localize_progress(value):
 
 def status_message(value):
     text = str(value or '')
-    if re.search('[가-힣]', text): return text
+    if re.search('[가-힣]', text) and not re.search('[\u3400-\u9fff]', text): return text
     categories = (
         (('Failed','Error','failed','error'), '처리 중 오류가 발생했습니다. 설정과 입력 내용을 확인하세요.'),
         (('Completed','Success','complete','success','created','saved','updated','deleted'), '완료했습니다.'),

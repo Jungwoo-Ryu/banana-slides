@@ -392,7 +392,7 @@ describe('useProjectStore Fluid outline item segregation', () => {
       await expect(pending).rejects.toThrow('boom')
     })
 
-    expect(result.current.error).toBe('boom')
+    expect(result.current.error).toBe('작업을 완료하지 못했습니다. 입력과 서비스 설정을 확인하세요.')
     expect(result.current.isOutlineStreaming).toBe(false)
   })
 
