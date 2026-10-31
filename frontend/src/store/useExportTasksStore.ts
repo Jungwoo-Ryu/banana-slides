@@ -1,0 +1,542 @@
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import * as api from '@/api/endpoints';
+import { devLog } from '@/utils/logger';
+import { getT } from '@/utils/i18nHelper';
+import { normalizeErrorMessage } from '@/utils';
+
+const exportI18n = {
+  zh: {
+    exportStore: {
+      exportFailed: 'Export failed',
+      pollFailed: 'Polling failed',
+      pollRetrying: 'Export status is temporarily unavailable. The backend task is not marked failed; reconnecting automatically',
+      pollPaused: 'Automatic status checks stopped. The backend task status is unknown; check again manually',
+      staleTask: 'The task status response is invalid. The backend task status is unknown; check again manually',
+      pollGatewayTimeout: 'The status request timed out at the gateway',
+      pollRequestTimeout: 'This status request exceeded its request timeout',
+      pollRateLimited: 'Status checks are being rate limited',
+      pollServiceUnavailable: 'The export status service is temporarily unavailable',
+      pollNetworkError: 'The status-check connection was interrupted',
+      createConfirmationPending: 'The task is not visible yet after the create response was interrupted; it may still be passing through the gateway or queue',
+      taskInterrupted: 'Export interrupted: the backend restarted, so this task will not continue (last progress {{duration}} ago).',
+      taskInterruptedNoDuration: 'Export interrupted: the backend restarted, so this task will not continue.',
+      taskStalled: 'Export looks stuck: no progress for {{duration}} (last step: {{step}}).',
+      taskStalledNoStep: 'Export looks stuck: no progress for {{duration}}.',
+      durationHours: '{{value}} hours',
+      durationMinutes: '{{value}} minutes',
+      durationSeconds: '{{value}} seconds',
+      stepStarting: 'starting',
+      stepPreparing: 'preparing',
+      stepLayoutAnalysis: 'layout analysis',
+      stepStyleExtraction: 'style extraction',
+      stepBuildingPptx: 'building the PPTX',
+      stepSaving: 'saving the file',
+    },
+  },
+  en: {
+    exportStore: {
+      exportFailed: 'Export failed',
+      pollFailed: 'Polling failed',
+      pollRetrying: 'Export status is temporarily unavailable. The backend task is not marked failed; reconnecting automatically',
+      pollPaused: 'Automatic status checks stopped. The backend task status is unknown; check again manually',
+      staleTask: 'The task status response is invalid. The backend task status is unknown; check again manually',
+      pollGatewayTimeout: 'The status request timed out at the gateway',
+      pollRequestTimeout: 'This status request exceeded its request timeout',
+      pollRateLimited: 'Status checks are being rate limited',
+      pollServiceUnavailable: 'The export status service is temporarily unavailable',
+      pollNetworkError: 'The status-check connection was interrupted',
+      createConfirmationPending: 'The task is not visible yet after the create response was interrupted; it may still be passing through the gateway or queue',
+      taskInterrupted: 'Export interrupted: the backend restarted, so this task will not continue (last progress {{duration}} ago).',
+      taskInterruptedNoDuration: 'Export interrupted: the backend restarted, so this task will not continue.',
+      taskStalled: 'Export looks stuck: no progress for {{duration}} (last step: {{step}}).',
+      taskStalledNoStep: 'Export looks stuck: no progress for {{duration}}.',
+      durationHours: '{{value}} hours',
+      durationMinutes: '{{value}} minutes',
+      durationSeconds: '{{value}} seconds',
+      stepStarting: 'starting',
+      stepPreparing: 'preparing',
+      stepLayoutAnalysis: 'layout analysis',
+      stepStyleExtraction: 'style extraction',
+      stepBuildingPptx: 'building the PPTX',
+      stepSaving: 'saving the file',
+    },
+  },
+};
+const t = getT(exportI18n);
+const EXPORT_POLL_INTERVAL_MS = 2000;
+const MAX_POLL_RETRY_DELAY_MS = 30000;
+const MAX_CREATE_CONFIRMATION_RETRIES = 6;
+// Localize watchdog errors from structured codes and details, never raw legacy prose.
+const TASK_INTERRUPTED_CODE = 'TASK_INTERRUPTED';
+const TASK_STALLED_CODE = 'TASK_STALLED';
+
+// Map known backend heartbeat stages to labels; omit unknown internal stage names.
+const STEP_LABEL_KEYS: Record<string, string> = {
+  'Commencement': 'exportStore.stepStarting',
+  'Ready.': 'exportStore.stepPreparing',
+  'Configuration': 'exportStore.stepPreparing',
+  'Board Analysis': 'exportStore.stepLayoutAnalysis',
+  'Style Ripping': 'exportStore.stepStyleExtraction',
+  'Build PPTX': 'exportStore.stepBuildingPptx',
+  'Save File': 'exportStore.stepSaving',
+  'Completed': 'exportStore.stepSaving',
+};
+
+const localizeStep = (step: string | undefined): string | undefined => {
+  if (!step) return undefined;
+  const key = STEP_LABEL_KEYS[step];
+  return key ? t(key) : undefined;
+};
+
+const formatDuration = (seconds: number): string => {
+  if (seconds >= 3600) {
+    return t('exportStore.durationHours', { value: (seconds / 3600).toFixed(1) });
+  }
+  if (seconds >= 60) {
+    return t('exportStore.durationMinutes', { value: Math.round(seconds / 60) });
+  }
+  return t('exportStore.durationSeconds', { value: Math.round(seconds) });
+};
+
+const describeWatchdogFailure = (
+  errorCode: string | undefined,
+  details: { idle_seconds?: number; last_step?: string } | undefined,
+): string | undefined => {
+  const idleSeconds = typeof details?.idle_seconds === 'number' ? details.idle_seconds : undefined;
+  const duration = idleSeconds !== undefined ? formatDuration(idleSeconds) : undefined;
+
+  if (errorCode === TASK_INTERRUPTED_CODE) {
+    return duration
+      ? t('exportStore.taskInterrupted', { duration })
+      : t('exportStore.taskInterruptedNoDuration');
+  }
+  if (errorCode === TASK_STALLED_CODE) {
+    if (!duration) return undefined;
+    const step = localizeStep(details?.last_step);
+    return step
+      ? t('exportStore.taskStalled', { duration, step })
+      : t('exportStore.taskStalledNoStep', { duration });
+  }
+  return undefined;
+};
+export const activePolls = new Set<string>();
+
+interface PollingIssue {
+  code: string;
+  message: string;
+  transient: boolean;
+  httpStatus?: number;
+}
+
+const describePollingError = (error: any): PollingIssue => {
+  const status = error?.response?.status;
+  if (status === 408 || status === 504) {
+    return {
+      code: status === 504 ? 'EXPORT_STATUS_GATEWAY_TIMEOUT' : 'EXPORT_STATUS_REQUEST_TIMEOUT',
+      message: `${t('exportStore.pollGatewayTimeout')} (HTTP ${status})`,
+      transient: true,
+      httpStatus: status,
+    };
+  }
+  if (status === 429) {
+    return {
+      code: 'EXPORT_STATUS_RATE_LIMITED',
+      message: `${t('exportStore.pollRateLimited')} (HTTP 429)`,
+      transient: true,
+      httpStatus: status,
+    };
+  }
+  if ([500, 502, 503].includes(status)) {
+    return {
+      code: 'EXPORT_STATUS_SERVICE_UNAVAILABLE',
+      message: `${t('exportStore.pollServiceUnavailable')} (HTTP ${status})`,
+      transient: true,
+      httpStatus: status,
+    };
+  }
+
+  const isRequestTimeout = error?.code === 'ECONNABORTED'
+    || String(error?.message || '').toLowerCase().includes('timeout');
+  if (isRequestTimeout) {
+    return {
+      code: 'EXPORT_STATUS_CLIENT_TIMEOUT',
+      message: t('exportStore.pollRequestTimeout'),
+      transient: true,
+    };
+  }
+
+  const isNetworkError = Boolean(
+    error?.request
+    || error?.code === 'ERR_NETWORK'
+    || error?.message?.includes('Network Error')
+  );
+  if (isNetworkError) {
+    return {
+      code: 'EXPORT_STATUS_NETWORK_ERROR',
+      message: t('exportStore.pollNetworkError'),
+      transient: true,
+    };
+  }
+
+  return {
+    code: 'EXPORT_STATUS_CHECK_FAILED',
+    message: normalizeErrorMessage(error?.message || t('exportStore.pollFailed')),
+    transient: false,
+    httpStatus: status,
+  };
+};
+
+// Note: Backend uses 'RUNNING' but we also accept 'PROCESSING' for compatibility
+export type ExportTaskStatus = 'PENDING' | 'PROCESSING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+export type ExportTaskType = 'pptx' | 'pdf' | 'editable-pptx' | 'images' | 'video';
+const EXPORT_TASK_STATUSES = new Set<ExportTaskStatus>(['PENDING', 'PROCESSING', 'RUNNING', 'COMPLETED', 'FAILED']);
+const MAX_UNUSABLE_TASK_RESPONSES = 3;
+const unusableTaskResponseCounts = new Map<string, number>();
+
+const isExportTaskStatus = (status: unknown): status is ExportTaskStatus => (
+  typeof status === 'string' && EXPORT_TASK_STATUSES.has(status as ExportTaskStatus)
+);
+
+const hasTask = (tasks: ExportTask[], id: string) => tasks.some(task => task.id === id);
+
+export interface ExportTask {
+  id: string;
+  taskId: string;
+  projectId: string;
+  type: ExportTaskType;
+  status: ExportTaskStatus;
+  pageIds?: string[]; // Selected Pages ID List，undefined For All
+  progress?: {
+    total: number;
+    completed: number;
+    percent?: number;
+    current_step?: string;
+    help_text?: string;
+    backend_status?: string;
+    error_code?: string;
+    error_type?: string;
+    error_stage?: string;
+    error_details?: {
+      stage?: string;
+      operation?: string;
+      reason?: string;
+      provider?: string;
+      model?: string;
+      retryable?: boolean;
+      request_timeout_seconds?: number;
+      max_attempts?: number;
+      technical_message?: string;
+      [key: string]: unknown;
+    };
+    messages?: string[];
+    warnings?: string[];  // Export Warning Information
+    warning_details?: {   // Warning Details
+      style_extraction_failed?: Array<{ element_id: string; reason: string }>;
+      text_render_failed?: Array<{ text: string; reason: string }>;
+      image_add_failed?: Array<{ path: string; reason: string }>;
+      json_parse_failed?: Array<{ context: string; reason: string }>;
+      other_warnings?: string[];
+      total_warnings?: number;
+    };
+  };
+  downloadUrl?: string;
+  filename?: string;
+  errorMessage?: string;
+  monitoring?: {
+    state: 'retrying' | 'paused';
+    code: string;
+    message: string;
+    consecutiveErrors: number;
+    lastErrorAt: string;
+    nextRetryAt?: string;
+    httpStatus?: number;
+  };
+  createdAt: string;
+  completedAt?: string;
+}
+
+interface ExportTasksState {
+  tasks: ExportTask[];
+
+  // Actions
+  addTask: (task: Omit<ExportTask, 'createdAt'>) => void;
+  updateTask: (id: string, updates: Partial<ExportTask>) => void;
+  removeTask: (id: string) => void;
+  clearCompleted: (projectId?: string | null) => void;
+  pollTask: (id: string, projectId: string, taskId: string) => Promise<void>;
+  restoreActiveTasks: () => void; // Resume ongoing missions and recommence rounds of inquiry
+}
+
+export const useExportTasksStore = create<ExportTasksState>()(
+  persist(
+    (set, get) => ({
+      tasks: [],
+
+      addTask: (task) => {
+        set((state) => {
+          // Check if task with this id already exists
+          const existingIndex = state.tasks.findIndex(t => t.id === task.id);
+
+          if (existingIndex >= 0) {
+            // Update existing task
+            const updatedTasks = [...state.tasks];
+            updatedTasks[existingIndex] = {
+              ...updatedTasks[existingIndex],
+              ...task,
+              // Update completedAt if status changed to completed/failed
+              completedAt: (task.status === 'COMPLETED' || task.status === 'FAILED')
+                ? new Date().toISOString()
+                : updatedTasks[existingIndex].completedAt,
+            };
+            return { tasks: updatedTasks };
+          } else {
+            // Add new task
+            const newTask: ExportTask = {
+              ...task,
+              createdAt: new Date().toISOString(),
+            };
+            return {
+              tasks: [newTask, ...state.tasks].slice(0, 20), // Keep max 20 tasks
+            };
+          }
+        });
+      },
+
+      updateTask: (id, updates) => {
+        set((state) => ({
+          tasks: state.tasks.map((task) =>
+            task.id === id ? { ...task, ...updates } : task
+          ),
+        }));
+      },
+
+      removeTask: (id) => {
+        unusableTaskResponseCounts.delete(id);
+        set((state) => ({
+          tasks: state.tasks.filter((task) => task.id !== id),
+        }));
+      },
+
+      clearCompleted: (projectId) => {
+        set((state) => ({
+          tasks: state.tasks.filter(
+            (task) => {
+              const isCompleted = task.status === 'COMPLETED' || task.status === 'FAILED';
+              if (!isCompleted) return true;
+              return projectId != null ? task.projectId !== projectId : false;
+            }
+          ),
+        }));
+      },
+
+      pollTask: async (id, projectId, taskId) => {
+        // The UI can mount while task creation is still awaiting its server ID.
+        // Do not let a placeholder poll block the real task poll for the same UI entry.
+        if (!taskId) return;
+        const existingTask = get().tasks.find(task => task.id === id);
+        if (!existingTask || existingTask.status === 'COMPLETED' || existingTask.status === 'FAILED') {
+          return;
+        }
+        if (activePolls.has(id)) {
+          return;
+        }
+        activePolls.add(id);
+        let consecutivePollErrors = 0;
+        const awaitingCreateConfirmation = existingTask.monitoring?.code === 'EXPORT_CREATE_RESPONSE_INTERRUPTED'
+          || existingTask.monitoring?.code === 'EXPORT_CREATE_CONFIRMATION_PENDING';
+
+        if (existingTask.monitoring?.state === 'paused') {
+          get().updateTask(id, {
+            monitoring: {
+              ...existingTask.monitoring,
+              state: 'retrying',
+              message: t('exportStore.pollRetrying'),
+              lastErrorAt: new Date().toISOString(),
+            },
+          });
+        }
+
+        const poll = async () => {
+          if (!hasTask(get().tasks, id)) {
+            unusableTaskResponseCounts.delete(id);
+            activePolls.delete(id);
+            return;
+          }
+
+          try {
+            const response = await api.getTaskStatus(projectId, taskId);
+            consecutivePollErrors = 0;
+            const task = response.data;
+
+            if (!hasTask(get().tasks, id)) {
+              unusableTaskResponseCounts.delete(id);
+              activePolls.delete(id);
+              return;
+            }
+
+            if (!task || !isExportTaskStatus(task.status)) {
+              const retryCount = unusableTaskResponseCounts.get(id) ?? 0;
+              if (retryCount < MAX_UNUSABLE_TASK_RESPONSES) {
+                unusableTaskResponseCounts.set(id, retryCount + 1);
+                console.warn(
+                  `[ExportTasksStore] No usable task data in response, retrying (${retryCount + 1}/${MAX_UNUSABLE_TASK_RESPONSES})`
+                );
+                setTimeout(poll, 2000);
+                return;
+              }
+
+              console.warn('[ExportTasksStore] No usable task data in response after retries');
+              unusableTaskResponseCounts.delete(id);
+              activePolls.delete(id);
+              get().updateTask(id, {
+                monitoring: {
+                  state: 'paused',
+                  code: 'EXPORT_STATUS_INVALID_RESPONSE',
+                  message: t('exportStore.staleTask'),
+                  consecutiveErrors: retryCount + 1,
+                  lastErrorAt: new Date().toISOString(),
+                },
+              });
+              return;
+            }
+            unusableTaskResponseCounts.delete(id);
+
+            const updates: Partial<ExportTask> = {
+              status: task.status,
+              monitoring: undefined,
+            };
+
+            if (task.progress) {
+              // Parse progress if it's a string (from database JSON field)
+              let progressData = task.progress;
+              if (typeof progressData === 'string') {
+                try {
+                  progressData = JSON.parse(progressData);
+                } catch (e) {
+                  console.warn('[ExportTasksStore] Failed to parse progress:', e);
+                }
+              }
+
+              updates.progress = progressData;
+
+              // Extract download URL if available
+              if (progressData.download_url) {
+                updates.downloadUrl = progressData.download_url;
+              }
+              if (progressData.filename) {
+                updates.filename = progressData.filename;
+              }
+            }
+
+            if (task.status === 'COMPLETED') {
+              updates.completedAt = new Date().toISOString();
+              activePolls.delete(id);
+              get().updateTask(id, updates);
+            } else if (task.status === 'FAILED') {
+              const taskErrorMessage = task.error_message
+                || task.error
+                || t('exportStore.exportFailed');
+              const watchdogMessage = describeWatchdogFailure(
+                updates.progress?.error_code,
+                updates.progress?.error_details as { idle_seconds?: number; last_step?: string } | undefined,
+              );
+              updates.errorMessage = watchdogMessage
+                || (updates.progress?.error_code
+                  ? taskErrorMessage
+                  : normalizeErrorMessage(taskErrorMessage));
+              updates.completedAt = new Date().toISOString();
+              activePolls.delete(id);
+              get().updateTask(id, updates);
+            } else if (task.status === 'PENDING' || task.status === 'RUNNING' || task.status === 'PROCESSING') {
+              get().updateTask(id, updates);
+              // Continue polling
+              setTimeout(poll, EXPORT_POLL_INTERVAL_MS);
+            }
+          } catch (error: any) {
+            console.error('[ExportTasksStore] Poll error:', error);
+            const currentTask = get().tasks.find(task => task.id === id);
+            const isActiveTask = currentTask
+              && (currentTask.status === 'PENDING' || currentTask.status === 'RUNNING' || currentTask.status === 'PROCESSING');
+
+            consecutivePollErrors += 1;
+            let issue = describePollingError(error);
+            if (awaitingCreateConfirmation && issue.httpStatus === 404) {
+              issue = {
+                code: 'EXPORT_CREATE_CONFIRMATION_PENDING',
+                message: `${t('exportStore.createConfirmationPending')} (HTTP 404)`,
+                transient: consecutivePollErrors <= MAX_CREATE_CONFIRMATION_RETRIES,
+                httpStatus: 404,
+              };
+            }
+            if (
+              isActiveTask
+              && issue.transient
+            ) {
+              const retryDelayMs = Math.min(
+                MAX_POLL_RETRY_DELAY_MS,
+                EXPORT_POLL_INTERVAL_MS * (2 ** Math.min(consecutivePollErrors - 1, 4)),
+              );
+              const nextRetryAt = new Date(Date.now() + retryDelayMs).toISOString();
+              console.warn(
+                `[ExportTasksStore] Transient poll error ${consecutivePollErrors}; retrying in ${retryDelayMs}ms`
+              );
+              get().updateTask(id, {
+                monitoring: {
+                  state: 'retrying',
+                  code: issue.code,
+                  message: `${issue.message} ${t('exportStore.pollRetrying')}.`,
+                  consecutiveErrors: consecutivePollErrors,
+                  lastErrorAt: new Date().toISOString(),
+                  nextRetryAt,
+                  httpStatus: issue.httpStatus,
+                },
+              });
+              setTimeout(poll, retryDelayMs);
+              return;
+            }
+
+            activePolls.delete(id);
+            get().updateTask(id, {
+              monitoring: {
+                state: 'paused',
+                code: issue.code,
+                message: `${issue.message} ${t('exportStore.pollPaused')}.`,
+                consecutiveErrors: consecutivePollErrors,
+                lastErrorAt: new Date().toISOString(),
+                httpStatus: issue.httpStatus,
+              },
+            });
+          }
+        };
+
+        await poll();
+      },
+
+      restoreActiveTasks: () => {
+        // Restoring all ongoing missions and recommenced the rounds
+        const state = get();
+        const activeTasks = state.tasks.filter(
+          task => task.status === 'PENDING' || task.status === 'PROCESSING' || task.status === 'RUNNING'
+        );
+
+        if (activeTasks.length > 0) {
+          devLog(`[ExportTasksStore] Restore ${activeTasks.length} Ongoing tasks`);
+          activeTasks.forEach(task => {
+            // Recommence Rotation
+            state.pollTask(task.id, task.projectId, task.taskId).catch(err => {
+              console.error(`[ExportTasksStore] Resume Tasks ${task.id} Failed:`, err);
+            });
+          });
+        }
+      },
+    }),
+    {
+      name: 'export-tasks-storage',
+      partialize: (state) => ({
+        // Persist all tasks (including active ones) so they can be restored after page refresh
+        tasks: state.tasks.slice(0, 20), // Keep max 20 tasks
+      }),
+    }
+  )
+);

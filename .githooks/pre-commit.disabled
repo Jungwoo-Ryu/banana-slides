@@ -1,0 +1,60 @@
+#!/bin/bash
+# Pre-commit hook: Autotranslation README.md Present. README_EN.md
+# Only README.md Only when modified
+
+set -e
+
+# Inspection README.md Modified in the current submission
+if git diff --cached --name-only | grep -q "^README\.md$"; then
+    echo "Detected README.md Change, autotranslating to README_EN.md..."
+
+    # Check if it’s in the root directory
+    if [ ! -f "README.md" ]; then
+        echo "Error: Not found README.md"
+        exit 1
+    fi
+
+    # Inspection.env Documentation
+    if [ ! -f ".env" ]; then
+        echo "Warning: Not found.env File, Skip Translation"
+        echo "If you need to translate automatically, make sure.env File contains necessary API Key Configuration"
+        exit 0
+    fi
+
+    # Loading Environment Variables
+    set -a
+    source .env 2>/dev/null || true
+    set +a
+
+    # Check the necessary environment variables
+    if [ -z "$GOOGLE_API_KEY" ]; then
+        echo "Warning: GOOGLE_API_KEY Unset, Skip Translation"
+        echo "For automatic translation, please be in.env File Settings GOOGLE_API_KEY"
+        exit 0
+    fi
+
+    # Inspection uv Available
+    if ! command -v uv &> /dev/null; then
+        echo "Warning: uv Not installed, Skip translation"
+        exit 0
+    fi
+
+    # Run translation scripts
+    echo "Start translation...."
+    if uv run python scripts/translate_readme.py; then
+        echo "✅ Translation success！"
+
+        # After translation README_EN.md Add to Current Submission
+        git add README_EN.md
+        echo "README_EN.md Automatically added to current submission"
+    else
+        echo "❌ Translation failed, but does not prevent submission"
+        echo "You can run manually later.: ./scripts/test_translation.sh"
+        # Do not prevent submission, and allow continuation.
+        exit 0
+    fi
+else
+    # README.md No change, no translation required
+    exit 0
+fi
+

@@ -1,0 +1,93 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Banana Slides",
+  "colors": {
+    "primary": "#F59E0B",
+    "light": "#FBBF24",
+    "dark": "#D97706"
+  },
+  "favicon": "/logo/banana.svg",
+  "navigation": {
+    "languages": [
+      {
+        "language": "zh",
+        "groups": [
+          {
+            "group": "Let’s do it fast.",
+            "pages": ["zh/index", "zh/quickstart", "zh/configuration", "zh/features/desktop"]
+          },
+          {
+            "group": "Create Process",
+            "pages": [
+              "zh/features/creation",
+              "zh/features/outline",
+              "zh/features/descriptions",
+              "zh/features/templates",
+              "zh/features/images"
+            ]
+          },
+          {
+            "group": "Materials and Export",
+            "pages": [
+              "zh/features/materials",
+              "zh/features/export",
+              "zh/features/import-export"
+            ]
+          },
+          {
+            "group": "Developer",
+            "pages": ["zh/cli"]
+          },
+          {
+            "group": "Other",
+            "pages": [
+              "zh/history",
+              "zh/features/overview",
+              "zh/faq"
+            ]
+          }
+        ]
+      },
+      {
+        "language": "en",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["index", "quickstart", "configuration", "features/desktop"]
+          },
+          {
+            "group": "Creation Flow",
+            "pages": [
+              "features/creation",
+              "features/outline",
+              "features/descriptions",
+              "features/templates",
+              "features/images"
+            ]
+          },
+          {
+            "group": "Materials & Export",
+            "pages": [
+              "features/materials",
+              "features/export",
+              "features/import-export"
+            ]
+          },
+          {
+            "group": "Developer",
+            "pages": ["cli"]
+          },
+          {
+            "group": "More",
+            "pages": [
+              "history",
+              "features/overview",
+              "faq"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

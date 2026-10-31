@@ -1,0 +1,103 @@
+name: Local Web
+on:
+  push:
+    branches: [main, 'feat/**']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  web-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      DATABASE_PATH: ${{ github.workspace }}/.runtime/sola-e2e/database.db
+      UPLOAD_FOLDER: ${{ github.workspace }}/.runtime/sola-e2e/uploads
+      SOLA_E2E_FOLDER: ${{ github.workspace }}/.runtime/sola-e2e
+      SOLA_E2E_VIDEO: '1'
+      AZURE_OPENAI_ENDPOINT: http://127.0.0.1:5044
+      AZURE_OPENAI_API_KEY: local-test-key
+      AZURE_OPENAI_API_VERSION: v1
+      AZURE_OPENAI_TTS_DEPLOYMENT: local-test-speech
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          # Keep optional uv cache maintenance out of workflow verification.
+          enable-cache: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.4'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: sudo apt-get update && sudo apt-get install -y tesseract-ocr tesseract-ocr-eng fonts-dejavu-core ffmpeg
+      - run: uv sync --frozen --extra test --python 3.12
+      - name: Check source language
+        run: python scripts/check_source_language.py
+      - name: Backend local workflow contracts
+        run: uv run pytest backend/tests/unit/test_file_parser_service.py backend/tests/unit/test_openai_image_multi_reference.py backend/tests/unit/test_screenshot_issue_regressions.py backend/tests/unit/test_sola_features.py backend/tests/unit/test_tts_video_service.py backend/tests/unit/test_local_web.py backend/tests/unit/test_text_output_limit.py backend/tests/unit/test_api_project.py backend/tests/unit/test_page_part_inheritance.py backend/tests/unit/test_template_mode_switch.py backend/tests/unit/test_description_field_contract.py backend/tests/unit/test_task_manager_image_prompt_fields.py backend/tests/unit/test_template_auto_match.py backend/tests/unit/test_style_from_content.py backend/tests/unit/test_image_prompt_ratio.py backend/tests/unit/test_english_schema_compat.py backend/tests/unit/test_renovation_filename.py backend/tests/unit/test_api_material.py backend/tests/unit/test_pptx_font_size.py -q
+      - run: npm --prefix frontend ci
+      - run: npm --prefix frontend run build:check
+      - name: Frontend save, script and export contracts
+        run: npx vitest run src/tests/store/useExportTasksStore.test.ts src/tests/store/useProjectStore.test.ts src/tests/store/useProjectStore.initializeProject.test.ts src/tests/components/DescriptionCard.test.tsx --poolOptions.threads.singleThread
+        working-directory: frontend
+      - run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - name: Start both services
+        run: |
+          uv run python frontend/e2e/helpers/fake_azure_tts.py > /tmp/fake-azure.log 2>&1 &
+          uv run python scripts/start_local.py --no-browser > /tmp/local-web.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:3011/ > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/local-web.log
+          exit 1
+      - run: npx playwright test --config playwright.local.config.ts
+        working-directory: frontend
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: local-web-failures
+          path: |
+            frontend/test-results/
+            .runtime/logs/
+
+  windows-launcher:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.4'
+      - name: Run start.bat with native cmd.exe
+        shell: pwsh
+        run: |
+          $launcher = Start-Process cmd.exe -ArgumentList '/d /c start.bat --no-browser' -PassThru -RedirectStandardOutput launcher.log -RedirectStandardError launcher-error.log
+          try {
+            $ready = $false
+            for ($attempt = 0; $attempt -lt 240; $attempt++) {
+              if ($launcher.HasExited) { throw 'Launcher exited before readiness' }
+              try {
+                $health = Invoke-RestMethod http://127.0.0.1:5011/health -TimeoutSec 2
+                $web = Invoke-WebRequest http://127.0.0.1:3011/ -TimeoutSec 2
+                if ($health.status -eq 'ok' -and $web.StatusCode -eq 200) { $ready = $true; break }
+              } catch { Start-Sleep -Seconds 2 }
+            }
+            if (-not $ready) { throw 'Services did not become ready' }
+          } finally {
+            if (-not $launcher.HasExited) { taskkill /PID $launcher.Id /T /F }
+            Get-Content launcher.log
+            Get-Content launcher-error.log
+          }
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: windows-launcher-failures
+          path: |
+            launcher*.log
+            .runtime/logs/

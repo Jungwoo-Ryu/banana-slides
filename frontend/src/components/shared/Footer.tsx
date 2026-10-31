@@ -1,0 +1,1 @@
+export const Footer = () => <footer className="py-6 text-center text-xs text-gray-500">Sol.A · AGPL-3.0 · 로컬 작업공간 · <a className="underline" href="https://github.com/Jungwoo-Ryu/banana-slides" target="_blank" rel="noreferrer">소스 코드와 라이선스</a></footer>;

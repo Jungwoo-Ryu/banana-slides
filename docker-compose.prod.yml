@@ -1,0 +1,55 @@
+# This profile is used to draw directly Docker Hub Builded Mirror
+
+services:
+  backend:
+    # Use pre-built backend mirrors
+    image: ${DOCKER_IMAGE_BACKEND:-anoinex/banana-slides-backend:latest}
+    container_name: banana-slides-backend
+    ports:
+      # Host Port:Internal Port of Container
+      # Host port by BACKEND_PORT Control, inside the container fixed. 5000
+      - "${BACKEND_PORT:-5011}:5000"
+      # OpenAI OAuth callback server
+      - "1455:1455"
+    # From .env The file automatically loads all environment variables
+    env_file:
+      - .env
+    # Vertex AI Configure (Use Vertex AI , and then delete the following comments）
+    # environment:
+    #   - GOOGLE_APPLICATION_CREDENTIALS=/app/gcp-service-account.json
+    volumes:
+      # Enduring database
+      - ./backend/instance:/app/backend/instance
+      # Enduring Uploaded Files
+      - ./uploads:/app/uploads
+      # GCP Service account file (only) Vertex AI User needs to cancel the next line comment）
+      # - ./gcp-service-account.json:/app/gcp-service-account.json:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - banana-slides-network
+
+  frontend:
+    # Use preconstructed frontend mirror
+    image: ${DOCKER_IMAGE_FRONTEND:-anoinex/banana-slides-frontend:latest}
+    container_name: banana-slides-frontend
+    ports:
+      - "${FRONTEND_PORT:-3011}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - banana-slides-network
+
+networks:
+  banana-slides-network:
+    driver: bridge
+
+volumes:
+  backend-data:
+  uploads-data:
