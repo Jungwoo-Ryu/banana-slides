@@ -1,0 +1,184 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Main colour - Yellow System */
+  --banana-yellow: #FFD700;
+  --banana-yellow-light: #FFE44D;
+  --banana-yellow-dark: #FFC700;
+  --banana-yellow-pale: #FFF9E6;
+
+  /* neutral color - Black and white ash. */
+  --black: #1A1A1A;
+  --black-80: #4A4A4A;
+  --black-60: #757575;
+  --black-10: #F5F5F5;
+  --white: #FFFFFF;
+
+  /* Function Colour */
+  --success: #52C41A;
+  --warning: #FAAD14;
+  --error: #FF4D4F;
+  --info: #1890FF;
+
+  /* Transition */
+  --transition-fast: 150ms ease-in-out;
+  --transition-base: 250ms ease-in-out;
+  --transition-slow: 350ms ease-in-out;
+
+  /* Background Colour */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F5F5F5;
+  --bg-tertiary: #FAFAFA;
+  --bg-elevated: #FFFFFF;
+  --bg-hover: #F5F5F5;
+
+  /* Text Colour */
+  --text-primary: #1A1A1A;
+  --text-secondary: #4A4A4A;
+  --text-tertiary: #757575;
+
+  /* Border Colour */
+  --border-primary: #E5E5E5;
+  --border-secondary: #F0F0F0;
+  --border-hover: #D4D4D4;
+}
+
+.dark {
+  /* Main colour - Yellow system (slightly sharpened in dark mode)） */
+  --banana-yellow: #F5A623;
+  --banana-yellow-light: #FFD700;
+  --banana-yellow-dark: #E6930E;
+  --banana-yellow-pale: #2A2520;
+
+  /* neutral color - Dark Mode */
+  --black: #F5F5F5;
+  --black-80: #D4D4D4;
+  --black-60: #8E8E8E;
+  --black-10: #1E1E24;
+  --white: #13131A;
+
+  /* Background Colour */
+  --bg-primary: #13131A;
+  --bg-secondary: #1E1E24;
+  --bg-tertiary: #17171E;
+  --bg-elevated: #252530;
+  --bg-hover: #2E2E38;
+
+  /* Text Colour */
+  --text-primary: #FFFFFF;
+  --text-secondary: #B0B0B0;
+  --text-tertiary: #6E6E6E;
+
+  /* Border Colour */
+  --border-primary: #2E2E38;
+  --border-secondary: #252530;
+  --border-hover: #3E3E48;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Move End Optimization */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--banana-yellow);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--banana-yellow-dark);
+}
+
+/* Describe a very light scrollbar for the card */
+.desc-card-scroll::-webkit-scrollbar {
+  width: 3px;
+}
+.desc-card-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.desc-card-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+.desc-card-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+.dark .desc-card-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+}
+.dark .desc-card-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Move End Toucher Optimization */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Move-end button optimized - Only for main interactive buttons */
+@media (max-width: 640px) {
+  .btn-touch-target,
+  button:not(.no-min-touch-target):not([class*="w-"]):not([class*="h-"]),
+  a:not(.no-min-touch-target):not([class*="w-"]):not([class*="h-"]) {
+    min-height: 44px; /* iOS The recommended minimum touch target */
+    min-width: 44px;
+  }
+}
+
+/* Gradient Text Animation */
+@keyframes gradient {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Small Menu/Frozen material evolution： faded from trigger point instead of flashing out */
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Markdown Content Styles - Only keep the base container style, the specific style is by Markdown.tsx In the component Tailwind Class handling */
+.markdown-content {
+  line-height: 1.6;
+}
+

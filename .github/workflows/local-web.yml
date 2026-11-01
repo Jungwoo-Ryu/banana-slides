@@ -1,0 +1,106 @@
+name: Local Web
+on:
+  push:
+    branches: [main, 'feat/**']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  web-contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      DATABASE_PATH: ${{ github.workspace }}/.runtime/sola-e2e/database.db
+      UPLOAD_FOLDER: ${{ github.workspace }}/.runtime/sola-e2e/uploads
+      SOLA_E2E_FOLDER: ${{ github.workspace }}/.runtime/sola-e2e
+      SOLA_E2E_VIDEO: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          # Keep optional uv cache maintenance out of workflow verification.
+          enable-cache: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.4'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: sudo apt-get update && sudo apt-get install -y tesseract-ocr tesseract-ocr-eng fonts-dejavu-core ffmpeg
+      - run: uv sync --frozen --extra test --python 3.12
+      - name: Check source language
+        run: python scripts/check_source_language.py
+      - name: Backend regression suite
+        run: uv run pytest backend/tests/unit backend/tests/integration/test_full_workflow.py backend/tests/integration/test_migration_019_backfill.py backend/tests/integration/test_reference_file_ssrf.py backend/tests/integration/test_requests_socks_proxy.py -q
+      - run: npm --prefix frontend ci
+      - run: npm --prefix frontend run build:check
+      - name: Frontend regression suite
+        run: npx vitest run --poolOptions.threads.singleThread
+        working-directory: frontend
+      - run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - name: Start both services
+        env:
+          AZURE_OPENAI_ENDPOINT: http://127.0.0.1:5044
+          AZURE_OPENAI_API_KEY: local-test-key
+          AZURE_OPENAI_API_VERSION: v1
+          AZURE_OPENAI_DEPLOYMENT: local-text
+          AZURE_OPENAI_IMAGE_DEPLOYMENT: local-image
+          AZURE_OPENAI_TTS_DEPLOYMENT: local-test-speech
+        run: |
+          uv run python frontend/e2e/helpers/fake_azure_tts.py > /tmp/fake-azure.log 2>&1 &
+          uv run python scripts/start_local.py --no-browser > /tmp/local-web.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:3011/ > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/local-web.log
+          exit 1
+      - run: npx playwright test --config playwright.local.config.ts
+        working-directory: frontend
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: local-web-failures
+          path: |
+            frontend/test-results/
+            .runtime/logs/
+
+  windows-launcher:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.4'
+      - name: Run start.bat with native cmd.exe
+        shell: pwsh
+        run: |
+          $launcher = Start-Process cmd.exe -ArgumentList '/d /c start.bat --no-browser' -PassThru -RedirectStandardOutput launcher.log -RedirectStandardError launcher-error.log
+          try {
+            $ready = $false
+            for ($attempt = 0; $attempt -lt 240; $attempt++) {
+              if ($launcher.HasExited) { throw 'Launcher exited before readiness' }
+              try {
+                $health = Invoke-RestMethod http://127.0.0.1:5011/health -TimeoutSec 2
+                $web = Invoke-WebRequest http://127.0.0.1:3011/ -TimeoutSec 2
+                if ($health.status -eq 'ok' -and $web.StatusCode -eq 200) { $ready = $true; break }
+              } catch { Start-Sleep -Seconds 2 }
+            }
+            if (-not $ready) { throw 'Services did not become ready' }
+          } finally {
+            if (-not $launcher.HasExited) { taskkill /PID $launcher.Id /T /F }
+            Get-Content launcher.log
+            Get-Content launcher-error.log
+          }
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: windows-launcher-failures
+          path: |
+            launcher*.log
+            .runtime/logs/

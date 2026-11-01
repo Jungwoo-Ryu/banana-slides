@@ -1,0 +1,3 @@
+
+# Windows launcher remains directly runnable after checkout.
+*.bat text eol=crlf

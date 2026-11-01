@@ -1,0 +1,118 @@
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.svg
+*.webp
+*.ico
+*.tiff
+*.tif
+*.heic
+*.heif
+*.avif
+
+!frontend/public/**/*.png
+!frontend/src/assets/**/*.png
+!desktop/resources/icon.png
+!desktop/resources/icon.ico
+!desktop/resources/trayTemplate.png
+!desktop/resources/trayTemplate@2x.png
+!desktop/resources/trayTemplate.svg
+!desktop/resources/installer-icon.ico
+!desktop/resources/installerSidebar.bmp
+!desktop/resources/installerHeader.bmp
+!frontend/public/**/*.jpg
+!frontend/public/**/*.jpeg
+!frontend/public/**/*.gif
+!frontend/public/**/*.bmp
+!frontend/public/**/*.svg
+!frontend/public/**/*.webp
+!frontend/public/**/*.ico
+!frontend/public/**/*.tiff
+!frontend/public/**/*.tif
+!frontend/public/**/*.heic
+!frontend/public/**/*.heif
+!frontend/public/**/*.avif
+
+# Keep Test fixtures
+!e2e/fixtures/*.png
+
+# Keep project template pictures
+!template*.png
+
+# Ignore temporary documents, but keep item documents
+*.md
+!README.md
+!README_*.md
+!docs/readme-i18n.md
+/.cache/readme-i18n/
+!skills/**/*.md
+# !docs/**/*.md
+!docs/specs/cli-spec.md
+!docs/superpowers/specs/*.md
+!docs/superpowers/plans/*.md
+!docs/desktop-handover.md
+!.github/**/*.md
+*.pyc
+.env
+/desktop/.cache/
+/desktop/resources/ffmpeg/
+
+# GCP service-account key (sensitive — never commit)
+gcp-service-account.json
+*.ppt
+*.pptx
+generate-example.py
+*.mdc
+*.pdf
+.cursor/worktrees.json
+uploads/
+!assets/*
+!assets/buttons/*.svg
+!assets/readme/*.svg
+!assets/readme/lucide-icons.json
+!assets/readme/LUCIDE-LICENSE.txt
+
+# Backup file for mirror source configuration scripts
+*.orig
+# Local backup directory (storing test files, etc.)）
+_local_backup/
+!CLA.md
+!CONTRIBUTING.md
+.venv
+banana_slides.egg-info/
+dist/
+build/
+
+# Local ML Model（RMBG Wait.）
+/models/
+
+# macOS Metadata
+.DS_Store
+# Claude Code Local Configuration & Screenshot
+.claude/
+# Locally recorded promotional films / Counterscreen material (large size, no library)）
+videos/
+# Playwright Run the product and grab the script one-time
+test-results/
+frontend/cap-real.mjs
+# Draft local designer (not finalized, not library)）
+/banana-slides-landing.html
+/design-mockup.html
+/design-system-proposal.html
+
+# Isolated issue regression evidence
+/output/issue-verification/
+
+# Local runtime, credentials and generated artifacts
+.runtime/
+.env
+.env.local
+*.pem
+backend/instance/
+uploads/
+
+# Sol.A application assets and integration handoff
+!frontend/src/assets/sola-sun.svg
+!sola-integration.md
