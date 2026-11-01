@@ -4,6 +4,12 @@ import re
 
 def localize_error(message):
     text = str(message or '')
+    known = {
+        'client_task_id must be a valid UUID': '작업 ID는 올바른 UUID 형식이어야 합니다.',
+        'No template image or style description found for page': '템플릿을 선택하거나 스타일 설명을 입력하세요.',
+    }
+    if text in known:
+        return known[text]
     # Provider responses can include echoed credentials, URLs and uploaded data.
     if any(term in text.lower() for term in ('certificate', 'ssl', 'tls')):
         return 'HTTPS 인증서 검증에 실패했습니다. 사내 Root CA(CORPORATE_CA_FILE)와 프록시 설정을 확인하세요.'
@@ -57,5 +63,5 @@ def status_message(value):
         (('Ready.','Here we go.','Configuration','prepar','start'), '작업을 준비하는 중입니다.'),
     )
     for terms, message in categories:
-        if any(term in text.lower() for term in terms): return message
+        if any(term.lower() in text.lower() for term in terms): return message
     return '작업을 처리하는 중입니다.'

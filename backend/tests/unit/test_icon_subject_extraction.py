@@ -167,33 +167,14 @@ class TestRmbgSegmentationProvider:
 
         assert result is None
 
-    def test_extract_subject_downloads_model_when_missing(self, tmp_path):
-        from services.ai_providers.image.rmbg_segmentation_provider import _MODEL_URL
-
+    def test_missing_model_never_triggers_external_download(self, tmp_path):
         model_path = tmp_path / "subdir" / "model.onnx"
         provider = self._new_provider(model_path)
-
-        chunks = [b"a" * 1024, b"b" * 1024, b""]
-        fake_resp = MagicMock()
-        fake_resp.headers = {"Content-Length": "2048"}
-        fake_resp.iter_content.return_value = iter(chunks)
-        fake_resp.raise_for_status.return_value = None
-        fake_resp.__enter__ = MagicMock(return_value=fake_resp)
-        fake_resp.__exit__ = MagicMock(return_value=False)
-
-        mask = np.full((1, 1, 1024, 1024), 0.5, dtype=np.float32)
-        mock_session = _build_mock_session([mask])
-
-        with patch("requests.get", return_value=fake_resp) as mock_get, \
-             _install_fake_onnxruntime(mock_session):
-            src = Image.new("RGB", (64, 64), color=(0, 0, 0))
-            result = provider.extract_subject(src)
-
-        assert result is not None
-        assert model_path.exists()
-        assert not model_path.with_suffix(model_path.suffix + ".part").exists()
-        mock_get.assert_called_once()
-        assert mock_get.call_args.args[0] == _MODEL_URL
+        with patch("requests.get") as download:
+            result = provider.extract_subject(Image.new("RGB", (64, 64)))
+        assert result is None
+        assert not model_path.exists()
+        download.assert_not_called()
 
 
 class TestBBoxExpand:

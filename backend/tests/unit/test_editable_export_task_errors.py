@@ -147,7 +147,7 @@ def test_editable_export_rejects_invalid_client_task_id(client, sample_project):
     )
 
     assert response.status_code == 400
-    assert response.get_json()["error"]["message"] == "client_task_id must be a valid UUID"
+    assert response.get_json()["error"]["message"] == "작업 ID는 올바른 UUID 형식이어야 합니다."
 
 
 def test_editable_export_records_task_submission_failure(

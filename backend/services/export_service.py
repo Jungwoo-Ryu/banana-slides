@@ -358,7 +358,7 @@ class ExportService:
             ),
             (
                 'incomplete_response',
-                ('Full result not returned', 'missing result', 'incomplete'),
+                ('Full result not returned', 'did not return the full result', 'missing result', 'incomplete'),
                 'INCOMPLETE_RESPONSE',
                 'Image Identification Model returns incomplete',
                 True,
@@ -373,7 +373,7 @@ class ExportService:
         )
 
         for reason, needles, code_suffix, summary, retryable in classifications:
-            if any(needle in lowered for needle in needles):
+            if any(needle.lower() in lowered for needle in needles):
                 return {
                     'reason': reason,
                     'code_suffix': code_suffix,

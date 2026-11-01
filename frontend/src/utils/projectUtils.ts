@@ -217,12 +217,14 @@ const pageToMarkdown = (page: Page, index: number, opts: ExportOptions = {}): st
     } else {
       md += `${t('projectUtils.noDesc')}\n`;
     }
-    // Extra Fields
-    if (extraFields) {
-      md += '\n';
-      for (const [name, value] of Object.entries(extraFields)) {
-        if (value) md += `${name}：${value}\n`;
+    // Explicit boundaries keep multiline fields and narration separate from slide text.
+    const fields = { ...extraFields, ...(page.narration_text ? { TTS_SCRIPT: page.narration_text } : {}) };
+    if (Object.values(fields).some(Boolean)) {
+      md += '\n<!-- SLIDE_FIELDS -->\n';
+      for (const [name, value] of Object.entries(fields)) {
+        if (value) md += `${name}: ${value.replace(/\n/g, '\n  ')}\n`;
       }
+      md += '<!-- SLIDE_FIELDS_END -->\n';
     }
     md += '\n';
   }
@@ -258,13 +260,13 @@ export interface ParsedPage {
 const sanitize = (s: string) => s.replace(/<[^>]*>/g, '');
 
 const splitMarkdownPages = (markdown: string): string[] => {
-  // Support both Chinese "## Page N Page:" and English "## Page N:" formats
-  return markdown.split(/^## (?:\u7b2c \d+ \u9875|Page \d+):/m).slice(1);
+  // Accept current exports and headings from older localized versions.
+  return markdown.split(/^##\s+(?:\u7b2c\s*\d+\s*\u9875|Page\s+\d+(?:\s+Page)?|\d+\s*페이지)\s*[:：]/im).slice(1);
 };
 
 // Additional field line mode： short name + Medium/The British colon. + Contents
-const EXTRA_FIELD_RE = /^([^\s：:]{1,20})[：:](.+)/;
-const TRAILING_MARKERS = new Set(['---', '', '*No point at this point.*', '*No description for now.*', '*No points yet*', '*No description yet*']);
+const EXTRA_FIELD_RE = /^([^：:]{1,100})[：:]\s*(.*)$/;
+const TRAILING_MARKERS = new Set(['---', '', '*No point at this point.*', '*No description for now.*', '*No points yet*', '*No description yet*', '*아직 내용이 없습니다*', '*아직 설명이 없습니다*']);
 const BULLET_RE = /^[-*+]\s+(.+)$/;
 
 const stripBullet = (line: string): string | null => {
@@ -273,13 +275,39 @@ const stripBullet = (line: string): string | null => {
 };
 
 const splitDescAndExtraFields = (descLines: string[]): { text: string; extra_fields?: Record<string, string> } => {
+  const fieldMarker = descLines.findIndex(line => line.trim() === '<!-- SLIDE_FIELDS -->');
+  if (fieldMarker >= 0) {
+    const fields: Record<string, string> = {};
+    let key = '';
+    for (const line of descLines.slice(fieldMarker + 1)) {
+      if (line.trim() === '<!-- SLIDE_FIELDS_END -->') break;
+      const match = /^\S/.test(line) ? EXTRA_FIELD_RE.exec(line) : null;
+      if (match) { key = match[1].trim(); fields[key] = match[2]; }
+      else if (key) fields[key] += `\n${line.replace(/^  /, '')}`;
+    }
+    return { text: descLines.slice(0, fieldMarker).join('\n').trim(), extra_fields: fields };
+  }
+  const marker = descLines.findIndex(line => line.trim() === '--- SLIDE_TEXT_END ---');
+  const firstField = descLines.findIndex((line, index) => index > marker && EXTRA_FIELD_RE.test(line.trim()));
+  // With explicit slide markers, multiline field values cannot consume slide text.
+  if (marker >= 0 && firstField > marker) {
+    const fields: Record<string, string> = {};
+    let key = '';
+    for (const line of descLines.slice(firstField)) {
+      const match = EXTRA_FIELD_RE.exec(line.trim());
+      if (match) { key = match[1].trim(); fields[key] = match[2]; }
+      else if (key) fields[key] += `\n${line}`;
+    }
+    for (const name of Object.keys(fields)) fields[name] = fields[name].trim();
+    return { text: descLines.slice(0, firstField).join('\n').trim(), extra_fields: fields };
+  }
   // Scan an extra field line running forward from the end
   const fields: Record<string, string> = {};
   let i = descLines.length - 1;
   while (i >= 0) {
     const m = EXTRA_FIELD_RE.exec(descLines[i].trim());
     if (m) {
-      fields[m[1]] = m[2].trim();
+      fields[m[1].trim()] = m[2].trim();
       i--;
     } else if (descLines[i].trim() === '') {
       i--; // Skip empty lines
@@ -312,12 +340,12 @@ export const parseMarkdownPages = (markdown: string): ParsedPage[] => {
     const title = sanitize(lines[0].trim());
 
     // Extract metadata (support both Chinese and English)
-    const partLine = lines.find(l => l.startsWith('> Section: ') || l.startsWith('> Chapter: '));
-    const part = partLine ? sanitize(partLine.replace(/^> (?:\u7ae0\u8282|Chapter): /, '').trim()) : undefined;
+    const partMatch = lines.map(line => /^>\s*(?:\u7ae0\u8282|Chapter|Section|장)\s*[:：]\s*(.+)$/i.exec(line)).find(Boolean);
+    const part = partMatch ? sanitize(partMatch[1].trim()) : undefined;
 
     // Find section markers (support both Chinese and English)
-    const outlineIdx = lines.findIndex(l => l.trim() === '**Outline points：**' || l.trim() === '**Outline Points:**');
-    const descIdx = lines.findIndex(l => l.trim() === '**Page description：**' || l.trim() === '**Page Description:**');
+    const outlineIdx = lines.findIndex(l => /^\*\*(?:Outline points|핵심 내용|\u5927\u7eb2\u8981\u70b9)[:：]\*\*$/i.test(l.trim()));
+    const descIdx = lines.findIndex(l => /^\*\*(?:Page description|페이지 설명|\u9875\u9762\u63cf\u8ff0)[:：]\*\*$/i.test(l.trim()));
 
     let points: string[] = [];
     let text = '';

@@ -98,7 +98,8 @@ def get_test_status(task_id):
         return error_response('TASK_NOT_FOUND', '테스트 작업을 찾을 수 없습니다.', 404)
     from services.task_watchdog import reconcile_task_for_response
     reconcile_task_for_response(task)
-    return success_response({'status': task.status, 'error': task.error_message, **(task.get_progress() or {})})
+    payload = task.to_dict()
+    return success_response({'status': task.status, 'error': payload['error_message'], **payload['progress']})
 
 
 @settings_bp.post('/verify')

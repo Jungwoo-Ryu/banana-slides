@@ -97,7 +97,14 @@ def test_retired_website_revisions_remain_upgradeable(cli_env, revision):
         assert conn.execute('SELECT version_num FROM alembic_version').fetchone()[0] == _current_head()
         assert 'image_quality' in {row[1] for row in conn.execute("PRAGMA table_info('settings')")}
         for table, rows in before.items():
-            assert conn.execute(f'SELECT * FROM {table}').fetchall() == rows
+            after = conn.execute(f'SELECT * FROM {table}').fetchall()
+            if table == 'projects':
+                columns = [row[1] for row in conn.execute('PRAGMA table_info(projects)')]
+                policy = {'export_extractor_method': 'configured', 'export_inpaint_method': 'local', 'enable_icon_subject_extraction': 0}
+                expected = [tuple(policy.get(name, value) for name, value in zip(columns, row)) for row in rows]
+                assert after == expected
+            else:
+                assert after == rows
 
 
 def test_cli_is_idempotent(cli_env):

@@ -277,7 +277,7 @@ def test_import_reference_markdown_images_decodes_urls_and_truncates_caption(cli
     data = assert_success_response(client.get(f"/api/projects/{project_id}/materials"))
     material = data["data"]["materials"][0]
     assert material["original_filename"] == "Figure.png"
-    assert material["caption"] == "Figure" * 500
+    assert material["caption"] == ("Figure" * 500)[:500]
 
 
 def test_import_reference_markdown_images_strips_query_and_fragment(client, app):

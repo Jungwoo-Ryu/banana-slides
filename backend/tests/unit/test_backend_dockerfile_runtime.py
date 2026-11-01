@@ -18,17 +18,11 @@ def test_backend_container_uses_prebuilt_virtualenv_at_runtime():
     assert "uv run" not in cmd_lines[0]
 
 
-def test_lazyllm_runtime_provider_dependencies_are_packaged():
+def test_only_company_azure_model_dependencies_are_packaged():
     pyproject = Path(__file__).resolve().parents[3] / "pyproject.toml"
-    data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
-
-    dependencies = data["project"]["dependencies"]
-
-    assert "lazyllm>=0.7.3" in dependencies
-    assert not any(dep.startswith("lazyllm[") for dep in dependencies)
-    assert any(dep.startswith("volcengine-python-sdk") for dep in dependencies)
-    assert any(dep.startswith("zhipuai>=") for dep in dependencies)
-    assert any(dep.startswith("dashscope>=") for dep in dependencies)
+    dependencies = tomllib.loads(pyproject.read_text())["project"]["dependencies"]
+    assert any(dep.startswith("openai>=") for dep in dependencies)
+    assert not any(dep.startswith(("google-genai", "anthropic", "lazyllm", "edge-tts", "elevenlabs")) for dep in dependencies)
 
 
 def test_requests_socks_runtime_dependency_is_packaged():
@@ -44,8 +38,7 @@ def test_requests_socks_runtime_dependency_is_packaged():
     assert "'requests', 'socks', 'aiohttp'" in spec_content
 
 
-def test_desktop_backend_collects_dynamic_lazyllm_suppliers():
+def test_desktop_spec_does_not_collect_removed_model_providers():
     spec = Path(__file__).resolve().parents[2] / "banana-slides.spec"
     content = spec.read_text(encoding="utf-8")
-
-    assert "collect_submodules('lazyllm.module.llms.onlinemodule.supplier')" in content
+    assert "lazyllm.module.llms.onlinemodule.supplier" not in content

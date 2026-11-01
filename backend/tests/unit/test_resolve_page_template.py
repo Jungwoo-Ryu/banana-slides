@@ -228,7 +228,7 @@ def test_single_page_generation_rejects_disabled_image_only_template(
 
     assert response.status_code == 400
     assert response.get_json()['error']['message'] == (
-        'No template image or style description found for page')
+        '템플릿을 선택하거나 스타일 설명을 입력하세요.')
     assert len(stub_submit_task) == submitted_before
 
 

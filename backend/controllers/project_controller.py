@@ -664,7 +664,6 @@ def generate_outline_stream(project_id):
         headers={
             'Cache-Control': 'no-cache, no-transform',
             'X-Accel-Buffering': 'no',
-            'Connection': 'keep-alive',
         },
     )
 
@@ -1022,7 +1021,6 @@ def generate_descriptions_stream(project_id):
         headers={
             'Cache-Control': 'no-cache, no-transform',
             'X-Accel-Buffering': 'no',
-            'Connection': 'keep-alive',
         },
     )
 

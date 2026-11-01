@@ -18,15 +18,15 @@ describe('TextStyleSelector Component', () => {
 
   it('renders correctly with default props', () => {
     render(<TextStyleSelector value="" onChange={vi.fn()} />);
-    expect(screen.getByRole('button', { name: /Generate from content|\u6839\u636e\u5185\u5bb9\u751f\u6210\u98ce\u683c/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Extract from image|\u4ece\u56fe\u7247\u63d0\u53d6\u98ce\u683c/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /내용에 맞게 생성|Generate from content|\u6839\u636e\u5185\u5bb9\u751f\u6210\u98ce\u683c/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /이미지에서 추출|Extract from image|\u4ece\u56fe\u7247\u63d0\u53d6\u98ce\u683c/i })).toBeInTheDocument();
   });
 
   it('shows error toast when sourceContent is empty and generate button clicked', () => {
     const handleToast = vi.fn();
     render(<TextStyleSelector value="" onChange={vi.fn()} onToast={handleToast} sourceContent="" />);
 
-    const generateBtn = screen.getByRole('button', { name: /Generate from content|\u6839\u636e\u5185\u5bb9\u751f\u6210\u98ce\u683c/i });
+    const generateBtn = screen.getByRole('button', { name: /내용에 맞게 생성|Generate from content|\u6839\u636e\u5185\u5bb9\u751f\u6210\u98ce\u683c/i });
     fireEvent.click(generateBtn);
 
     expect(handleToast).toHaveBeenCalledWith(
@@ -53,7 +53,7 @@ describe('TextStyleSelector Component', () => {
       />
     );
 
-    const generateBtn = screen.getByRole('button', { name: /Generate from content|\u6839\u636e\u5185\u5bb9\u751f\u6210\u98ce\u683c/i });
+    const generateBtn = screen.getByRole('button', { name: /내용에 맞게 생성|Generate from content|\u6839\u636e\u5185\u5bb9\u751f\u6210\u98ce\u683c/i });
     fireEvent.click(generateBtn);
 
     await waitFor(() => {
@@ -83,7 +83,7 @@ describe('TextStyleSelector Component', () => {
       />
     );
 
-    const generateBtn = screen.getByRole('button', { name: /Generate from content|\u6839\u636e\u5185\u5bb9\u751f\u6210\u98ce\u683c/i });
+    const generateBtn = screen.getByRole('button', { name: /내용에 맞게 생성|Generate from content|\u6839\u636e\u5185\u5bb9\u751f\u6210\u98ce\u683c/i });
     fireEvent.click(generateBtn);
 
     await waitFor(() => {

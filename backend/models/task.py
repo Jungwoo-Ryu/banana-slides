@@ -99,12 +99,27 @@ class Task(db.Model):
 
     def to_dict(self):
         """Convert to dictionary"""
+        from services.task_watchdog import localize_watchdog_payload, INTERRUPTED_ERROR_CODE, STALLED_ERROR_CODE
+        progress = self.get_progress() or {}
+        trusted_watchdog = (
+            bool(self.error_message)
+            and self.error_message == progress.get('watchdog_message_text')
+            and progress.get('error_code') in (INTERRUPTED_ERROR_CODE, STALLED_ERROR_CODE)
+        )
+        payload = localize_watchdog_payload({'error_message': self.error_message, 'progress': progress})
+        safe_progress = localize_progress(payload['progress'])
+        error = localize_error(self.error_message) if self.error_message else None
+        if trusted_watchdog:
+            # These messages are rebuilt from fixed translations and numeric details.
+            error = payload['error_message']
+            safe_progress['help_text'] = payload['progress']['help_text']
+            safe_progress['watchdog_message_text'] = error
         return {
             'task_id': self.id,
             'task_type': self.task_type,
             'status': self.status,
-            'progress': localize_progress(self.get_progress()),
-            'error_message': localize_error(self.error_message) if self.error_message else None,
+            'progress': safe_progress,
+            'error_message': error,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'completed_at': self.completed_at.isoformat() if self.completed_at else None,
         }

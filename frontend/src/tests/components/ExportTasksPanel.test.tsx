@@ -56,9 +56,9 @@ describe('ExportTasksPanel', () => {
     render(<ExportTasksPanel projectId="project-1" />);
 
     await waitFor(() => {
-      expect(screen.getAllByRole('button', { name: /\u4e0b\u8f7d|Download/ })).toHaveLength(2);
+      expect(screen.getAllByRole('button', { name: /\u4e0b\u8f7d|다운로드|Download/ })).toHaveLength(2);
     });
-    const downloadButtons = screen.getAllByRole('button', { name: /\u4e0b\u8f7d|Download/ });
+    const downloadButtons = screen.getAllByRole('button', { name: /\u4e0b\u8f7d|다운로드|Download/ });
 
     await userEvent.click(downloadButtons[0]);
     await userEvent.click(downloadButtons[1]);
@@ -101,9 +101,9 @@ describe('ExportTasksPanel', () => {
 
     render(<ExportTasksPanel projectId="project-1" />);
 
-    expect(await screen.findByText(/\u8fd9\u4e0d\u4ee3\u8868\u540e\u53f0\u5bfc\u51fa\u5931\u8d25|does not mean the backend export failed/)).toBeInTheDocument();
+    expect(await screen.findByText(/\u8fd9\u4e0d\u4ee3\u8868\u540e\u53f0\u5bfc\u51fa\u5931\u8d25|백엔드 작업은 계속 진행될 수 있습니다.|does not mean the backend export failed/)).toBeInTheDocument();
     expect(screen.getByText(/HTTP 504/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /\u91cd\u65b0\u67e5\u8be2|Check Again/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /\u91cd\u65b0\u67e5\u8be2|다시 확인|Check Again/ })).toBeInTheDocument();
     expect(screen.queryByText(/^\u5bfc\u51fa\u5931\u8d25$|^Export Failed$/)).not.toBeInTheDocument();
   });
 
@@ -125,8 +125,8 @@ describe('ExportTasksPanel', () => {
           error_stage: 'style_extraction',
           error_details: {
             reason: 'timeout',
-            provider: 'CodexTextProvider',
-            model: 'gpt-5.4',
+            provider: 'AzureTextProvider',
+            model: 'gpt-5.5',
             request_timeout_seconds: 120,
             max_attempts: 5,
             technical_message: 'Read timed out after retries',
@@ -143,9 +143,9 @@ describe('ExportTasksPanel', () => {
 
     expect(await screen.findByText('Text style extraction failed： photo recognition service request timed out')).toBeInTheDocument();
     expect(screen.getByText('EXPORT_STYLE_TIMEOUT')).toBeInTheDocument();
-    expect(screen.getByText('CodexTextProvider')).toBeInTheDocument();
-    expect(screen.getByText('gpt-5.4')).toBeInTheDocument();
+    expect(screen.getByText('AzureTextProvider')).toBeInTheDocument();
+    expect(screen.getByText('gpt-5.5')).toBeInTheDocument();
     expect(screen.getByText(/120.*5/)).toBeInTheDocument();
-    expect(screen.getByText(/\u6280\u672f\u539f\u56e0|Technical reason/)).toBeInTheDocument();
+    expect(screen.getByText(/\u6280\u672f\u539f\u56e0|상세 원인|Technical reason/)).toBeInTheDocument();
   });
 });

@@ -71,25 +71,17 @@ DEFAULT_ORPHAN_GRACE_SECONDS = 300.0
 # Direct display of non-export tasks (live maps, video export, template analysis, etc.) error_message，
 # So here you can generate the text by the output language used; the export panel has other presses error_code Front Localize。
 _TEXTS = {
-    'zh': {
-        'interrupted': 'Mandate interrupted： back-office services have been restarted or the process has been withdrawn and the task will not continue。',
-        'interrupted_detail': 'Last update on {duration}Front。',
-        'interrupted_help': INTERRUPTED_HELP_TEXT,
-        'stalled': 'Mission suspected to be stuck： already {duration}No progress update{step}。',
-        'stalled_step': '（Last step.：{step}）',
-        'stalled_help': 'You can do it on the right. × Re-export after removing the task; if repeated, send the application log to the developer。',
-        'hours': '{value} Hours',
-        'minutes': '{value} min',
-        'seconds': '{value} sec',
-        'step_starting': 'Commencement',
-        'step_preparing': 'Ready.',
-        'step_exporting': 'Export',
-        'step_layout': 'Board Analysis',
-        'step_style': 'Style Ripping',
-        'step_build': 'Build PPTX',
-        'step_saving': 'Save File',
-        'step_narration': 'Narrator.',
-        'step_done': 'Completed',
+    'ko': {
+        'interrupted': '작업이 중단되었습니다. 백엔드가 재시작되어 이 작업은 계속되지 않습니다.',
+        'interrupted_detail': ' 마지막 진행은 {duration} 전입니다.',
+        'interrupted_help': '작업 목록에서 항목을 지운 뒤 다시 실행하세요.',
+        'stalled': '{duration} 동안 진행이 없어 작업을 중단했습니다{step}.',
+        'stalled_step': ' (마지막 단계: {step})',
+        'stalled_help': '작업을 다시 실행하세요. 반복되면 관리자에게 실행 로그를 전달하세요.',
+        'hours': '{value}시간', 'minutes': '{value}분', 'seconds': '{value}초',
+        'step_starting': '시작', 'step_preparing': '준비', 'step_exporting': '내보내기',
+        'step_layout': '배치 분석', 'step_style': '스타일 분석', 'step_build': 'PPTX 생성',
+        'step_saving': '저장', 'step_narration': '발표 음성 생성', 'step_done': '완료',
     },
     'en': {
         'interrupted': 'Task interrupted: the backend restarted or the process exited, so this task will not continue.',
@@ -148,11 +140,11 @@ def _current_language() -> str:
             return str(configured).lower()
     except Exception:  # pragma: no cover - Outside request context
         pass
-    return (os.getenv('OUTPUT_LANGUAGE') or 'zh').lower()
+    return (os.getenv('OUTPUT_LANGUAGE') or 'ko').lower()
 
 
 def _texts() -> Dict[str, str]:
-    return _TEXTS['en'] if _current_language().startswith('en') else _TEXTS['zh']
+    return _TEXTS['en'] if _current_language().startswith('en') else _TEXTS['ko']
 
 
 def _localized_step(step: Optional[str]) -> Optional[str]:
@@ -166,7 +158,7 @@ def _localized_step(step: Optional[str]) -> Optional[str]:
     key = _STEP_KEYS.get(step)
     if key:
         return _texts()[key]
-    return step if not _current_language().startswith('en') else None
+    return None
 
 
 def _positive_env_float(name: str, default: float) -> float:

@@ -95,8 +95,8 @@ def test_status_endpoint_fails_task_left_over_from_previous_process(client, app)
     assert data['progress']['error_code'] == INTERRUPTED_ERROR_CODE
     # The last real progress must be kept so that users can understand where the card is.
     assert data['progress']['percent'] == 88
-    assert data['progress']['current_step'] == 'Build No. 17/24 Page...'
-    assert 'Interrupt' in data['error_message']
+    assert data['progress']['current_step'] == '작업을 처리하는 중입니다.'
+    assert '작업이 중단' in data['error_message']
     assert data['progress']['help_text']
     assert data['progress']['error_stage'] == 'task_watchdog'
     assert data['completed_at'] is not None
@@ -130,8 +130,8 @@ def test_status_endpoint_fails_stalled_task_owned_by_this_process(client, app, m
 
         assert data['status'] == 'FAILED'
         assert data['progress']['error_code'] == STALLED_ERROR_CODE
-        assert 'Hold it!' in data['error_message']
-        assert 'Build PPTX' in data['error_message']
+        assert '진행이 없어' in data['error_message']
+        assert 'PPTX 생성' in data['error_message']
     finally:
         with task_manager.lock:
             task_manager.active_tasks.pop(task_id, None)
@@ -414,7 +414,8 @@ def test_worker_error_is_not_overwritten_by_localization(client, app):
         headers={'Accept-Language': 'en'},
     )
     data = response.get_json()['data']
-    assert data['error_message'] == 'AI Service Return 401 invalid api key'
+    assert 'API 인증' in data['error_message']
+    assert data['progress']['error_code'] == STALLED_ERROR_CODE
 
 
 def test_stalled_message_is_localized_at_display_time(client, app):
@@ -456,6 +457,7 @@ def test_settings_test_status_localizes_watchdog_failure(client, app):
     with app.app_context():
         task = Task.query.get(task_id)
         task.task_type = 'TEST_TEXT_MODEL'
+        task.project_id = 'settings-test'
         task.error_message = 'Mandate interrupted： back-office services have been restarted or the process has been withdrawn and the task will not continue。'
         task.progress = json.dumps({
             'percent': 0,

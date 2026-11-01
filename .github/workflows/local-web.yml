@@ -15,10 +15,6 @@ jobs:
       UPLOAD_FOLDER: ${{ github.workspace }}/.runtime/sola-e2e/uploads
       SOLA_E2E_FOLDER: ${{ github.workspace }}/.runtime/sola-e2e
       SOLA_E2E_VIDEO: '1'
-      AZURE_OPENAI_ENDPOINT: http://127.0.0.1:5044
-      AZURE_OPENAI_API_KEY: local-test-key
-      AZURE_OPENAI_API_VERSION: v1
-      AZURE_OPENAI_TTS_DEPLOYMENT: local-test-speech
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -34,16 +30,23 @@ jobs:
       - run: uv sync --frozen --extra test --python 3.12
       - name: Check source language
         run: python scripts/check_source_language.py
-      - name: Backend local workflow contracts
-        run: uv run pytest backend/tests/unit/test_file_parser_service.py backend/tests/unit/test_openai_image_multi_reference.py backend/tests/unit/test_screenshot_issue_regressions.py backend/tests/unit/test_sola_features.py backend/tests/unit/test_tts_video_service.py backend/tests/unit/test_local_web.py backend/tests/unit/test_text_output_limit.py backend/tests/unit/test_api_project.py backend/tests/unit/test_page_part_inheritance.py backend/tests/unit/test_template_mode_switch.py backend/tests/unit/test_description_field_contract.py backend/tests/unit/test_task_manager_image_prompt_fields.py backend/tests/unit/test_template_auto_match.py backend/tests/unit/test_style_from_content.py backend/tests/unit/test_image_prompt_ratio.py backend/tests/unit/test_english_schema_compat.py backend/tests/unit/test_renovation_filename.py backend/tests/unit/test_api_material.py backend/tests/unit/test_pptx_font_size.py -q
+      - name: Backend regression suite
+        run: uv run pytest backend/tests/unit backend/tests/integration/test_full_workflow.py backend/tests/integration/test_migration_019_backfill.py backend/tests/integration/test_reference_file_ssrf.py backend/tests/integration/test_requests_socks_proxy.py -q
       - run: npm --prefix frontend ci
       - run: npm --prefix frontend run build:check
-      - name: Frontend save, script and export contracts
-        run: npx vitest run src/tests/store/useExportTasksStore.test.ts src/tests/store/useProjectStore.test.ts src/tests/store/useProjectStore.initializeProject.test.ts src/tests/components/DescriptionCard.test.tsx --poolOptions.threads.singleThread
+      - name: Frontend regression suite
+        run: npx vitest run --poolOptions.threads.singleThread
         working-directory: frontend
       - run: npx playwright install --with-deps chromium
         working-directory: frontend
       - name: Start both services
+        env:
+          AZURE_OPENAI_ENDPOINT: http://127.0.0.1:5044
+          AZURE_OPENAI_API_KEY: local-test-key
+          AZURE_OPENAI_API_VERSION: v1
+          AZURE_OPENAI_DEPLOYMENT: local-text
+          AZURE_OPENAI_IMAGE_DEPLOYMENT: local-image
+          AZURE_OPENAI_TTS_DEPLOYMENT: local-test-speech
         run: |
           uv run python frontend/e2e/helpers/fake_azure_tts.py > /tmp/fake-azure.log 2>&1 &
           uv run python scripts/start_local.py --no-browser > /tmp/local-web.log 2>&1 &

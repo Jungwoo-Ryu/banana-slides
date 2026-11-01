@@ -458,17 +458,9 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     debouncedUpdatePage(currentProject.project_id, pageId, data);
   },
 
-  // Save all page changes immediately (for saving buttons)）
-  // Waiting for the shivering to be completed and then synchronize the project status to ensure updated_at Update
+  // Await the actual requests rather than assuming the network finishes within 1.5s.
   saveAllPages: async () => {
-    const { currentProject } = get();
-    if (!currentProject) return;
-
-    // Waiting for the shaking delay（1 sec）+ Additional time to ensure API Call Completed
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // Sync Project Status. This will get the latest from the backend. updated_at
-    await get().syncProject(currentProject.project_id);
+    await get().flushPendingPageUpdates();
   },
 
   // Reorder Page

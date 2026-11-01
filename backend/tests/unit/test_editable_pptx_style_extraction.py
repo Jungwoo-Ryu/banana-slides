@@ -157,7 +157,7 @@ def test_hybrid_style_extraction_fails_fast_when_provider_has_no_image_input(tmp
         assert exc.error_type == "style_extraction"
         assert exc.error_code == "EXPORT_STYLE_MODEL_UNSUPPORTED"
         assert exc.details["reason"] == "unsupported_model"
-        assert "Image input is not supported" in exc.message
+        assert "does not support image input" in exc.message
         assert "image caption" in exc.help_text
 
 
