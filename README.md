@@ -56,7 +56,7 @@ AI 생성·분석·TTS는 지정한 사내 Azure로 관련 내용을 전송합�
 
 ## 검증과 후속 통합
 
-[검증 안내](docs/enterprise/VALIDATION.md), [어댑터 계약](docs/enterprise/ADAPTERS.md), [Sol.A 통합용 GitHub Copilot 프롬프트](sola-integration.md)를 참고하세요. 현재는 단일 사용자 로컬 웹입니다. Sol.A OAuth·사용자별 소유권·세션 사용량 집계·영속 작업 큐·원격 저장소·FastMCP는 후속 통합 범위입니다.
+[검증 안내](docs/enterprise/VALIDATION.md), [이미지 생성 오류 진단](docs/enterprise/IMAGE_GENERATION_DEBUG.md), [어댑터 계약](docs/enterprise/ADAPTERS.md), [Sol.A 통합용 GitHub Copilot 프롬프트](sola-integration.md)를 참고하세요. 현재는 단일 사용자 로컬 웹입니다. Sol.A OAuth·사용자별 소유권·세션 사용량 집계·영속 작업 큐·원격 저장소·FastMCP는 후속 통합 범위입니다.
 
 Node 기준 버전은 [공식 22.23.4 보안 릴리스](https://nodejs.org/en/blog/release/v22.23.4)에 맞췄습니다. Dockerfile 변경 후 기존 이미지는 반드시 재빌드해야 합니다. 웹의 Node 버전 검사와 레거시 Electron 내장 런타임은 별개이며 데스크톱 배포는 이 웹 검증 범위에 포함하지 않습니다.
 

@@ -1119,32 +1119,27 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     if (!currentProject) return;
 
     // Determines the page to be generated ID List
-    const targetPageIds = pageIds || currentProject.pages.map(p => p.id).filter((id): id is string => !!id);
-
-    // Check if pages are being generated
-    const alreadyGenerating = targetPageIds.filter(id => pageGeneratingTasks[id]);
-    if (alreadyGenerating.length > 0) {
-      devLog(`[Batch Generation] ${alreadyGenerating.length} A page is being generated, skipping`);
-      // Filters already generated pages
-      const newPageIds = targetPageIds.filter(id => !pageGeneratingTasks[id]);
-      if (newPageIds.length === 0) {
-        devLog('[Batch Generation] All pages are being generated, skipping requests');
-        return;
-      }
-    }
+    const requestedPageIds = pageIds || currentProject.pages.map(p => p.id).filter((id): id is string => !!id);
+    const targetPageIds = requestedPageIds.filter(id => !pageGeneratingTasks[id]);
+    if (!targetPageIds.length) return;
 
     set({ error: null, warningMessage: null });
 
     try {
+      console.info('[Sol.A image-generation]', { stage: 'save', project_id: currentProject.project_id, page_count: targetPageIds.length });
+      if (!await get().flushPendingPageUpdates()) throw new Error(get().error || '페이지 저장에 실패했습니다. 다시 저장한 뒤 생성하세요.');
+      if (get().currentProject?.project_id !== currentProject.project_id) return;
+      console.info('[Sol.A image-generation]', { stage: 'request', project_id: currentProject.project_id, page_ids: targetPageIds });
       // Call Bulk Generation API
-      const response = await api.generateImages(currentProject.project_id, undefined, pageIds);
+      const response = await api.generateImages(currentProject.project_id, undefined, targetPageIds);
       const taskId = response.data?.task_id;
 
       if (taskId) {
+        console.info('[Sol.A image-generation]', { stage: 'accepted', project_id: currentProject.project_id, task_id: taskId });
         devLog(`[Batch Generation] Copy that. task_id: ${taskId}，Tags ${targetPageIds.length} Pages are being generated`);
 
         // Set Tasks for All Destination Pages ID
-        const newPageGeneratingTasks = { ...pageGeneratingTasks };
+        const newPageGeneratingTasks = { ...get().pageGeneratingTasks };
         targetPageIds.forEach(id => {
           newPageGeneratingTasks[id] = taskId;
         });
@@ -1160,7 +1155,8 @@ export const useProjectStore = create<ProjectState>((set, get) => {
         await get().syncProject();
       }
     } catch (error: any) {
-      console.error('[Batch Generation] Starting Failed:', error);
+      console.error('[Sol.A image-generation]', { stage: 'request_failed', project_id: currentProject.project_id, http_status: error.response?.status, code: error.response?.data?.error?.code || error.code });
+      set({ error: normalizeErrorMessage(error.response?.data?.error?.message || error.message) });
       throw error;
     }
   },
@@ -1174,6 +1170,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
     }
     const projectId = currentProject.id!;
 
+    let previousProgress = '';
     const poll = async () => {
       try {
         const response = await api.getTaskStatus(projectId, taskId);
@@ -1186,6 +1183,11 @@ export const useProjectStore = create<ProjectState>((set, get) => {
 
         devLog(`[Batch Rotation] Task ${taskId} Status: ${task.status}`, task.progress);
 
+        const progressKey = JSON.stringify([task.status, task.progress?.completed, task.progress?.failed]);
+        if (progressKey !== previousProgress) {
+          console.info('[Sol.A image-generation]', { stage: 'progress', project_id: projectId, task_id: taskId, status: task.status, completed: task.progress?.completed, failed: task.progress?.failed });
+          previousProgress = progressKey;
+        }
         // Check Task Status
         if (task.status === 'COMPLETED') {
           devLog(`[Batch Rotation] Task ${taskId} Completed, clear task logs`);
@@ -1238,7 +1240,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
 
           await syncWithRetry();
         } else if (task.status === 'FAILED') {
-          console.error(`[Batch Rotation] Task ${taskId} Failed:`, task.error_message || task.error);
+          console.error('[Sol.A image-generation]', { stage: 'failed', project_id: projectId, task_id: taskId, page_errors: task.progress?.page_errors, error_details: task.progress?.error_details, message: task.error_message });
           // Clears the task log for all relevant pages
           const { pageGeneratingTasks } = get();
           const newTasks = { ...pageGeneratingTasks };
@@ -1297,7 +1299,7 @@ export const useProjectStore = create<ProjectState>((set, get) => {
           set({ pageGeneratingTasks: newTasks });
         }
       } catch (error: any) {
-        console.error('[Batch Rotation] Query error:', error);
+        console.error('[Sol.A image-generation]', { stage: 'poll_failed', project_id: projectId, task_id: taskId, http_status: error.response?.status, code: error.code });
         // Clears the task log for all relevant pages
         const { pageGeneratingTasks } = get();
         const newTasks = { ...pageGeneratingTasks };

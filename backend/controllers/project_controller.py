@@ -1038,7 +1038,9 @@ def generate_images(project_id):
         "page_ids": ["id1", "id2"]  # optional: specific page IDs to generate (if not provided, generates all)
     }
     """
+    from services.generation_diagnostics import event, log_failure
     try:
+        event('request', 'received', project_id=project_id, ocr_required=False)
         project = Project.query.get(project_id)
 
         if not project:
@@ -1076,13 +1078,16 @@ def generate_images(project_id):
             for p in pages
         )
         if not ref_image_path and not project.template_style and not has_page_template:
-            return bad_request("Please upload the template pictures or add style descriptions first。")
+            event('template', 'failed', project_id=project_id, code='IMAGE_TEMPLATE_REQUIRED')
+            return bad_request('템플릿 이미지를 업로드하거나 디자인 스타일을 입력하세요.')
 
         # Reconstruct outline from pages with part structure
-        outline = _reconstruct_outline_from_pages(pages)
+        outline = _reconstruct_outline_from_pages(get_filtered_pages(project_id))
 
         # Read the default simultaneous number from the configuration and use the requested value if the request provides
         max_workers = data.get('max_workers', current_app.config.get('MAX_IMAGE_WORKERS', 8))
+        if isinstance(max_workers, bool) or not isinstance(max_workers, int) or max_workers < 1:
+            return bad_request('이미지 동시 생성 수는 1 이상의 정수여야 합니다.')
         use_template = data.get('use_template', True)
         language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'ko'))
 
@@ -1120,6 +1125,11 @@ def generate_images(project_id):
         app = current_app._get_current_object()
         image_prompt_field_names = get_image_prompt_field_names()
 
+        # Commit before submission so a fast worker cannot have its final state overwritten.
+        project.status = 'GENERATING_IMAGES'
+        db.session.commit()
+        event('request', 'accepted', project_id=project_id, task_id=task.id, page_count=len(pages), max_workers=max_workers)
+
         # Submit background task
         task_manager.submit_task(
             task.id,
@@ -1139,10 +1149,6 @@ def generate_images(project_id):
             image_prompt_field_names
         )
 
-        # Update project status
-        project.status = 'GENERATING_IMAGES'
-        db.session.commit()
-
         return success_response({
             'task_id': task.id,
             'status': 'GENERATING_IMAGES',
@@ -1151,7 +1157,7 @@ def generate_images(project_id):
 
     except Exception as e:
         db.session.rollback()
-        logger.error(f"generate_images failed: {str(e)}", exc_info=True)
+        log_failure(e, 'request', project_id=project_id)
         return error_response('SERVER_ERROR', str(e), 500)
 
 

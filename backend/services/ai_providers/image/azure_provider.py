@@ -5,6 +5,7 @@ from contextlib import ExitStack
 from io import BytesIO
 from PIL import Image
 from .base import ImageProvider
+from services.generation_diagnostics import generation_stage
 
 
 def image_size(aspect_ratio, resolution):
@@ -51,12 +52,15 @@ class AzureImageProvider(ImageProvider):
                         normalized.save(buffer, format='PNG')
                     buffer.seek(0)
                     files.append((f'reference-{index}.png', buffer, 'image/png'))
-                response = self.client.images.edit(image=files, **params)
+                with generation_stage('azure_image_request', operation='edit', size=params['size'], quality=self.image_quality, reference_count=len(files)):
+                    response = self.client.images.edit(image=files, **params)
             else:
-                response = self.client.images.generate(**params)
-        if not response.data or not response.data[0].b64_json:
-            raise ValueError('Azure 이미지 응답에 이미지 데이터가 없습니다.')
-        with BytesIO(base64.b64decode(response.data[0].b64_json, validate=True)) as data:
-            with Image.open(data) as result:
-                result.load()
-                return result.copy()
+                with generation_stage('azure_image_request', operation='generate', size=params['size'], quality=self.image_quality, reference_count=0):
+                    response = self.client.images.generate(**params)
+        with generation_stage('decode_image'):
+            if not response.data or not response.data[0].b64_json:
+                raise ValueError('Azure 이미지 응답에 이미지 데이터가 없습니다.')
+            with BytesIO(base64.b64decode(response.data[0].b64_json, validate=True)) as data:
+                with Image.open(data) as result:
+                    result.load()
+                    return result.copy()

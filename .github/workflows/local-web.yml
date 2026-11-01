@@ -1,7 +1,7 @@
 name: Local Web
 on:
   push:
-    branches: [main, 'feat/**']
+    branches: [main, Dev, 'feat/**']
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -41,6 +41,7 @@ jobs:
         working-directory: frontend
       - name: Start both services
         env:
+          TESSERACT_CMD: /nonexistent/sola-test-tesseract
           AZURE_OPENAI_ENDPOINT: http://127.0.0.1:5044
           AZURE_OPENAI_API_KEY: local-test-key
           AZURE_OPENAI_API_VERSION: v1

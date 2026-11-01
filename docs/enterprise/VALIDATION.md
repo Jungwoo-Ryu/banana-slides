@@ -4,10 +4,10 @@
 
 ## 검증 범위
 
-2026-11-01에 전체 회귀 검증으로 확대했습니다. [발견한 문제·수정·검증 상세](REGRESSION.md)를 참고하세요.
+2026-11-01에 전체 회귀 검증으로 확대했고, Dev 브랜치에서 [이미지 일괄 생성 실패 진단](IMAGE_GENERATION_DEBUG.md)을 추가했습니다. [발견한 문제·수정·검증 상세](REGRESSION.md)를 참고하세요.
 
-- 백엔드 전체 unit 및 로컬 integration **535개**, 프런트엔드 전체 **187개**, 실행 도구 **28개** 통과.
-- Playwright **7개**: 설정·자료 업로드·영역 편집·PPTX 다운로드·디자인 기본값·TTS MP4, 개요/설명 SSE부터 이미지 생성·수정·버전 복원·정적 내보내기, PDF 템플릿 분할·분석·적용.
+- 백엔드 전체 unit 및 로컬 integration **557개**, 프런트엔드 전체 **191개**, 실행 도구 **28개** 통과.
+- Playwright **9개**: 설정·자료 업로드·영역 편집·PPTX 다운로드·디자인 기본값·TTS MP4, 개요/설명 SSE부터 이미지 생성·수정·버전 복원·정적 내보내기, PDF 템플릿 분할·분석·적용.
 - TypeScript 검사, Vite production build, 소스 언어 검사 통과.
 - 다운로드한 PPTX/PDF/ZIP/MP4를 다시 열어 내용을 검사합니다. MP4는 실제 FFmpeg가 만들며 FFprobe로 음성·영상 스트림을 확인합니다.
 - 모델 응답은 localhost Azure 호환 프로토콜 대역을 사용합니다. 앱의 SDK·DB·SSE·작업·내보내기 경로는 실제 실행합니다. 사내 Azure 권한·지원 API·품질 검증을 대신하지 않습니다.
@@ -40,6 +40,8 @@ export SOLA_E2E_FOLDER="$PWD/.runtime/sola-e2e"
 export DATABASE_PATH="$SOLA_E2E_FOLDER/database.db"
 export UPLOAD_FOLDER="$SOLA_E2E_FOLDER/uploads"
 export SOLA_E2E_VIDEO=1
+# 검증 전용: OCR이 없어도 이미지 생성이 가능한지 확인합니다.
+export TESSERACT_CMD=/nonexistent/sola-test-tesseract
 export AZURE_OPENAI_ENDPOINT=http://127.0.0.1:5044
 export AZURE_OPENAI_API_KEY=local-test-key
 export AZURE_OPENAI_API_VERSION=v1

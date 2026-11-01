@@ -8,6 +8,10 @@ import base64
 import json
 import os
 import subprocess
+import threading
+
+image_failures = []
+failure_lock = threading.Lock()
 from PIL import Image
 
 folder = Path(os.environ.get('SOLA_E2E_FOLDER', '.runtime/sola-e2e')).resolve()
@@ -40,10 +44,11 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args):
         pass
 
-    def respond(self, payload, content_type='application/json'):
+    def respond(self, payload, content_type='application/json', status=200):
         if not isinstance(payload, bytes):
             payload = json.dumps(payload, ensure_ascii=False).encode()
-        self.send_response(200)
+        self.send_response(status)
+        self.send_header('x-request-id', 'fixture-image-request')
         self.send_header('Content-Type', content_type)
         self.send_header('Content-Length', str(len(payload)))
         self.end_headers()
@@ -63,6 +68,10 @@ class Handler(BaseHTTPRequestHandler):
                     body[part.get_param('name', header='content-disposition')] = part.get_payload(decode=True).decode()
         else:
             body = json.loads(raw)
+        if self.path == '/__fixture__/image-failures':
+            with failure_lock:
+                image_failures[:] = body.get('statuses', [])
+            return self.respond({'ok': True})
         if self.path == '/openai/v1/audio/speech':
             with (folder / 'speech-inputs.jsonl').open('a') as out:
                 out.write(json.dumps({'input': body['input'], 'model': body['model']}, ensure_ascii=False) + '\n')
@@ -82,6 +91,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self.respond(payload.encode(), 'text/event-stream')
             return self.respond({'id': 'fixture', 'choices': [{'index': 0, 'message': {'role': 'assistant', 'content': text}, 'finish_reason': 'stop'}]})
         if self.path in ('/openai/v1/images/generations', '/openai/v1/images/edits'):
+            with failure_lock:
+                status = image_failures.pop(0) if image_failures else 200
+            if status != 200:
+                return self.respond({'error': {'code': 'FixtureImageError', 'message': 'sk-fixture-must-not-leak'}}, status=status)
             with BytesIO() as buffer:
                 with Image.new('RGB', (2048, 1152), 'navy' if self.path.endswith('generations') else 'teal') as picture:
                     picture.save(buffer, format='PNG')

@@ -21,6 +21,7 @@ from models import db, Task, Page, Material, PageImageVersion, Settings, Project
 from services.task_watchdog import task_scope, task_watchdog
 from utils import get_filtered_pages
 from utils.image_utils import check_image_resolution
+from services.generation_diagnostics import event, generation_context, generation_stage, log_failure
 
 logger = logging.getLogger(__name__)
 
@@ -157,21 +158,19 @@ def generate_image_until_quality_passes(
 
     for attempt in range(1, attempts + 1):
         try:
-            image = generate_image()
+            with generation_stage('generate_image', attempt=attempt):
+                image = generate_image()
             if not image:
                 raise ValueError("Failed to generate image")
 
             if not quality_control_enabled:
                 return image
 
-            review = review_image_quality(
-                ai_service,
-                image,
-                generation_prompt,
-                page_desc,
-                page_data=page_data,
-                page_index=page_index,
-            )
+            with generation_stage('quality_review', attempt=attempt):
+                review = review_image_quality(
+                    ai_service, image, generation_prompt, page_desc,
+                    page_data=page_data, page_index=page_index,
+                )
             last_review = review
             last_error = None
             if review.get('passed'):
@@ -183,7 +182,7 @@ def generate_image_until_quality_passes(
                 page_index,
                 attempt,
                 attempts,
-                _format_quality_review_failure(review),
+                'Review rejected (content omitted)',
             )
         except Exception as e:
             last_error = e
@@ -193,7 +192,7 @@ def generate_image_until_quality_passes(
                 attempt,
                 attempts,
                 page_index,
-                e,
+                type(e).__name__,
             )
             if attempt >= attempts and not quality_control_enabled:
                 raise
@@ -745,8 +744,9 @@ def generate_images_task(task_id: str, project_id: str, ai_service, file_service
     if app is None:
         raise ValueError("Flask app instance must be provided")
 
-    with app.app_context():
+    with app.app_context(), generation_context(task_id=task_id, project_id=project_id):
         try:
+            event('batch', 'started', max_workers=max_workers, resolution=resolution, aspect_ratio=aspect_ratio, ocr_required=False)
             # Update task status to PROCESSING
             task = Task.query.get(task_id)
             if not task:
@@ -783,6 +783,7 @@ def generate_images_task(task_id: str, project_id: str, ai_service, file_service
             # Generate images in parallel
             completed = 0
             failed = 0
+            page_errors = []
             resolution_mismatched = 0  # Count of resolution mismatches
 
             def generate_single_image(page_id, page_data, page_index):
@@ -791,8 +792,12 @@ def generate_images_task(task_id: str, project_id: str, ai_service, file_service
                 Note： Passes only page_id（String), do not pass ORM Object, avoid cross-line session problems
                 """
                 # Critical repairs： also need to apply context in sub-routing
-                with app.app_context():
+                with app.app_context(), generation_context(task_id=task_id, project_id=project_id, page_id=page_id):
+                    stage = 'queue'
+                    started = time.monotonic()
+                    image = None
                     try:
+                        event(stage, 'waiting')
                         logger.debug(f"Starting image generation for page {page_id}, index {page_index}")
                         # Get page from database in this thread
                         page_obj = Page.query.get(page_id)
@@ -800,6 +805,7 @@ def generate_images_task(task_id: str, project_id: str, ai_service, file_service
                             raise ValueError(f"Page {page_id} not found")
 
                         def mark_generating():
+                            event('queue', 'acquired', wait_ms=round((time.monotonic() - started) * 1000))
                             page_for_update = Page.query.get(page_id)
                             if page_for_update:
                                 page_for_update.status = 'GENERATING'
@@ -810,6 +816,8 @@ def generate_images_task(task_id: str, project_id: str, ai_service, file_service
                             f"project={project_id} page={page_id}",
                             on_acquire=mark_generating,
                         ):
+                            stage = 'description'
+                            event(stage, 'started')
                             # Get description content
                             desc_content = page_obj.get_description_content()
                             if not desc_content:
@@ -828,7 +836,7 @@ def generate_images_task(task_id: str, project_id: str, ai_service, file_service
                             # Yes, sir. extra_fields Spell description text for image generation
                             desc_text = _append_extra_fields(desc_text, desc_content, image_prompt_field_names)
 
-                            logger.debug(f"Got description text for page {page_id}: {desc_text[:100]}...")
+                            event(stage, 'completed', character_count=len(desc_text))
 
                             # Extract pictures from the description of the current page URL
                             page_additional_ref_images = []
@@ -844,14 +852,19 @@ def generate_images_task(task_id: str, project_id: str, ai_service, file_service
 
                             # Per-page-template (PRD §13): resolve image + style
                             # per-page, falling back to project-level for legacy/single-mode.
+                            stage = 'template'
+                            event(stage, 'started')
                             project_for_template = Project.query.get(project_id)
                             page_ref_image_path, page_style_text = resolve_page_template(
                                 page_obj, project_for_template, file_service)
                             has_template_image = bool(page_ref_image_path)
+                            event(stage, 'completed', has_image=has_template_image, has_style=bool(page_style_text))
 
+                            stage = 'prompt'
+                            event(stage, 'started')
                             # Generate image prompt
                             prompt = ai_service.generate_image_prompt(
-                                outline, page_data, desc_text, page_index,
+                                outline, page_data, desc_text, _get_absolute_page_index(page_obj, page_index),
                                 has_material_images=has_material_images,
                                 extra_requirements=extra_requirements,
                                 language=language,
@@ -859,7 +872,9 @@ def generate_images_task(task_id: str, project_id: str, ai_service, file_service
                                 aspect_ratio=aspect_ratio,
                                 page_style_text=page_style_text,
                             )
-                            logger.debug(f"Generated image prompt for page {page_id}")
+                            event(stage, 'completed', character_count=len(prompt))
+                            stage = 'generate_image'
+                            event(stage, 'started', quality_control=quality_control_enabled)
 
                             logger.info(f"🎨 Calling AI service to generate image for page {page_index}/{len(pages)}...")
                             image = generate_image_until_quality_passes(
@@ -874,7 +889,7 @@ def generate_images_task(task_id: str, project_id: str, ai_service, file_service
                                 page_index=_get_absolute_page_index(page_obj, page_index),
                                 quality_control_enabled=quality_control_enabled,
                             )
-                        logger.info(f"✅ Image generated successfully for page {page_index}")
+                        event(stage, 'completed')
 
                         if not image:
                             raise ValueError("Failed to generate image")
@@ -886,17 +901,22 @@ def generate_images_task(task_id: str, project_id: str, ai_service, file_service
 
                         # Optimization： Calculating version numbers directly in the sub-routine and saving them to final position
                         # Each page is independent, using database services to ensure the atomicity of the version number and avoid temporary files
-                        image_path, next_version = save_image_with_version(
-                            image, project_id, page_id, file_service, page_obj=page_obj
-                        )
+                        stage = 'save_image'
+                        with generation_stage(stage):
+                            image_path, next_version = save_image_with_version(
+                                image, project_id, page_id, file_service, page_obj=page_obj
+                            )
+                        event('page', 'completed', version=next_version, elapsed_ms=round((time.monotonic() - started) * 1000))
 
                         return (page_id, image_path, None, not is_match)
 
                     except Exception as e:
-                        import traceback
-                        error_detail = traceback.format_exc()
-                        logger.error(f"Failed to generate image for page {page_id}: {error_detail}")
-                        return (page_id, None, str(e), None)
+                        db.session.rollback()
+                        details = log_failure(e, stage, elapsed_ms=round((time.monotonic() - started) * 1000))
+                        return (page_id, None, {'page_id': page_id, **details}, None)
+                    finally:
+                        if image is not None:
+                            image.close()
 
             # Use ThreadPoolExecutor for parallel generation
             # Key： Advance extraction page.id，Do not pass. ORM Object to Sub-Range
@@ -924,6 +944,7 @@ def generate_images_task(task_id: str, project_id: str, ai_service, file_service
                         if error:
                             page.status = 'FAILED'
                             failed += 1
+                            page_errors.append(error)
                             db.session.commit()
                         else:
                             # Pictures have been saved and version records created in a sub-routine, which requires only an update of the count
@@ -937,6 +958,7 @@ def generate_images_task(task_id: str, project_id: str, ai_service, file_service
                         progress = task.get_progress()
                         progress['completed'] = completed
                         progress['failed'] = failed
+                        progress['page_errors'] = page_errors
                         # Set a warning when a match is detected first
                         if resolution_mismatched > 0 and 'warning_message' not in progress:
                             progress['warning_message'] = "생성된 이미지 해상도가 요청한 설정과 다릅니다. 이미지 크기를 확인하세요."
@@ -947,26 +969,34 @@ def generate_images_task(task_id: str, project_id: str, ai_service, file_service
             # Mark task as completed
             task = Task.query.get(task_id)
             if task:
-                task.status = 'COMPLETED'
+                task.status = 'FAILED' if failed else 'COMPLETED'
+                if failed:
+                    task.error_message = f'{len(pages)}개 중 {failed}개 이미지 생성에 실패했습니다. ' + page_errors[0]['message']
                 task.completed_at = datetime.utcnow()
                 if resolution_mismatched > 0:
                     logger.warning(f"Task {task_id} has {resolution_mismatched} resolution mismatches")
                 db.session.commit()
-                logger.info(f"Task {task_id} COMPLETED - {completed} images generated, {failed} failed")
+                event('batch', 'failed' if failed else 'completed', completed=completed, failed=failed, total=len(pages))
 
             # Update project status
             project = Project.query.get(project_id)
-            if project and failed == 0:
-                project.status = 'COMPLETED'
+            if project:
+                unfinished = Page.query.filter(Page.project_id == project_id, Page.status != 'COMPLETED').first()
+                project.status = 'COMPLETED' if not unfinished else 'DESCRIPTIONS_GENERATED'
                 db.session.commit()
-                logger.info(f"Project {project_id} status updated to COMPLETED")
+                logger.info("Project %s status updated to %s", project_id, project.status)
 
         except Exception as e:
+            db.session.rollback()
+            details = log_failure(e, 'batch')
             # Mark task as failed
             task = Task.query.get(task_id)
             if task:
                 task.status = 'FAILED'
-                task.error_message = str(e)
+                task.error_message = details['message']
+                progress = task.get_progress() or {}
+                progress['error_details'] = details
+                task.set_progress(progress)
                 task.completed_at = datetime.utcnow()
                 db.session.commit()
 

@@ -92,3 +92,55 @@ test('PDF template upload splits, analyzes, binds and generates a slide through 
     expect((await project(request, id)).pages[0].template_asset_id).toBe(asset.id);
   } finally { await request.delete(`/api/projects/${id}`); }
 });
+
+for (const status of [401, 404]) {
+  test(`batch image failure ${status} is visible, diagnosable and recoverable without Tesseract`, async ({ page, request }) => {
+    test.skip(process.env.SOLA_E2E_VIDEO !== '1', 'Requires the Azure protocol fixture and invalid TESSERACT_CMD');
+    const messages: string[] = [];
+    page.on('console', message => { if (message.text().includes('[Sol.A image-generation]')) messages.push(message.text()); });
+    const created = await request.post('/api/projects', { data: { creation_type: 'blank', template_style: 'Navy and gold' } });
+    const id = (await created.json()).data.project_id;
+    try {
+      // Prove OCR is unavailable in this server, rather than assuming it is absent.
+      const ocr = await request.post('/api/settings/tests/ocr');
+      const ocrId = (await ocr.json()).data.task_id;
+      await expect.poll(async () => (await (await request.get(`/api/settings/tests/${ocrId}/status`)).json()).data.status).toBe('FAILED');
+      const ocrFailure = (await (await request.get(`/api/settings/tests/${ocrId}/status`)).json()).data;
+      expect(ocrFailure.error).toContain('Tesseract');
+      for (let i = 0; i < 2; i++) {
+        const added = await request.post(`/api/projects/${id}/pages`, { data: { order_index: i, outline_content: { title: `오류 검증 ${i+1}` }, description_content: { text: `슬라이드 설명 ${i+1}` } } });
+        expect(added.status()).toBe(201);
+      }
+      await request.post('http://127.0.0.1:5044/__fixture__/image-failures', { data: { statuses: status === 401 ? [401] : [404, 404] } });
+      await page.goto(`/project/${id}/preview`);
+      const submitted = page.waitForResponse(r => r.url().endsWith('/generate/images') && r.request().method() === 'POST');
+      await page.getByRole('button', { name: /이미지 일괄 생성/ }).click();
+      const response = await submitted; expect(response.status()).toBe(202);
+      const taskId = (await response.json()).data.task_id;
+      const result = async () => (await (await request.get(`/api/projects/${id}/tasks/${taskId}`)).json()).data;
+      await expect.poll(async () => (await result()).status, { timeout: 20000 }).toBe('FAILED');
+      const failed = await result();
+      expect(failed.progress.failed).toBe(status === 401 ? 1 : 2);
+      expect(failed.progress.page_errors[0]).toMatchObject({ stage: 'azure_image_request', http_status: status, provider_request_id: 'fixture-image-request' });
+      await expect(page.getByText(new RegExp(status === 401 ? '2개 중 1개 이미지 생성에 실패' : 'AZURE_OPENAI_IMAGE_DEPLOYMENT')).first()).toBeVisible({ timeout: 10000 });
+      const before = (await project(request, id)).pages;
+      const failedIds = before.filter((p: any) => p.status === 'FAILED').map((p: any) => p.page_id);
+      const successful = before.find((p: any) => p.status === 'COMPLETED');
+      const retry = await request.post(`/api/projects/${id}/generate/images`, { data: { page_ids: failedIds } });
+      expect(retry.status()).toBe(202); await task(request, id, (await retry.json()).data.task_id);
+      const after = (await project(request, id)).pages;
+      expect(after.filter((p: any) => p.generated_image_url)).toHaveLength(2);
+      if (successful) expect(after.find((p: any) => p.page_id === successful.page_id).generated_image_url).toBe(successful.generated_image_url);
+      expect(messages.some(m => m.includes('accepted'))).toBe(true);
+      expect(messages.some(m => m.includes('failed'))).toBe(true);
+      const log = readFileSync(path.join(root, '.runtime/logs/backend.log'), 'utf8');
+      const events = log.split('\n').filter(line => line.includes('image_generation') && line.includes(taskId));
+      expect(events.some(line => line.includes('"stage": "queue"'))).toBe(true);
+      expect(events.some(line => line.includes('"stage": "azure_image_request"') && line.includes('fixture-image-request'))).toBe(true);
+      expect(log).not.toContain('sk-fixture-must-not-leak');
+    } finally {
+      await request.post('http://127.0.0.1:5044/__fixture__/image-failures', { data: { statuses: [] } });
+      await request.delete(`/api/projects/${id}`);
+    }
+  });
+}

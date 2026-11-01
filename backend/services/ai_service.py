@@ -1187,9 +1187,8 @@ class AIService:
                         pass
 
         except Exception as e:
-            error_detail = f"Error generating image: {type(e).__name__}: {str(e)}"
-            logger.error(error_detail, exc_info=True)
-            raise Exception(error_detail) from e
+            # Preserve typed Azure errors for task diagnostics; never log response bodies.
+            raise
 
     def edit_image(self, prompt: str, current_image_path: str,
                   aspect_ratio: str = "16:9", resolution: str = "2K",
