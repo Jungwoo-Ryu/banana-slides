@@ -22,8 +22,7 @@ const previewI18n = {
       saveFailed: "Save failed: {{error}}", refreshFailed: "Refresh failed, please try again later",
       loadMaterialFailed: "Failed to load material: {{error}}", templateChangeFailed: "Failed to change template: {{error}}",
       versionSwitchFailed: "Switch failed: {{error}}", unknownError: "Unknown error",
-      regionCropSuccess: "Selected region added as a reference image; remove it from its thumbnail if needed.",
-      regionCropFailed: "Cannot crop from current image (browser security restriction). Try uploading a reference image manually."
+      regionCropFailed: "Could not prepare the selected region. Reload the image and select the region again."
     },
     preview: {
       title: "Preview", pageCount: "{{count}} pages", export: "Export", exportTasks: "Export Tasks",
@@ -156,8 +155,7 @@ const previewI18n = {
       saveFailed: "Save failed: {{error}}", refreshFailed: "Refresh failed, please try again later",
       loadMaterialFailed: "Failed to load material: {{error}}", templateChangeFailed: "Failed to change template: {{error}}",
       versionSwitchFailed: "Switch failed: {{error}}", unknownError: "Unknown error",
-      regionCropSuccess: "Selected region added as a reference image; remove it from its thumbnail if needed.",
-      regionCropFailed: "Cannot crop from current image (browser security restriction). Try uploading a reference image manually."
+      regionCropFailed: "Could not prepare the selected region. Reload the image and select the region again."
     },
     preview: {
       title: "Preview", pageCount: "{{count}} pages", export: "Export", exportTasks: "Export Tasks",
@@ -313,6 +311,8 @@ import { materialUrlToFile } from '@/components/shared/MaterialSelector';
 import { triggerDownload } from '@/api/client';
 import type { Material } from '@/api/endpoints';
 import { SlideCard } from '@/components/preview/SlideCard';
+import { RegionImageEditor } from '@/components/preview/RegionImageEditor';
+import { createRegionReference, regionEditPrompt, type ImageRegion } from '@/utils/imageRegion';
 import { SlidePlayer } from '@/components/preview/SlidePlayer';
 import { PagePropertiesDrawer, clampWidth, readStoredDrawerWidth } from '@/components/preview/PagePropertiesDrawer';
 import { useProjectStore } from '@/store/useProjectStore';
@@ -698,6 +698,8 @@ export const SlidePreview: React.FC = () => {
   // Edit Parameter Cache per Page (front-end session internal cache, easy to repeat)）
   const [editContextByPage, setEditContextByPage] = useState<Record<string, {
     prompt: string;
+    region: ImageRegion | null;
+    regionSource: string | undefined;
     contextImages: {
       useTemplate: boolean;
       descImageUrls: string[];
@@ -705,24 +707,16 @@ export const SlidePreview: React.FC = () => {
     };
   }>>({});
 
-  // Preview Diagram Rectangular Selection Status (edited in bullet window)）
-  const imageRef = useRef<HTMLImageElement | null>(null);
   const hasTouchedImageQualityControlRef = useRef(false);
-  const [isRegionSelectionMode, setIsRegionSelectionMode] = useState(false);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const attachMenuRef = useRef<HTMLDivElement>(null);
-  const [isSelectingRegion, setIsSelectingRegion] = useState(false);
-  const [selectionStart, setSelectionStart] = useState<{ x: number; y: number } | null>(null);
-  const [selectionRect, setSelectionRect] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
+  const [selectedRegion, setSelectedRegion] = useState<ImageRegion | null>(null);
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+  const submittingEditRef = useRef(false);
   const { show, ToastContainer } = useToast();
   const { confirm, ConfirmDialog } = useConfirm();
 
-  const resetRegionSelection = useCallback((enabled = false) => {
-    setIsRegionSelectionMode(enabled);
-    setSelectionStart(null);
-    setSelectionRect(null);
-    setIsSelectingRegion(false);
-  }, []);
+  const resetRegionSelection = useCallback(() => setSelectedRegion(null), []);
 
   useEffect(() => {
     let isMounted = true;
@@ -1134,6 +1128,7 @@ export const SlidePreview: React.FC = () => {
       // Restore last edited content and photo selection of the page
       const cached = editContextByPage[pageId];
       setEditPrompt(cached.prompt);
+      setSelectedRegion(cached.regionSource === page.generated_image_path ? cached.region : null);
       setSelectedContextImages({
         useTemplate: cached.contextImages.useTemplate,
         descImageUrls: [...cached.contextImages.descImageUrls],
@@ -1142,15 +1137,13 @@ export const SlidePreview: React.FC = () => {
     } else {
       // First edit of the page, with default
       setEditPrompt('');
+      setSelectedRegion(null);
       setSelectedContextImages({
         useTemplate: false,
         descImageUrls: [],
         uploadedFiles: [],
       });
     }
-
-    // The area selection is opened by default every time you enter the editor, and the user can drag and drag a box directly on the picture。
-    resetRegionSelection(true);
 
     // lg+ Go ahead and edit it. The narrow screen doesn’t have room for the top and bottom columns, and it still uses a bullet window.
     if (window.matchMedia('(min-width: 1024px)').matches) {
@@ -1251,7 +1244,7 @@ export const SlidePreview: React.FC = () => {
     if (!currentProject || !editPrompt.trim()) return;
 
     const page = currentProject.pages[selectedIndex];
-    if (!page.id) return;
+    if (!page.id || submittingEditRef.current || pageGeneratingTasks[page.id]) return;
 
     // There’s an outline in the window./Description input box to save when submitting; neither field exists in the local editing position，
     // Save will only write back the snapshots when entering the edit state, while covering the period from elsewhere (responsible panel)、
@@ -1260,21 +1253,35 @@ export const SlidePreview: React.FC = () => {
       handleSaveOutlineAndDescription();
     }
 
-    // The store shows the error; keep the prompt and references for retry.
+    submittingEditRef.current = true;
+    setIsSubmittingEdit(true);
     try {
-      await editPageImage(
-        page.id,
-        editPrompt,
-        {
-          useTemplate: selectedContextImages.useTemplate,
-          descImageUrls: selectedContextImages.descImageUrls,
-          uploadedFiles: selectedContextImages.uploadedFiles.length > 0
-            ? selectedContextImages.uploadedFiles
-            : undefined,
+      let instruction = editPrompt;
+      const references = [...selectedContextImages.uploadedFiles];
+      if (selectedRegion && page.generated_image_path) {
+        try {
+          const reference = await createRegionReference(
+            getImageUrl(page.generated_image_path, page.updated_at), selectedRegion,
+          );
+          references.unshift(reference);
+          instruction = regionEditPrompt(editPrompt, selectedRegion);
+        } catch (error) {
+          console.error('[Sol.A region-edit] Could not prepare selected region:', error);
+          show({ message: t('slidePreview.regionCropFailed'), type: 'error' });
+          return;
         }
-      );
+      }
+      // The store displays API failures. Keep the prompt and selection for retry.
+      await editPageImage(page.id, instruction, {
+        useTemplate: selectedContextImages.useTemplate,
+        descImageUrls: selectedContextImages.descImageUrls,
+        uploadedFiles: references.length ? references : undefined,
+      });
     } catch {
       return;
+    } finally {
+      submittingEditRef.current = false;
+      setIsSubmittingEdit(false);
     }
 
     // Cache the edit context of the current page to allow quick duplicate follow-up
@@ -1282,6 +1289,8 @@ export const SlidePreview: React.FC = () => {
       ...prev,
       [page.id!]: {
         prompt: editPrompt,
+        region: selectedRegion,
+        regionSource: page.generated_image_path,
         contextImages: {
           useTemplate: selectedContextImages.useTemplate,
           descImageUrls: [...selectedContextImages.descImageUrls],
@@ -1292,7 +1301,7 @@ export const SlidePreview: React.FC = () => {
 
     if (isInlineEditing) exitInlineEditing();
     else closeEditModal();
-  }, [currentProject, selectedIndex, editPrompt, selectedContextImages, editPageImage, handleSaveOutlineAndDescription, isInlineEditing, exitInlineEditing, closeEditModal]);
+  }, [currentProject, selectedIndex, editPrompt, selectedRegion, selectedContextImages, pageGeneratingTasks, editPageImage, handleSaveOutlineAndDescription, isInlineEditing, exitInlineEditing, closeEditModal]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -1341,8 +1350,7 @@ export const SlidePreview: React.FC = () => {
     }
   };
 
-  // Edit the input and image selection into the cache (frontend session) in real time (bullet window or local editing)），
-  // So you can cut off the page and come back and change it.
+  // Cache each page draft, including the region in original image pixels.
   useEffect(() => {
     if ((!isEditModalOpen && !isInlineEditing) || !currentProject) return;
     const page = currentProject.pages[selectedIndex];
@@ -1357,6 +1365,8 @@ export const SlidePreview: React.FC = () => {
       ...prev,
       [pageId]: {
         prompt: editPrompt,
+        region: selectedRegion,
+        regionSource: page.generated_image_path,
         contextImages: {
           useTemplate: selectedContextImages.useTemplate,
           descImageUrls: [...selectedContextImages.descImageUrls],
@@ -1364,11 +1374,9 @@ export const SlidePreview: React.FC = () => {
         },
       },
     }));
-  }, [isEditModalOpen, isInlineEditing, currentProject, selectedIndex, editPrompt, selectedContextImages]);
+  }, [isEditModalOpen, isInlineEditing, currentProject, selectedIndex, editPrompt, selectedRegion, selectedContextImages]);
 
-  // Edit from thumbnail cut pages： electoral box, cut-out reference charts, commands are all on the previous page and will keep
-  // Feeding old pages to new pages. Quit editing.——Up there. effect We’ve got the contents on the page.，
-  // User in New Page Point「Edit」It’ll keep changing.。
+  // Close the editor on page navigation so one page cannot inherit another page draft.
   useEffect(() => {
     if (!isInlineEditing) {
       editingPageIdRef.current = undefined;
@@ -1379,152 +1387,6 @@ export const SlidePreview: React.FC = () => {
       exitInlineEditing();
     }
   }, [isInlineEditing, selectedIndex, currentProject, exitInlineEditing]);
-
-  // ========== Preview Diagram Rectangular Selection Logic ==========
-  // Picture in <img> The actual location in the box.：object-fit It’ll make the two different.——contain It’s been a long time.、
-  // cover The excess has been reduced. The selection coordinates are relative to the size of the box and must be converted to the content coordinates and map back to the original map.，
-  // Otherwise, when the project changes the scale, and the chart is generated at the old scale, the area will be set up in an overall deviation.。
-  const getRenderedImageRect = (img: HTMLImageElement) => {
-    const box = img.getBoundingClientRect();
-    const { naturalWidth: natW, naturalHeight: natH } = img;
-    if (!natW || !natH || !box.width || !box.height) return null;
-    const scale =
-      getComputedStyle(img).objectFit === 'contain'
-        ? Math.min(box.width / natW, box.height / natH)
-        : Math.max(box.width / natW, box.height / natH);
-    const renderedW = natW * scale;
-    const renderedH = natH * scale;
-    return {
-      scale,
-      // cover is negative, which means left content/How much did you lose?
-      offsetX: (box.width - renderedW) / 2,
-      offsetY: (box.height - renderedH) / 2,
-      renderedW,
-      renderedH,
-    };
-  };
-
-  const handleSelectionPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isRegionSelectionMode || !imageRef.current) return;
-    e.preventDefault();
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId);
-    } catch {
-      // Synthetic pointer events used by some browsers/tests may not be capturable.
-    }
-    const rect = imageRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    if (x < 0 || y < 0 || x > rect.width || y > rect.height) return;
-    setIsSelectingRegion(true);
-    setSelectionStart({ x, y });
-    setSelectionRect(null);
-  };
-
-  const handleSelectionPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isRegionSelectionMode || !isSelectingRegion || !selectionStart || !imageRef.current) return;
-    e.preventDefault();
-    const rect = imageRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const clampedX = Math.max(0, Math.min(x, rect.width));
-    const clampedY = Math.max(0, Math.min(y, rect.height));
-
-    const left = Math.min(selectionStart.x, clampedX);
-    const top = Math.min(selectionStart.y, clampedY);
-    const width = Math.abs(clampedX - selectionStart.x);
-    const height = Math.abs(clampedY - selectionStart.y);
-
-    setSelectionRect({ left, top, width, height });
-  };
-
-  const handleSelectionPointerUp = async (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    }
-    if (!isRegionSelectionMode || !isSelectingRegion || !selectionRect || !imageRef.current) {
-      setIsSelectingRegion(false);
-      setSelectionStart(null);
-      return;
-    }
-
-    // End drag, but retain the selected rectangle until the user manually exits the area selection mode
-    setIsSelectingRegion(false);
-    setSelectionStart(null);
-
-    try {
-      const img = imageRef.current;
-      const { left, top, width, height } = selectionRect;
-      if (width < 10 || height < 10) {
-        // It’s too small to ignore.
-        return;
-      }
-
-      // Map electoral constituencies from display size to original image size (but not first) object-fit It’s the cause of the confession./Deciding）
-      const rendered = getRenderedImageRect(img);
-      if (!rendered) return;
-
-      // contain It’s time for the electoral districts to fall behind.、cover It may fall on the part that was cut, but it must be caught in the original picture.
-      const sx = Math.max(0, (left - rendered.offsetX) / rendered.scale);
-      const sy = Math.max(0, (top - rendered.offsetY) / rendered.scale);
-      const sWidth = Math.min(width / rendered.scale, img.naturalWidth - sx);
-      const sHeight = Math.min(height / rendered.scale, img.naturalHeight - sy);
-      if (sWidth <= 0 || sHeight <= 0) return;
-
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.max(1, Math.round(sWidth));
-      canvas.height = Math.max(1, Math.round(sHeight));
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-
-      try {
-        ctx.drawImage(
-          img,
-          sx,
-          sy,
-          sWidth,
-          sHeight,
-          0,
-          0,
-          canvas.width,
-          canvas.height
-        );
-
-        canvas.toBlob((blob) => {
-          if (!blob) return;
-          const file = new File([blob], `crop-${Date.now()}.png`, { type: 'image/png' });
-          // Add the selected area to the upload list as an additional reference picture
-          setSelectedContextImages((prev) => ({
-            ...prev,
-            uploadedFiles: [...prev.uploadedFiles, file],
-          }));
-          // A clear feedback to users： the constituency has added the ”upload pictures” below as a picture”
-          show({
-            message: t('slidePreview.regionCropSuccess'),
-            type: 'success',
-          });
-        }, 'image/png');
-      } catch (e: any) {
-        console.error('Failed to crop the selected region (possibly due to a cross-origin image canvas Contaminated.）:', e);
-        show({
-          message: t('slidePreview.regionCropFailed'),
-          type: 'error',
-        });
-      }
-    } finally {
-      // No cleanup selectionRect，Let the selections continue to be shown on the interface
-    }
-  };
-
-  const handleSelectionPointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    }
-    setIsSelectingRegion(false);
-    setSelectionStart(null);
-    setSelectionRect(null);
-  };
 
   // Multiple selection of related functions
   const togglePageSelection = (pageId: string) => {
@@ -2593,23 +2455,14 @@ export const SlidePreview: React.FC = () => {
                   The command area is smooth from the capsule position and no more slides.。 */}
               <div className="flex-1 overflow-y-auto min-h-0 flex items-center justify-center p-4 md:p-8">
                 <div className="max-w-5xl w-full">
-                  <div
-                    className={`relative bg-white dark:bg-background-secondary rounded-lg shadow-xl overflow-hidden transition-shadow ${
-                      isInlineEditing ? 'ring-2 ring-banana-400' : ''
-                    } ${isInlineEditing && isRegionSelectionMode ? 'cursor-crosshair touch-none' : 'touch-manipulation'}`}
-                    style={{ aspectRatio: aspectRatioStyle }}
-                    onPointerDown={isInlineEditing ? handleSelectionPointerDown : undefined}
-                    onPointerMove={isInlineEditing ? handleSelectionPointerMove : undefined}
-                    onPointerUp={isInlineEditing ? handleSelectionPointerUp : undefined}
-                    onPointerCancel={isInlineEditing ? handleSelectionPointerCancel : undefined}
-                  >
+                  {isInlineEditing && imageUrl ? (
+                    <RegionImageEditor key={`${selectedPage?.id}:${imageUrl}`} src={imageUrl} alt={`Slide ${selectedIndex + 1}`}
+                      aspectRatio={aspectRatioStyle} value={selectedRegion} onChange={setSelectedRegion} disabled={isSubmittingEdit} />
+                  ) : <div className="relative bg-white dark:bg-background-secondary rounded-lg shadow-xl overflow-hidden" style={{ aspectRatio: aspectRatioStyle }}>
                     {selectedPage?.generated_image_path ? (
                       <img
-                        ref={isInlineEditing ? imageRef : undefined}
                         src={imageUrl}
                         alt={`Slide ${selectedIndex + 1}`}
-                        // Desktop getImageUrl Point 127.0.0.1:<port>，cross-source; area tailoring to this map
-                        // Painting canvas，Missing crossOrigin It’s polluting. canvas The image that led to the cut failed.）
                         crossOrigin="anonymous"
                         className="w-full h-full object-cover select-none"
                         draggable={false}
@@ -2639,40 +2492,7 @@ export const SlidePreview: React.FC = () => {
                         </div>
                       </div>
                     )}
-                    {/* In situ editing state： checktips and selection frames are drawn directly on the big map */}
-                    {isInlineEditing && (
-                      <>
-                        <button
-                          type="button"
-                          aria-pressed={isRegionSelectionMode}
-                          onPointerDown={(e) => e.stopPropagation()}
-                          onClick={() => {
-                            resetRegionSelection(!isRegionSelectionMode);
-                          }}
-                          className={`absolute left-2 top-2 z-10 flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium shadow transition-colors ${
-                            isRegionSelectionMode
-                              ? 'bg-banana-500 text-black'
-                              : 'bg-white/90 text-gray-700 hover:bg-white dark:bg-background-elevated/90 dark:text-foreground-secondary'
-                          }`}
-                        >
-                          <Sparkles size={13} />
-                          {isRegionSelectionMode ? t('preview.endRegionSelect') : t('preview.regionSelect')}
-                        </button>
-                        {selectionRect && (
-                          <div
-                            data-testid="inline-edit-selection"
-                            className="absolute border-2 border-banana-500 bg-banana-500/20 pointer-events-none"
-                            style={{
-                              left: selectionRect.left,
-                              top: selectionRect.top,
-                              width: selectionRect.width,
-                              height: selectionRect.height,
-                            }}
-                          />
-                        )}
-                      </>
-                    )}
-                  </div>
+                  </div>}
 
               {/* The preview capsule is stacked in the same bar as the edit state command dock：Visibility + Transparency + scale
                   Cross-border transition（Apple Wind slows down. cubic-bezier(0.32,0.72,0,1)，Convergence, symmetry），
@@ -2864,7 +2684,7 @@ export const SlidePreview: React.FC = () => {
                       variant="primary"
                       size="sm"
                       onClick={handleSubmitEdit}
-                      disabled={!editPrompt.trim() || isCurrentPageGenerating}
+                      disabled={!editPrompt.trim() || isCurrentPageGenerating || isSubmittingEdit}
                       className="flex-shrink-0 rounded-full text-sm"
                     >
                       {isCurrentPageGenerating ? t('preview.regenerating') : t('preview.generateImage')}
@@ -3042,60 +2862,8 @@ export const SlidePreview: React.FC = () => {
         size="lg"
       >
         <div className="space-y-4">
-          {/* Picture (support rectangular area selection)） */}
-          <div
-            className={`bg-gray-100 dark:bg-background-secondary rounded-lg overflow-hidden relative ${
-              isRegionSelectionMode ? 'cursor-crosshair touch-none' : 'touch-manipulation'
-            }`}
-            style={{ aspectRatio: aspectRatioStyle }}
-            onPointerDown={handleSelectionPointerDown}
-            onPointerMove={handleSelectionPointerMove}
-            onPointerUp={handleSelectionPointerUp}
-            onPointerCancel={handleSelectionPointerCancel}
-          >
-            {imageUrl && (
-              <>
-                {/* Top left corner： Area Selection Mode Switch */}
-                <button
-                  type="button"
-                  aria-pressed={isRegionSelectionMode}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    resetRegionSelection(!isRegionSelectionMode);
-                  }}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  className={`absolute top-2 left-2 z-10 px-2 py-1 rounded text-[10px] shadow-sm dark:shadow-background-primary/30 flex items-center gap-1 ${
-                    isRegionSelectionMode
-                      ? 'bg-banana-500 text-black'
-                      : 'bg-white/80 text-gray-700 dark:text-foreground-secondary hover:bg-banana-50 dark:hover:bg-background-hover'
-                  }`}
-                >
-                  <Sparkles size={12} />
-                  <span>{isRegionSelectionMode ? t('preview.endRegionSelect') : t('preview.regionSelect')}</span>
-                </button>
-
-                <img
-                  ref={imageRef}
-                  src={imageUrl}
-                  alt="Current slide"
-                  className="w-full h-full object-contain select-none"
-                  draggable={false}
-                  crossOrigin="anonymous"
-                />
-                {selectionRect && (
-                  <div
-                    className="absolute border-2 border-banana-500 bg-banana-400/10 pointer-events-none"
-                    style={{
-                      left: selectionRect.left,
-                      top: selectionRect.top,
-                      width: selectionRect.width,
-                      height: selectionRect.height,
-                    }}
-                  />
-                )}
-              </>
-            )}
-          </div>
+          {imageUrl && <RegionImageEditor key={`${selectedPage?.id}:${imageUrl}`} src={imageUrl} alt={`Slide ${selectedIndex + 1}`}
+            aspectRatio={aspectRatioStyle} value={selectedRegion} onChange={setSelectedRegion} disabled={isSubmittingEdit} />}
 
           {/* Outline - Editable */}
           <div className="bg-gray-50 dark:bg-background-primary rounded-lg border border-gray-200 dark:border-border-primary">
@@ -3310,7 +3078,7 @@ export const SlidePreview: React.FC = () => {
               <Button
                 variant="primary"
                 onClick={handleSubmitEdit}
-                disabled={!editPrompt.trim() || !selectedPage?.generated_image_path}
+                disabled={!editPrompt.trim() || !selectedPage?.generated_image_path || isSubmittingEdit || isCurrentPageGenerating}
               >
                 {t('preview.generateImage')}
               </Button>

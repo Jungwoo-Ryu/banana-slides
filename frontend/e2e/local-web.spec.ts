@@ -37,17 +37,19 @@ test('blank project, region prompt and actual PPTX browser download',async({page
     await expect(page.getByText('로컬 편집 검증').first()).toBeVisible();
     await expect(page.locator('body')).not.toContainText(/[\u4e00-\u9fff]/);await page.screenshot({path:testInfo.outputPath('preview.png')});
     await page.getByTestId('preview-floating-toolbar').getByRole('button',{name:'편집',exact:true}).click();
-    await expect(page.getByRole('button',{name:'영역 선택 종료',exact:true}).first()).toBeVisible();
+    await expect(page.getByRole('button',{name:'영역 선택',exact:true}).first()).toBeVisible();
     let target;for(const img of await page.locator('main img:visible').all()){const box=await img.boundingBox();if(box&&box.width>500){target=box;break;}}
     expect(target).toBeTruthy();await page.mouse.move(target!.x+120,target!.y+90);await page.mouse.down();await page.mouse.move(target!.x+360,target!.y+200,{steps:10});await page.mouse.up();
-    await expect(page.getByTestId('inline-edit-attachment-thumb')).toHaveCount(1);
+    await expect(page.getByTestId('inline-edit-attachment-thumb')).toHaveCount(0);
+    await expect(page.getByTestId('region-selection')).toBeVisible();
     await page.getByTestId('inline-edit-prompt').fill('선택한 영역의 제목을 파란색으로 바꿔 주세요.');
     // Only the paid AI call is stubbed; all storage and export requests are real.
     let payload='';await page.route(`**/api/projects/${projectId}/pages/${pageId}/edit/image`,async route=>{payload=route.request().postData()||'';await route.fulfill({status:400,contentType:'application/json',body:JSON.stringify({success:false,error:{code:'TEST_NO_MODEL',message:'테스트에서는 유료 모델을 호출하지 않습니다.'}})});});
     await page.getByTestId('inline-edit-prompt').press('Control+Enter');await expect.poll(()=>payload).toContain('선택한 영역의 제목');expect(payload).toContain('context_images');
     await expect(page.getByText('테스트에서는 유료 모델을 호출하지 않습니다.',{exact:true})).toBeVisible();
     await expect(page.getByTestId('inline-edit-prompt')).toHaveValue('선택한 영역의 제목을 파란색으로 바꿔 주세요.');
-    await expect(page.getByTestId('inline-edit-attachment-thumb')).toHaveCount(1);
+    await expect(page.getByTestId('inline-edit-attachment-thumb')).toHaveCount(0);
+    await expect(page.getByTestId('region-selection')).toBeVisible();
     await page.reload();await page.getByRole('button',{name:'내보내기',exact:true}).click();await page.getByRole('button',{name:'PPTX 내보내기',exact:true}).click();
     const downloadPromise=page.waitForEvent('download');await page.getByRole('button',{name:'내보내기 시작',exact:true}).click();const download=await downloadPromise;
     const saved=testInfo.outputPath('browser-export.pptx');await download.saveAs(saved);

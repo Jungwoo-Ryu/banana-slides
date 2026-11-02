@@ -39,6 +39,13 @@ test('real backend generation: SSE, scripts, image editing, version restore and 
     const originalImage = await (await request.get(original.image_url)).body();
     await page.reload();
     await page.getByTestId('preview-floating-toolbar').getByRole('button', { name: '편집', exact: true }).click();
+    const regionCanvas = page.getByTestId('region-editor-canvas');
+    const regionBox = (await regionCanvas.boundingBox())!;
+    await page.mouse.move(regionBox.x + 40, regionBox.y + 40);
+    await page.mouse.down();
+    await page.mouse.move(regionBox.x + 180, regionBox.y + 120, { steps: 5 });
+    await page.mouse.up();
+    await expect(page.getByTestId('region-selection')).toBeVisible();
     await page.getByTestId('inline-edit-prompt').fill('제목 색상을 청록색으로 변경하세요.');
     const submitted = page.waitForResponse(r => r.url().endsWith('/edit/image') && r.request().method() === 'POST');
     await page.getByTestId('inline-edit-prompt').press('Control+Enter');
@@ -65,7 +72,7 @@ test('real backend generation: SSE, scripts, image editing, version restore and 
     const images = logs.filter(l => l.path.includes('/images/') && l.prompt.includes('REGRESSION_DESIGN'));
     expect(images.length).toBeGreaterThanOrEqual(2);
     expect(images.every(l => !l.prompt.includes('자동 생성 발표 대본'))).toBe(true);
-    expect(logs.some(l => l.path.endsWith('/images/edits') && l.references > 0)).toBe(true);
+    expect(logs.some(l => l.path.endsWith('/images/edits') && l.references >= 2 && l.prompt.includes('Region in original image pixels'))).toBe(true);
     expect(logs.filter(l => l.stream).length).toBeGreaterThanOrEqual(2);
     expect(errors).toEqual([]);
   } finally { await request.delete(`/api/projects/${id}`); }
