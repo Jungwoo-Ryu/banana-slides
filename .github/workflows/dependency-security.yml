@@ -1,0 +1,43 @@
+name: Dependency Security
+on:
+  push:
+    branches: [main, Dev, 'feat/**']
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dependencies:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.4'
+      - run: python scripts/check_dependency_policy.py
+      - name: Frontend dependency advisories (all severities)
+        working-directory: frontend
+        run: npm audit --package-lock-only --ignore-scripts --audit-level=low
+      - name: Desktop dependency advisories
+        working-directory: desktop
+        # Legacy packaging dependencies still have a moderate minimatch advisory.
+        # They are not part of the web image; keep high/critical findings blocking.
+        run: npm audit --package-lock-only --ignore-scripts --audit-level=high
+      - name: Desktop unit contracts (without installer downloads)
+        working-directory: desktop
+        run: |
+          npm ci --ignore-scripts --registry=https://registry.npmjs.org
+          npm test
+      - name: Python runtime dependency advisories
+        run: |
+          uv export --frozen --no-dev --no-emit-project --no-hashes --output-file /tmp/sola-requirements.txt
+          uvx --python 3.12 --from pip-audit==2.10.1 pip-audit --disable-pip --no-deps --progress-spinner off -r /tmp/sola-requirements.txt

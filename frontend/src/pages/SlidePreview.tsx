@@ -1796,7 +1796,7 @@ export const SlidePreview: React.FC = () => {
         const stepMap: Record<string, string> = {
           'Generating clean backgrounds': t('preview.messages.generatingBackgrounds'),
           'Creating PDF': t('preview.messages.creatingPdf'),
-          'Parsing with MinerU': t('preview.messages.parsingContent'),
+          'Parsing with local document parser': t('preview.messages.parsingContent'),
           'Creating editable PPTX': t('preview.messages.creatingPptx'),
           'Complete': t('preview.messages.complete')
         };

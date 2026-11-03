@@ -106,5 +106,5 @@ compression: normal
 
 publish:
   provider: github
-  owner: Anionex
+  owner: Jungwoo-Ryu
   repo: banana-slides

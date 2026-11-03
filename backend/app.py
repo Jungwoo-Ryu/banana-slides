@@ -135,7 +135,6 @@ def create_app():
         werkzeug_logger.setLevel(werkzeug_log_level)
     except (ValueError, TypeError):
         werkzeug_logger.setLevel(logging.INFO)
-    logging.getLogger('volcenginesdkarkruntime').setLevel(logging.WARNING)
 
     # Initialize extensions
     db.init_app(app)
@@ -169,6 +168,7 @@ def create_app():
             from alembic.config import Config as AlembicConfig
             alembic_config = AlembicConfig(os.path.join(backend_dir, 'alembic.ini'))
             alembic_config.attributes['configure_logger'] = False
+            alembic_config.attributes['upload_folder'] = app.config['UPLOAD_FOLDER']
             alembic_config.set_main_option('script_location', os.path.join(backend_dir, 'migrations'))
             alembic_config.set_main_option('sqlalchemy.url', app.config['SQLALCHEMY_DATABASE_URI'])
             try:

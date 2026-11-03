@@ -12,7 +12,7 @@ from .common import load_data
 
 app = typer.Typer(no_args_is_help=True)
 
-TEST_NAMES = ["baidu-ocr", "text-model", "caption-model", "baidu-inpaint", "image-model", "mineru-pdf"]
+TEST_NAMES = ["text-model", "image-model", "caption-model", "ocr"]
 
 
 @app.command("get")

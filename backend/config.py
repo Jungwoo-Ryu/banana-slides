@@ -51,8 +51,6 @@ class Config:
     OPENAI_TIMEOUT = float(os.getenv('AZURE_OPENAI_TIMEOUT', '480'))
     OPENAI_MAX_RETRIES = int(os.getenv('AZURE_OPENAI_MAX_RETRIES', '2'))
     TEXT_MAX_OUTPUT_TOKENS = int(os.getenv('TEXT_MAX_OUTPUT_TOKENS', '16384'))
-    MINERU_API_BASE = os.getenv('MINERU_API_BASE', '')
-    MINERU_TOKEN = os.getenv('MINERU_TOKEN', '')
     DESIGN_SYSTEM_PROMPT = os.getenv('DESIGN_SYSTEM_PROMPT', '')
 
     # Combination Configuration

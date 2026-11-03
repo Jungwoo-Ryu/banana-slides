@@ -54,7 +54,7 @@ def main():
     try:
         if args.mode in ('unit', 'all'):
             jobs = [
-                ('backend', [sys.executable, '-m', 'pytest', 'backend/tests/unit/test_screenshot_issue_regressions.py', 'backend/tests/unit/test_mineru_path_utils.py', 'backend/tests/unit/test_ai_service_file_refs.py', '-q'], ROOT),
+                ('backend', [sys.executable, '-m', 'pytest', 'backend/tests/unit/test_screenshot_issue_regressions.py', 'backend/tests/unit/test_parsed_path_utils.py', 'backend/tests/unit/test_ai_service_file_refs.py', '-q'], ROOT),
                 ('frontend', ['npm', 'run', 'test:run', '--', '--minWorkers=1', '--maxWorkers=2'], ROOT / 'frontend'),
                 ('lint', ['npm', 'run', 'lint'], ROOT / 'frontend'),
             ]

@@ -397,8 +397,12 @@ def update_project(project_id):
 
         # Update export settings if provided
         if 'export_extractor_method' in data:
+            if data['export_extractor_method'] != 'configured':
+                return bad_request('OCR 추출 방식은 configured만 지원합니다.')
             project.export_extractor_method = data['export_extractor_method']
         if 'export_inpaint_method' in data:
+            if data['export_inpaint_method'] not in ('local', 'generative'):
+                return bad_request('배경 복원은 local 또는 generative만 지원합니다.')
             project.export_inpaint_method = data['export_inpaint_method']
         if 'export_allow_partial' in data:
             project.export_allow_partial = data['export_allow_partial']
@@ -1609,8 +1613,6 @@ def create_ppt_renovation_project():
         ai_service = get_ai_service()
         from services.file_parser_service import FileParserService
         file_parser_service = FileParserService(
-            mineru_token=current_app.config['MINERU_TOKEN'],
-            mineru_api_base=current_app.config['MINERU_API_BASE'],
         )
 
         app = current_app._get_current_object()

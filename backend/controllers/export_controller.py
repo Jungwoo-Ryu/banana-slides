@@ -375,7 +375,7 @@ def export_editable_pptx(project_id):
 
     This peer creates a different task to perform the following：：
     1. Recursively analyze pictures (supports any size and resolution)）
-    2. Convert to PDF & Upload MinerU Identification
+    2. Convert to PDF & Upload local document parser Identification
     3. Extract Element bbox And generate clean background（inpainting）
     4. Recursive processing of pictures/Sub-elements in Charts
     5. Create Editable PPTX

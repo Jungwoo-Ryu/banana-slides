@@ -18,8 +18,8 @@ def repair_desktop_settings_schema(db):
             'description_requirements': 'TEXT',
             'template_style': 'TEXT',
             'template_mode': "VARCHAR(20) DEFAULT 'single'",
-            'export_extractor_method': "VARCHAR(50) DEFAULT 'hybrid'",
-            'export_inpaint_method': "VARCHAR(50) DEFAULT 'hybrid'",
+            'export_extractor_method': "VARCHAR(50) DEFAULT 'configured'",
+            'export_inpaint_method': "VARCHAR(50) DEFAULT 'local'",
             'export_allow_partial': 'BOOLEAN DEFAULT 0',
             'enable_icon_subject_extraction': 'BOOLEAN DEFAULT 1',
             'image_aspect_ratio': "VARCHAR(10) DEFAULT '16:9'",
@@ -42,7 +42,6 @@ def repair_desktop_settings_schema(db):
             'original_filename': 'VARCHAR(500)',
         },
         'reference_files': {
-            'mineru_batch_id': 'VARCHAR(100)',
         },
         'tasks': {
             'completed_at': 'DATETIME',
@@ -66,14 +65,6 @@ def repair_desktop_settings_schema(db):
                 conn.execute(text(f'ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}'))
                 repaired.setdefault(table_name, []).append(column_name)
 
-        settings_columns = set()
-        if 'settings' in existing_tables:
-            settings_columns = {column['name'] for column in inspector.get_columns('settings')}
-        if 'baidu_api_key' in repaired.get('settings', []) and 'baidu_ocr_api_key' in settings_columns:
-            conn.execute(text(
-                'UPDATE settings SET baidu_api_key = baidu_ocr_api_key '
-                'WHERE baidu_api_key IS NULL AND baidu_ocr_api_key IS NOT NULL'
-            ))
 
     if repaired:
         details = '; '.join(f"{table}: {', '.join(columns)}" for table, columns in repaired.items())

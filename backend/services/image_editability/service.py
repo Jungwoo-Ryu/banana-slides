@@ -39,7 +39,7 @@ class ImageEditabilityService:
     Full reliance on abstract interfaces, without any details of actual realization
 
     Example:
-        >>> config = ServiceConfig.from_defaults(mineru_token="xxx")
+        >>> config = ServiceConfig.from_defaults()
         >>> service = ImageEditabilityService(config)
         >>>
         >>> # Serial processing
@@ -240,7 +240,7 @@ class ImageEditabilityService:
         """
         Convert the dictionary returned by the extractor to EditableElement Object
 
-        Based on each element bbox Crop and save pictures from original, not dependent MinerU Extracted Pictures。
+        Based on each element bbox Crop and save pictures from original, not dependent local document parser Extracted Pictures。
         So all the elements (including text) are there. image_path，Available for Style Extracting。
         """
         elements = []

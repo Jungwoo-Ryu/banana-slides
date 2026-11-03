@@ -21,26 +21,36 @@ cp "$ENV_EXAMPLE" "$ENV_FILE"
 # Define list of configuration items to be replaced from environment variables/Secrets
 # Format: configuration item name
 REPLACEABLE_VARS=(
-  "AI_PROVIDER_FORMAT"
-  "GOOGLE_API_KEY"
-  "GOOGLE_API_BASE"
-  "OPENAI_API_KEY"
-  "OPENAI_API_BASE"
-  "OPENAI_TIMEOUT"
-  "OPENAI_MAX_RETRIES"
-  "TEXT_MODEL"
-  "IMAGE_MODEL"
-  "LOG_LEVEL"
-  "FLASK_ENV"
-  "SECRET_KEY"
   "BACKEND_PORT"
-  "CORS_ORIGINS"
+  "FRONTEND_PORT"
+  "OUTPUT_LANGUAGE"
+  "LOG_LEVEL"
+  "AZURE_OPENAI_ENDPOINT"
+  "AZURE_OPENAI_API_KEY"
+  "AZURE_OPENAI_API_VERSION"
+  "AZURE_OPENAI_DEPLOYMENT"
+  "AZURE_OPENAI_IMAGE_DEPLOYMENT"
+  "AZURE_OPENAI_CAPTION_DEPLOYMENT"
+  "AZURE_OPENAI_TIMEOUT"
+  "AZURE_OPENAI_MAX_RETRIES"
+  "AZURE_OPENAI_TTS_DEPLOYMENT"
+  "AZURE_OPENAI_TTS_VOICE"
+  "AZURE_OPENAI_TTS_INSTRUCTIONS"
+  "FFMPEG_PATH"
+  "VIDEO_MAX_PAGES"
+  "IMAGE_QUALITY"
+  "TEXT_MAX_OUTPUT_TOKENS"
   "MAX_DESCRIPTION_WORKERS"
   "MAX_IMAGE_WORKERS"
-  "MINERU_TOKEN"
-  "MINERU_API_BASE"
-  "IMAGE_CAPTION_MODEL"
-  "OUTPUT_LANGUAGE"
+  "DESIGN_SYSTEM_PROMPT"
+  "DOCUMENT_PARSER"
+  "AUTO_IMAGE_CAPTION"
+  "OCR_PROVIDER"
+  "OCR_LANGUAGES"
+  "TESSERACT_CMD"
+  "INPAINTING_PROVIDER"
+  "TEXT_STYLE_PROVIDER"
+  "NO_PROXY"
 )
 
 replaced_count=0
@@ -70,12 +80,6 @@ for var_name in "${REPLACEABLE_VARS[@]}"; do
     skipped_count=$((skipped_count + 1))
   fi
 done
-
-# Special handling: If GOOGLE_API_KEY is not configured, use mock-api-key
-if [ -z "${GOOGLE_API_KEY}" ]; then
-  sed -i '/^GOOGLE_API_KEY=/s/your-api-key-here/mock-api-key/' "$ENV_FILE"
-  echo "Warning: GOOGLE_API_KEY using mock-api-key (not configured)"
-fi
 
 echo ""
 echo "Configuration complete:"

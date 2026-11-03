@@ -27,10 +27,10 @@ class Project(db.Model):
         db.String(10), nullable=False, server_default='single', default='single'
     )  # 'single' | 'multi'，Only UI Render branch, without prejudice to page-level field reading and writing
     # Export Settings
-    export_extractor_method = db.Column(db.String(50), nullable=True, default='configured')  # Component extraction method: mineru, hybrid
-    export_inpaint_method = db.Column(db.String(50), nullable=True, default='local')  # How to get background maps: generative, baidu, hybrid
+    export_extractor_method = db.Column(db.String(50), nullable=True, default='configured')  # Component extraction method: configured
+    export_inpaint_method = db.Column(db.String(50), nullable=True, default='local')  # How to get background maps: local, generative
     export_allow_partial = db.Column(db.Boolean, nullable=True, default=False)  # Whether to allow the return of semi-finished products (continue rather than stop when an error occurs)）
-    enable_icon_subject_extraction = db.Column(db.Boolean, nullable=True, default=True)  # Whether to walk a 100-degree smart map of a small size icon
+    enable_icon_subject_extraction = db.Column(db.Boolean, nullable=True, default=True)  # Enable optional local icon subject extraction
     image_aspect_ratio = db.Column(db.String(10), nullable=False, server_default='16:9', default='16:9')
     status = db.Column(db.String(50), nullable=False, default='DRAFT')
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)

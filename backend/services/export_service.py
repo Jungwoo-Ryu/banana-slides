@@ -278,7 +278,7 @@ class ExportService:
         slide_element.insert(insert_at, transition)
 
     # NOTE: clean background Generating function moved to decoupling InpaintProvider Achieved
-    # - DefaultInpaintProvider: Based on mask Reshaping of precise areas（Volcengine）
+    # - DefaultInpaintProvider: Based on mask Reshaping of precise areas（Azure）
     # - GenerativeEditInpaintProvider: Edit repainting based on large generating models（Gemini Wait.）
     # Usage: from services.image_editability import InpaintProviderFactory
 
@@ -782,14 +782,14 @@ class ExportService:
             return ExportService._add_pdf_metadata(pdf_bytes.getvalue())
 
     @staticmethod
-    def _add_mineru_text_to_slide(builder, slide, text_item: Dict[str, Any], scale_x: float = 1.0, scale_y: float = 1.0):
+    def _add_parsed_text_to_slide(builder, slide, text_item: Dict[str, Any], scale_x: float = 1.0, scale_y: float = 1.0):
         """
-        Add text item from MinerU to slide
+        Add text item from local document parser to slide
 
         Args:
             builder: PPTXBuilder instance
             slide: Target slide
-            text_item: Text item from MinerU content_list
+            text_item: Text item from local document parser content_list
             scale_x: X-axis scale factor
             scale_y: Y-axis scale factor
         """
@@ -902,22 +902,22 @@ class ExportService:
         logger.info(f"✓ Table cells added, complete {len(cell_elements)} individual")
 
     @staticmethod
-    def _add_mineru_image_to_slide(
+    def _add_parsed_image_to_slide(
         builder,
         slide,
         image_item: Dict[str, Any],
-        mineru_dir: Path,
+        parsed_dir: Path,
         scale_x: float = 1.0,
         scale_y: float = 1.0
     ):
         """
-        Add image or table item from MinerU to slide
+        Add image or table item from local document parser to slide
 
         Args:
             builder: PPTXBuilder instance
             slide: Target slide
-            image_item: Image/table item from MinerU content_list
-            mineru_dir: MinerU result directory
+            image_item: Image/table item from local document parser content_list
+            parsed_dir: local document parser result directory
             scale_x: X-axis scale factor
             scale_y: Y-axis scale factor
         """
@@ -940,7 +940,7 @@ class ExportService:
         if scale_x != 1.0 or scale_y != 1.0:
             logger.debug(f"Item bbox scaled: {original_bbox} -> {bbox} (scale: {scale_x:.3f}x{scale_y:.3f})")
 
-        # Check if this is a table with Sub-elements (cells from Baidu OCR)
+        # Check if this is a table with Sub-elements (cells from local OCR)
         item_type = image_item.get('element_type') or image_item.get('type', 'image')
         children = image_item.get('children', [])
 
@@ -989,11 +989,11 @@ class ExportService:
             return
 
         # Try to find the image file
-        # MinerU may store images in 'images/' subdirectory
+        # local document parser may store images in 'images/' subdirectory
         possible_paths = [
-            mineru_dir / img_path_str,
-            mineru_dir / 'images' / Path(img_path_str).name,
-            mineru_dir / Path(img_path_str).name,
+            parsed_dir / img_path_str,
+            parsed_dir / 'images' / Path(img_path_str).name,
+            parsed_dir / Path(img_path_str).name,
         ]
 
         image_path = None
@@ -1583,9 +1583,9 @@ class ExportService:
         text_attribute_extractor = None,  # Optional： Text Properties Ripper, to extract colours, bold, italics, etc.
         progress_callback = None,  # Optional： progress correction function (step, message, percent) -> None
         heartbeat_callback = None,  # Optional： Heart beatback (step) -> None，For elemental fine particle size survival detection (no library)）
-        export_extractor_method: str = 'hybrid',  # Component extraction method: mineru, hybrid
-        export_inpaint_method: str = 'hybrid',  # Background repair method: generative, baidu, hybrid
-        enable_icon_subject_extraction: bool = False,  # Whether to walk a 100-degree smart map of a small size icon
+        export_extractor_method: str = 'configured',  # Component extraction method: configured
+        export_inpaint_method: str = 'local',  # Background repair method: local, generative
+        enable_icon_subject_extraction: bool = False,  # Enable optional local icon subject extraction
         fail_fast: bool = True  # Whether to stop immediately in case of a mistake（False Then collect the warning and continue.）
     ) -> Tuple[Optional[bytes], ExportWarnings]:
         """
@@ -1597,7 +1597,7 @@ class ExportService:
         1. Import image_paths：Automatically analyze pictures and generate them PPTX
         2. Import editable_images：Direct use of analysed results (avoidance of analysis)）
 
-        Configure (e. g. MinerU token）Automatically from Flask app.config Access。
+        Configure (e. g. local document parser token）Automatically from Flask app.config Access。
 
         Args:
             image_paths: Picture path list (optional, with editable_images Two or one.）
@@ -1611,8 +1611,8 @@ class ExportService:
                 It’s possible. TextAttributeExtractorFactory.create_caption_model_extractor() Create
             heartbeat_callback: Heart beat echo (optional). Every element/It’s done once with submissions.，
                 Used to inform external watchdogs that the mission is still in progress (without creating a database to write)）
-            export_extractor_method: Component extraction method ('mineru' or 'hybrid'，Default 'hybrid')
-            export_inpaint_method: Background repair method ('generative', 'baidu', 'hybrid'，Default 'hybrid')
+            export_extractor_method: Component extraction method ('configured', using local OCR)
+            export_inpaint_method: Background repair method ('local' or 'generative', default 'local')
             fail_fast: Whether to stop immediately in case of error (default) True）。Set as False collect warning and continue to export。
 
         Returns:
@@ -1963,9 +1963,9 @@ class ExportService:
 
             logger.info(f"{'  ' * depth}  Add Elements: type={elem_type}, bbox={bbox_list}, content={elem.content[:30] if elem.content else None}, image_path={elem.image_path}, Usage{'Global' if depth > 0 else 'Local'}Coordinates")
 
-            # Add elements according to type (references to original achieved)_add_mineru_text_to_slide and_add_mineru_image_to_slide）
+            # Add elements according to type (references to original achieved)_add_parsed_text_to_slide and_add_parsed_image_to_slide）
             if elem_type in ['text', 'title', 'list', 'paragraph', 'header', 'footer', 'heading', 'table_caption', 'image_caption', 'equation', 'interline_equation', 'inline_equation']:
-                # Add text (reference)_add_mineru_text_to_slide）
+                # Add text (reference)_add_parsed_text_to_slide）
                 if elem.content:
                     text = elem.content.strip()
                     if text:

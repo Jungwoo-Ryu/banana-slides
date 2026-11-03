@@ -1,5 +1,5 @@
 """
-Path utilities for handling MinerU file paths and prefix matching
+Path utilities for handling local document parser file paths and prefix matching
 """
 import os
 import logging
@@ -23,7 +23,7 @@ def _default_project_root() -> Path:
     return backend_dir.parent
 
 
-def _resolve_mineru_root(
+def _resolve_parsed_root(
     project_root: Optional[Path] = None,
     upload_folder: Optional[Union[os.PathLike, str]] = None
 ) -> Path:
@@ -61,19 +61,19 @@ def _resolve_mineru_root(
         except ValueError as exc:
             raise ValueError("Relative UPLOAD_FOLDER must stay within the project root") from exc
 
-    return upload_root.resolve() / 'mineru_files'
+    return upload_root.resolve() / 'parsed_files'
 
 
-def convert_mineru_path_to_local(
-    mineru_path: str,
+def convert_parsed_path_to_local(
+    parsed_path: str,
     project_root: Optional[Path] = None,
     upload_folder: Optional[Union[os.PathLike, str]] = None,
 ) -> Optional[Path]:
     """
-    Yes, sir. /files/mineru/{extract_id}/{rel_path} Convert the format path to the local filesystem path
+    Yes, sir. /files/parsed/{extract_id}/{rel_path} Convert the format path to the local filesystem path
 
     Args:
-        mineru_path: MinerU URL Path, formatted as /files/mineru/{extract_id}/{rel_path}
+        parsed_path: local document parser URL Path, formatted as /files/parsed/{extract_id}/{rel_path}
         project_root: Item root directory path (if None，Autocalculate）
         upload_folder: Upload root directory; priority at upload project_root/uploads
 
@@ -81,38 +81,38 @@ def convert_mineru_path_to_local(
         Local filesystem path（Path object) returns if conversion fails None
     """
     try:
-        if not mineru_path.startswith('/files/mineru/'):
+        if not parsed_path.startswith('/files/parsed/'):
             return None
 
-        # Remove '/files/mineru/' prefix
-        rel_path = mineru_path[len('/files/mineru/'):].lstrip('/\\')
+        # Remove '/files/parsed/' prefix
+        rel_path = parsed_path[len('/files/parsed/'):].lstrip('/\\')
 
-        mineru_root = _resolve_mineru_root(project_root, upload_folder)
-        local_path = Path(os.path.realpath(mineru_root / rel_path))
-        if not _is_path_within(local_path, mineru_root):
-            logger.warning(f"Path traversal attempt blocked for MinerU path: {mineru_path}")
+        parsed_root = _resolve_parsed_root(project_root, upload_folder)
+        local_path = Path(os.path.realpath(parsed_root / rel_path))
+        if not _is_path_within(local_path, parsed_root):
+            logger.warning(f"Path traversal attempt blocked for local document parser path: {parsed_path}")
             return None
 
         return local_path
     except Exception as e:
-        logger.warning(f"Failed to convert MinerU path to local: {mineru_path}, error: {str(e)}")
+        logger.warning(f"Failed to convert local document parser path to local: {parsed_path}, error: {str(e)}")
         return None
 
 
-def find_mineru_file_with_prefix(
-    mineru_path: str,
+def find_parsed_file_with_prefix(
+    parsed_path: str,
     project_root: Optional[Path] = None,
     upload_folder: Optional[Union[os.PathLike, str]] = None,
 ) -> Optional[Path]:
     """
-    Find MinerU File, support prefix matching
+    Find local document parser File, support prefix matching
 
     First try direct path matching, and if you fail try prefix matching。
     Prefix matches logic： if the file name looks like a prefix+Extension (prefix length) >= 5），
     Finds files starting with this prefix in a directory。
 
     Args:
-        mineru_path: MinerU URL Path, formatted as /files/mineru/{extract_id}/{rel_path}
+        parsed_path: local document parser URL Path, formatted as /files/parsed/{extract_id}/{rel_path}
         project_root: Item root directory path (if None，Autocalculate）
         upload_folder: Upload root directory; priority at upload project_root/uploads
 
@@ -120,21 +120,21 @@ def find_mineru_file_with_prefix(
         File Path Found（Path object) returns if not found None
     """
     # First try direct path conversion
-    local_path = convert_mineru_path_to_local(mineru_path, project_root, upload_folder)
+    local_path = convert_parsed_path_to_local(parsed_path, project_root, upload_folder)
 
     if local_path is None:
         return None
-    mineru_root = _resolve_mineru_root(project_root, upload_folder)
+    parsed_root = _resolve_parsed_root(project_root, upload_folder)
 
     # Direct file matching
     if local_path.exists() and local_path.is_file():
-        if not _is_path_within(local_path, mineru_root):
+        if not _is_path_within(local_path, parsed_root):
             return None
         return local_path
 
     # Try prefix match using the generic function
     matched_path = find_file_with_prefix(local_path)
-    if matched_path and _is_path_within(matched_path, mineru_root):
+    if matched_path and _is_path_within(matched_path, parsed_root):
         return Path(os.path.realpath(matched_path))
     return None
 

@@ -151,17 +151,17 @@ def serve_global_material(filename):
         return error_response('SERVER_ERROR', str(e), 500)
 
 
-@file_bp.route('/mineru/<extract_id>/<path:filepath>', methods=['GET'])
-def serve_mineru_file(extract_id, filepath):
+@file_bp.route('/parsed/<extract_id>/<path:filepath>', methods=['GET'])
+def serve_parsed_file(extract_id, filepath):
     """
-    GET /files/mineru/{extract_id}/{filepath} - Serve MinerU extracted files.
+    GET /files/parsed/{extract_id}/{filepath} - Serve local document parser extracted files.
 
     Args:
         extract_id: Extract UUID
         filepath: Relative file path within the extract
     """
     try:
-        root_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'mineru_files', extract_id)
+        root_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'parsed_files', extract_id)
         full_path = Path(root_dir) / filepath
 
         # This prevents path traversal attacks

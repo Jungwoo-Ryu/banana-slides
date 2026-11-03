@@ -17,7 +17,7 @@ Example:
     >>> from services.image_editability import ServiceConfig, ImageEditabilityService
     >>>
     >>> # Create Configuration
-    >>> config = ServiceConfig.from_defaults(mineru_token="your_token")
+    >>> config = ServiceConfig.from_defaults()
     >>>
     >>> # Create Service
     >>> service = ImageEditabilityService(config)
@@ -45,7 +45,6 @@ from .coordinate_mapper import CoordinateMapper
 # Element Ripper
 from .extractors import (
     ElementExtractor,
-    MinerUElementExtractor,
     ExtractorRegistry
 )
 
@@ -85,7 +84,6 @@ __all__ = [
     'CoordinateMapper',
     # Element Ripper
     'ElementExtractor',
-    'MinerUElementExtractor',
     'ExtractorRegistry',
     # Mixed Ripper
     # Inpaint Provider

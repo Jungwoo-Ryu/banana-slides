@@ -115,10 +115,10 @@ export interface NarrationConfig {
 }
 
 // Export Settings - Component extraction method
-export type ExportExtractorMethod = 'configured' | 'mineru' | 'hybrid';
+export type ExportExtractorMethod = 'configured';
 
 // Export Settings - How to get background maps
-export type ExportInpaintMethod = 'local' | 'generative' | 'baidu' | 'hybrid';
+export type ExportInpaintMethod = 'local' | 'generative';
 
 // Item
 export interface Project {
@@ -140,7 +140,7 @@ export interface Project {
   export_extractor_method?: ExportExtractorMethod; // Component extraction method
   export_inpaint_method?: ExportInpaintMethod; // How to get background maps
   export_allow_partial?: boolean; // Whether to allow the return of semi-finished products (continue rather than stop when an error occurs)）
-  enable_icon_subject_extraction?: boolean; // Whether to walk a 100-degree smart map of a small size icon (transparent background)）
+  enable_icon_subject_extraction?: boolean; // Enable optional local icon subject extraction (transparent background)）
   image_aspect_ratio?: string; // Image scale (e.g. 16:9, 4:3）
   status: ProjectStatus;
   pages: Page[];

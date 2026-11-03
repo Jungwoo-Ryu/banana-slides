@@ -1,16 +1,16 @@
 # Banana Slides Setup
 
-Full documentation: https://docs.bananaslides.online/
+Current configuration: repository README.md and docs/enterprise/ADAPTERS.md.
 
 ## Install and Start Backend
 
 ```bash
-git clone https://github.com/Anionex/banana-slides
+git clone https://github.com/Jungwoo-Ryu/banana-slides
 cd banana-slides
 cp .env.example .env
 # Edit .env — at minimum set an AI provider key (see below)
 cd backend
-uv sync
+uv sync --frozen --python 3.12
 uv run alembic upgrade head
 uv run python app.py
 ```
@@ -19,20 +19,19 @@ Backend starts on http://localhost:5011.
 
 ## Required Configuration
 
-Edit `.env` with at least one AI provider:
+Configure only company Azure deployments in `.env`:
 
 ```env
-# Google Gemini (default)
-AI_PROVIDER_FORMAT=gemini
-GOOGLE_API_KEY=your-key
-
-# OR OpenAI-compatible
-AI_PROVIDER_FORMAT=openai
-OPENAI_API_KEY=your-key
-OPENAI_BASE_URL=https://api.openai.com/v1
+AZURE_OPENAI_ENDPOINT=https://YOUR-RESOURCE.openai.azure.com
+AZURE_OPENAI_API_KEY=
+AZURE_OPENAI_DEPLOYMENT=gpt-5.5
+AZURE_OPENAI_IMAGE_DEPLOYMENT=gpt-image-2
+AZURE_OPENAI_TTS_DEPLOYMENT=
+DOCUMENT_PARSER=local
+OCR_PROVIDER=local
 ```
 
-Supported providers: `gemini`, `openai`, `vertex`, `lazyllm`, `anthropic`.
+Documents and OCR are local only. Tesseract with language data is required for scanned documents and editable text extraction. No provider credentials are stored through the CLI settings endpoint.
 
 ## Verify
 

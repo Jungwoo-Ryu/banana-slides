@@ -66,6 +66,7 @@ test('Sol.A design defaults and Azure-only settings',async({page,request})=>{
     await page.goto('/settings');
     await expect(page.getByText('사내 Azure Foundry OpenAI 전용',{exact:false})).toBeVisible();
     await expect(page.getByText('Gemini',{exact:true})).toHaveCount(0);
+    await expect(page.locator('body')).not.toContainText(/MinerU|Baidu|Doubao|Qwen|DeepSeek|SenseNova|LazyLLM|ModelScope/i);
     await page.getByLabel('디자인 시스템 프롬프트').fill(prompt);
     await page.getByRole('button',{name:'설정 저장',exact:true}).click();
     await expect(page.getByText('설정을 저장했습니다.',{exact:true})).toBeVisible();
@@ -75,7 +76,9 @@ test('Sol.A design defaults and Azure-only settings',async({page,request})=>{
     const project=(await(await request.get(`/api/projects/${projectId}`)).json()).data;
     expect(project.template_style).toBe(prompt);
     await page.goto('/');await expect(page).toHaveTitle(/Sol.A/);
-    await expect(page.locator('img[src*="sola-sun"]').first()).toBeVisible();
+    const logo = page.getByRole('img', { name: /Sol\.A.*Logo/ }).first();
+    await expect(logo).toBeVisible();
+    await expect.poll(() => logo.evaluate(img => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
   } finally {
     await request.put('/api/settings',{data:{design_system_prompt:previous}});
     if(projectId) await request.delete(`/api/projects/${projectId}`);

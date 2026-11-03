@@ -31,11 +31,12 @@ jobs:
       - name: Check source language
         run: python scripts/check_source_language.py
       - name: Backend regression suite
-        run: uv run pytest backend/tests/unit backend/tests/integration/test_full_workflow.py backend/tests/integration/test_migration_019_backfill.py backend/tests/integration/test_reference_file_ssrf.py backend/tests/integration/test_requests_socks_proxy.py -q
+        run: uv run pytest backend/tests/unit backend/tests/integration/test_full_workflow.py backend/tests/integration/test_migration_019_backfill.py backend/tests/integration/test_local_document_migration.py backend/tests/integration/test_reference_file_ssrf.py backend/tests/integration/test_requests_socks_proxy.py -q
       - run: npm --prefix frontend ci
       - run: npm --prefix frontend run build:check
+      - run: npm --prefix frontend run lint:strict
       - name: Frontend regression suite
-        run: npx vitest run --poolOptions.threads.singleThread
+        run: npx vitest run --maxWorkers=1
         working-directory: frontend
       - run: npx playwright install --with-deps chromium
         working-directory: frontend

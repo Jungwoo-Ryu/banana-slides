@@ -4,9 +4,9 @@ Banana Slides（Banana Slides）Backend Services - AI Driven PPT Generation Syst
 
 ## Technology.
 
-- **Frame**: Flask 3.0
+- **Frame**: Flask 3.1
 - **Database**: SQLite + SQLAlchemy ORM
-- **AI Services**: Google Gemini API
+- **AI Services**: Company Azure Foundry OpenAI
 - **PPT Processing**: python-pptx
 - **Co-processing**: ThreadPoolExecutor
 - **Package management**: uv
@@ -53,7 +53,7 @@ Use of this project [uv](https://github.com/astral-sh/uv) Management Python Depe
 
 Run under the root directory：
 ```bash
-uv sync
+uv sync --frozen --python 3.12
 ```
 
 This will automatically install all the required dependencies.。
@@ -69,14 +69,14 @@ cp .env.example .env
 Edit `.env` Documentation：
 
 ```env
-GOOGLE_API_KEY=your-google-api-key
-GOOGLE_API_BASE=https://generativelanguage.googleapis.com
-
-# Volcanic engine configuration (optional, for Inpainting Image elimination function）
-VOLCENGINE_ACCESS_KEY=your-volcengine-access-key
-VOLCENGINE_SECRET_KEY=your-volcengine-secret-key
-VOLCENGINE_INPAINTING_TIMEOUT=60
-VOLCENGINE_INPAINTING_MAX_RETRIES=3
+AZURE_OPENAI_ENDPOINT=https://YOUR-RESOURCE.openai.azure.com
+AZURE_OPENAI_API_KEY=
+AZURE_OPENAI_DEPLOYMENT=gpt-5.5
+AZURE_OPENAI_IMAGE_DEPLOYMENT=gpt-image-2
+AZURE_OPENAI_TTS_DEPLOYMENT=
+DOCUMENT_PARSER=local
+OCR_PROVIDER=local
+OCR_LANGUAGES=kor+eng
 ```
 
 ### 3. Initialize / Upgrade database structure（Alembic Migration）
@@ -140,7 +140,7 @@ Full API Document refer to the root directory of the item `API Design Document.m
 
 ### 1. AI Driverd Content Generation
 
-Based on Google Gemini API，Support：
+Based on Company Azure Foundry OpenAI，Support：
 - Auto Generate PPT Outline
 - Parallel Generate Page Description
 - Generate pictures based on reference templates
@@ -315,13 +315,8 @@ A: Yes. `uploads/{project_id}/` Under the directories, lined up.。
 ### Q: How to Modify Parallel Numbers？
 A: Suggest changes by front-end settings page (sync to database and overwrite) `.env` value; can also be in `.env` Document Changes `MAX_DESCRIPTION_WORKERS` and `MAX_IMAGE_WORKERS` As default, then click ” Reset to Default ” on the settings page to sync to DB。
 
-### Q: How to switch to other AI Model / Modify MinerU Address？
-A: From the current version it is recommended that changes be made through the front-end System Settings page：<br>
-- Large model provider format / API Base / API Key<br>
-- Text Model (`TEXT_MODEL`) / Picture Model (`IMAGE_MODEL`)<br>
-- MinerU Address (`MINERU_API_BASE`) / Picture Identification Model (`IMAGE_CAPTION_MODEL`)<br>
-
-These values will be saved to `settings` Table & Overwrite `.env` . Click Reset to Default to return `.env` Default value。
+### Q: How do I configure the model deployments and local parser?
+Azure endpoints, credentials and deployment names are server environment settings; see the root `.env.example`. The browser stores non-secret preferences only. Documents use PyMuPDF/MarkItDown and OCR uses local Tesseract. External document/OCR upload adapters are removed.
 
 ### Q: Which image formats are supported？
 A: PNG, JPG, JPEG, GIF, WEBP。Yes. `config.py` Medium `ALLOWED_EXTENSIONS` Configuration。

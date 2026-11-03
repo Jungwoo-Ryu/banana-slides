@@ -126,7 +126,8 @@ function reducer(s: State, a: Action): State {
       return { ...s, items: a.items, loading: false };
     case 'TOGGLE_SELECT': {
       const next = new Set(s.selected);
-      next.has(a.key) ? next.delete(a.key) : next.add(a.key);
+      if (next.has(a.key)) next.delete(a.key);
+      else next.add(a.key);
       return { ...s, selected: next };
     }
     case 'SELECT_ALL':

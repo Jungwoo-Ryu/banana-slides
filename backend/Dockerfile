@@ -11,9 +11,9 @@ ARG APP_BUILD_DATE=
 # Install uv（Use intermediate stage avoided COPY --from Question of extending the variable）
 FROM ${GHCR_REGISTRY}astral-sh/uv:latest AS uv
 
-# Usage Python 3.10 As a basic mirror,
+# Usage Python 3.12 As a basic mirror,
 # If it’s specified, DOCKER_REGISTRY，Use mirror source; otherwise use official source
-FROM ${DOCKER_REGISTRY:-}python:3.10-slim
+FROM ${DOCKER_REGISTRY:-}python:3.12-slim
 
 # Restatement ARG（FROM After ARG Inactivated field. Restated.）
 ARG APT_MIRROR=
@@ -38,6 +38,7 @@ RUN if [ -n "$APT_MIRROR" ]; then \
     curl \
     ffmpeg \
     fonts-noto-cjk \
+    tesseract-ocr tesseract-ocr-eng tesseract-ocr-kor \
     && rm -rf /var/lib/apt/lists/*
 
 # From uv Phase Copy Binary File
@@ -56,7 +57,9 @@ ENV UV_HTTP_TIMEOUT=300
 
 # Install Python Dependency
 # If there is one... uv.lock The file is used --frozen，Otherwise generate a new lock file
-RUN if [ -f uv.lock ]; then \
+RUN --mount=type=secret,id=proxy_ca \
+    if [ -f /run/secrets/proxy_ca ]; then export SSL_CERT_FILE=/run/secrets/proxy_ca; fi; \
+    if [ -f uv.lock ]; then \
         uv sync --frozen; \
     else \
         uv sync; \

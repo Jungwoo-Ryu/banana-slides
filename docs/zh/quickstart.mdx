@@ -1,103 +1,41 @@
 ---
 title: "Quick Start"
-description: "Try the demo or deploy Banana Slides locally"
+description: "Run Sol.A locally with company Azure deployments"
 ---
 
-## Online Demo
+## Local web
 
-No installation needed — try it instantly: [bananaslides.online](https://bananaslides.online/)
-
----
-
-## Self-Hosting
-
-### Step 1: Install Docker
-
-<Tabs>
-  <Tab title="Windows / macOS">
-    Download and install [Docker Desktop](https://www.docker.com/products/docker-desktop/). After installation, launch it and confirm the Docker icon appears in the system tray (Windows) or menu bar (macOS).
-  </Tab>
-  <Tab title="Linux">
-    ```bash
-    curl -fsSL https://get.docker.com | sh
-    ```
-  </Tab>
-</Tabs>
-
-### Step 2: Download and Start
-
-Create a new directory, enter it, and run the following command to download the config files and start the service:
+Install Node.js 22.23.4 and uv, then check out the maintained fork:
 
 ```bash
-mkdir banana-slides && cd banana-slides && \
-curl -O https://raw.githubusercontent.com/Anionex/banana-slides/main/docker-compose.prod.yml && \
-curl -O https://raw.githubusercontent.com/Anionex/banana-slides/main/.env.example && \
+git clone --branch Dev https://github.com/Jungwoo-Ryu/banana-slides.git
+cd banana-slides
 cp .env.example .env
 ```
 
-Edit the `.env` file to fill in your API key (see [Configuration](/configuration)), then start:
+Configure company Azure deployments in `.env` as described in [Configuration](/configuration). On Windows, run `start.bat`. On Linux/macOS:
 
 ```bash
-docker compose -f docker-compose.prod.yml up -d
+uv sync --frozen --python 3.12
+uv run python scripts/start_local.py
 ```
 
-<Tip>
-  [AIHubMix](https://api.inferera.com/?aff=17EC) is recommended for API keys — it supports both Gemini and OpenAI formats and handles high-concurrency image generation reliably.
-</Tip>
+Open http://127.0.0.1:3011. The backend uses port 5011. Stop both services with Ctrl+C in the launcher terminal. OCR needs local Tesseract with Korean/English language data; video export needs FFmpeg/FFprobe and a separate Azure TTS deployment.
 
-### Step 3: Open the App
+## Containers
 
-Visit [http://localhost:3011](http://localhost:3011) in your browser.
-
-<Note>
-  Default ports are 3011 (frontend) and 5011 (backend). To change them, set `FRONTEND_PORT` and `BACKEND_PORT` in `.env`.
-</Note>
-
----
-
-## Update
-
-In the app, open **Settings → About → Check for Updates** to compare the current version SHA with the latest available version. Local source-code runs are checked with the current Git SHA as well.
+Build the checked-out fork instead of pulling an upstream application image:
 
 ```bash
-docker compose -f docker-compose.prod.yml pull && \
-docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-## View Logs
+Back up the database and uploads together before upgrading. The migration moves legacy parsed artifacts to `parsed_files` and rewrites saved local links. Conflicting destination directories stop the migration without overwriting files. Keep persistent database/uploads volumes mounted.
+
+## Logs
+
+Local launcher logs are under `.runtime/logs/`. Container logs:
 
 ```bash
-docker logs -f --tail 100 banana-slides-backend
+docker compose -f docker-compose.prod.yml logs --tail 100 backend
 ```
-
----
-
-## Deploy from Source
-
-<Accordion title="Expand for source deployment steps">
-
-### Requirements
-
-- Python 3.10+
-- [uv](https://github.com/astral-sh/uv) package manager
-- Node.js 16+ and npm
-
-### Backend
-
-```bash
-git clone https://github.com/Anionex/banana-slides
-cd banana-slides
-cp .env.example .env  # Edit .env and add your API key
-cd backend
-uv run alembic upgrade head && uv run python app.py
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-</Accordion>

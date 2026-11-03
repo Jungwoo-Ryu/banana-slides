@@ -286,7 +286,7 @@ test('uses the timestamp-aware release fallback when electron-updater sees the s
         update: {
           version: '1.0.0',
           notes: 'Rebuilt release',
-          url: 'https://github.com/Anionex/banana-slides/releases/tag/v1.0.0',
+          url: 'https://github.com/Jungwoo-Ryu/banana-slides/releases/tag/v1.0.0',
         },
         progress: null,
         canAutoUpdate: false,

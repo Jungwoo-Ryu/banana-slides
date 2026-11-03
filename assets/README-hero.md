@@ -1,12 +1,10 @@
+> Historical upstream artwork documentation. Sol.A uses its local sun logo and does not expose sponsor entry points.
+
 The README hero is a transparent PNG, 1920 × 480 pixels, with light and dark
 lettering variants. Its lettering comes from the approved image-generation draft;
 the logo is composited directly from
 `desktop/resources/BananaSlides.icon/Assets/brand-logo.png` without redrawing.
 The two variants have identical alpha channels and logo pixels.
-
-The AIHubMix sponsor logo retains its original icon and letter shapes. Its white
-rectangle is removed, with a thin white outline around the black lettering for
-contrast on dark backgrounds.
 
 The cover is assembled as centered Markdown/HTML rows. It reuses these original
 brand PNGs and the original recommendation artwork. Order: brand, language links,

@@ -1,5 +1,15 @@
 from unittest.mock import Mock, patch
 
+import pytest
+
+@pytest.fixture(autouse=True)
+def approved_update_registry(monkeypatch):
+    import services.update_check_service as service
+    monkeypatch.setattr(service, "DOCKER_NAMESPACE", "test-company")
+    original = service.fetch_docker_hub_tags
+    monkeypatch.setattr(service, "fetch_docker_hub_tags", lambda: original(namespace="test-company"))
+
+
 from services.update_check_service import check_for_update, get_current_version_metadata
 
 
@@ -71,7 +81,7 @@ def test_check_for_update_reports_newer_docker_image(monkeypatch):
 
     assert result["status"] == "update_available"
     assert result["update_available"] is True
-    assert result["latest"]["image"] == "anoinex/banana-slides:latest"
+    assert result["latest"]["image"] == "test-company/banana-slides:latest"
 
 
 def test_check_for_update_does_not_report_update_for_newer_local_build(monkeypatch):

@@ -14,7 +14,7 @@ describe('getTemplateFile', () => {
 
   it('returns a File when the preset template response is an image', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(new Blob(['image-bytes'], { type: 'image/png' }), {
+      new Response('image-bytes', {
         status: 200,
         headers: { 'content-type': 'image/png' },
       })
@@ -76,7 +76,7 @@ describe('getTemplateFile', () => {
       },
     } as any);
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(new Blob(['image-bytes'], { type: 'image/png' }), {
+      new Response('image-bytes', {
         status: 200,
         headers: { 'content-type': 'image/png' },
       })
@@ -89,7 +89,7 @@ describe('getTemplateFile', () => {
     expect(file?.type).toBe('image/png');
   });
   it('does not refresh an already cached template', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(new Blob(['image'], { type: 'image/png' }), { headers: { 'content-type': 'image/png' } }));
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('image-bytes', { headers: { 'content-type': 'image/png' } }));
     const file = await getTemplateFile('cached', [{ template_id: 'cached', template_image_url: '/files/cached.png', created_at: '' }]);
     expect(file).toBeInstanceOf(File);
     expect(listUserTemplates).not.toHaveBeenCalled();

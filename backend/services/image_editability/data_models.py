@@ -74,7 +74,7 @@ class EditableElement:
     bbox: BBox  # In the parent container（EditableImage）Position in the Coordinate System
     bbox_global: BBox  # In root picture (top floor) EditableImage）Location in the coordinates system (expected storage, avoid frontend)/Re-calculate after-use）
     content: Optional[str] = None  # Text content、HTML Tables etc.
-    image_path: Optional[str] = None  # Picture Path（MinerU Extracted）
+    image_path: Optional[str] = None  # Picture Path（local document parser Extracted）
 
     # Whether to be determined as an icon by the Catalog（True=icon / False=photo / None=Undecided or non-pictural elements）
     # Only image Type elements run into categories；icon It’ll be light at the page source. BBox Spread out to avoid the edges.

@@ -283,7 +283,7 @@ const splitDescAndExtraFields = (descLines: string[]): { text: string; extra_fie
       if (line.trim() === '<!-- SLIDE_FIELDS_END -->') break;
       const match = /^\S/.test(line) ? EXTRA_FIELD_RE.exec(line) : null;
       if (match) { key = match[1].trim(); fields[key] = match[2]; }
-      else if (key) fields[key] += `\n${line.replace(/^  /, '')}`;
+      else if (key) fields[key] += `\n${line.replace(/^ {2}/, '')}`;
     }
     return { text: descLines.slice(0, fieldMarker).join('\n').trim(), extra_fields: fields };
   }

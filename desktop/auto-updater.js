@@ -17,7 +17,7 @@ const {
   writeUpdateSettings,
 } = require('./update-settings');
 
-const REPO_OWNER = 'Anionex';
+const REPO_OWNER = 'Jungwoo-Ryu';
 const REPO_NAME = 'banana-slides';
 const BUILD_META_PATH = path.join(__dirname, 'build-meta.json');
 const DEFAULT_INITIAL_CHECK_DELAY_MS = 5000;

@@ -6,8 +6,10 @@ const yaml = require('js-yaml');
 
 const desktopDir = path.resolve(__dirname, '..');
 const repoRoot = path.resolve(desktopDir, '..');
+const releaseWorkflowPath = path.join(repoRoot, '.github', 'workflows', 'release-desktop.yml');
+const releaseOnly = { skip: !fs.existsSync(releaseWorkflowPath) && 'This fork has no desktop release workflow' };
 
-test('Windows FFmpeg cache is restored before npm install invokes prepare', () => {
+test('Windows FFmpeg cache is restored before npm install invokes prepare', releaseOnly, () => {
   const workflow = yaml.load(fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'release-desktop.yml'), 'utf8',
   ));
@@ -26,14 +28,16 @@ test('desktop packaging publishes the artifacts required by electron-updater', (
 
   assert.deepEqual(builderConfig.publish, {
     provider: 'github',
-    owner: 'Anionex',
+    owner: 'Jungwoo-Ryu',
     repo: 'banana-slides',
   });
   assert.ok(macTargets.includes('dmg'), 'macOS releases must keep the user-facing DMG');
   assert.ok(macTargets.includes('zip'), 'macOS auto-update requires a ZIP payload');
   assert.equal(builderConfig.mac.identity, undefined, 'macOS signing credentials must not be forcibly disabled');
   assert.ok(builderConfig.files.includes('update-settings.js'));
+});
 
+test('desktop release workflow uploads signed update artifacts', releaseOnly, () => {
   const releaseWorkflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'release-desktop.yml'),
     'utf8',

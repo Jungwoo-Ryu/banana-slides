@@ -1,43 +1,5 @@
 #!/usr/bin/env python3
-"""
-Editable PPTX Export Script
-
-This script is used to generate editable images from a given picture PPTX Documentation。
-Support single or multiple photo batch processing。
-
-Usage method:
-    # Handle single pictures
-    python scripts/export_editable_pptx.py path/to/image.png
-
-    # Handle multiple pictures
-    python scripts/export_editable_pptx.py img1.png img2.png img3.png
-
-    # Process all pictures in the directory
-    python scripts/export_editable_pptx.py path/to/images/
-
-    # Specify output file
-    python scripts/export_editable_pptx.py image.png -o output.pptx
-
-    # Use different extraction methods
-    python scripts/export_editable_pptx.py image.png --extractor mineru
-    python scripts/export_editable_pptx.py image.png --extractor hybrid
-
-    # Using different techniques of context repair
-    python scripts/export_editable_pptx.py image.png --inpaint baidu
-    python scripts/export_editable_pptx.py image.png --inpaint generative
-    python scripts/export_editable_pptx.py image.png --inpaint hybrid
-
-Environmental requirements:
-    Requires Configuration .env File, containing the following variables：
-    - MINERU_TOKEN: MinerU API token
-    - BAIDU_API_KEY, BAIDU_SECRET_KEY: 100 degrees API Key (used for baidu/hybrid Methodology）
-    - GEMINI_API_KEY or OPENAI_API_KEY: For generative/hybrid Methodology
-
-Cost hint:
-    - 'generative' and 'hybrid' The background fixer will call on the texture model. API，Additional costs incurred
-    - 'baidu' Method for repairing images using 100 degrees API，Lower cost
-    - 'mineru' and 'hybrid' The extraction method is used. MinerU API
-"""
+"""Export editable slides using local Tesseract/OpenCV or company Azure image editing."""
 
 import os
 import sys
@@ -99,64 +61,16 @@ def collect_image_paths(paths: List[str]) -> List[str]:
     return result
 
 
-def create_service_config(
-    extractor_method: str = 'hybrid',
-    inpaint_method: str = 'hybrid'
-):
-    """
-    Create Service Configuration
-
-    Args:
-        extractor_method: Ripping method ('mineru' or 'hybrid')
-        inpaint_method: Background repair method ('generative', 'baidu', 'hybrid')
-    """
+def create_service_config(extractor_method: str = 'configured', inpaint_method: str = 'local'):
     from services.image_editability import ServiceConfig
-
-    # Select Configuration Based on Method
-    use_hybrid_extractor = (extractor_method == 'hybrid')
-    use_hybrid_inpaint = (inpaint_method == 'hybrid')
-
-    logger.info(f"Configuration: Ripping method={extractor_method}, Background fixes={inpaint_method}")
-
-    config = ServiceConfig.from_defaults(
-        use_hybrid_extractor=use_hybrid_extractor,
-        use_hybrid_inpaint=use_hybrid_inpaint,
-        max_depth=1  # Recursive Depth
-    )
-
-    # If you’re not, hybrid It’s... inpaint Method, manual configuration required
-    if inpaint_method != 'hybrid':
-        from services.image_editability import (
-            InpaintProviderFactory,
-            InpaintProviderRegistry
-        )
-
-        inpaint_registry = InpaintProviderRegistry()
-
-        if inpaint_method == 'generative':
-            provider = InpaintProviderFactory.create_generative_edit_provider()
-            inpaint_registry.register_default(provider)
-            logger.info("Use of generating restoration methods (to call on the comical model) API）")
-        elif inpaint_method == 'baidu':
-            provider = InpaintProviderFactory.create_baidu_inpaint_provider()
-            if provider:
-                inpaint_registry.register_default(provider)
-                logger.info("Use 100 Degree Image Restoration Method")
-            else:
-                logger.warning("100 degrees of repair not available, back to the method of generation")
-                provider = InpaintProviderFactory.create_generative_edit_provider()
-                inpaint_registry.register_default(provider)
-
-        config.inpaint_registry = inpaint_registry
-
-    return config
+    return ServiceConfig.from_defaults(extractor_method=extractor_method, inpaint_method=inpaint_method, max_depth=1)
 
 
 def export_editable_pptx(
     image_paths: List[str],
     output_file: str,
-    extractor_method: str = 'hybrid',
-    inpaint_method: str = 'hybrid',
+    extractor_method: str = 'configured',
+    inpaint_method: str = 'local',
     extract_text_styles: bool = True
 ):
     """
@@ -281,11 +195,11 @@ def main():
         epilog="""
 Example：:
   %(prog)s slide1.png slide2.png -o presentation.pptx
-  %(prog)s ./slides/ --extractor hybrid --inpaint baidu
+  %(prog)s ./slides/ --extractor configured --inpaint local
   %(prog)s image.png --no-text-styles
 
 Cost hint:
-  - 'generative' and 'hybrid' The background fixer will call on the texture model. API
+  - 'generative' The background fixer will call on the texture model. API
   - '--no-text-styles' Skipping text style extracts, decreasing API Call
         """
     )
@@ -304,16 +218,16 @@ Cost hint:
 
     parser.add_argument(
         '--extractor',
-        choices=['mineru', 'hybrid'],
-        default='hybrid',
-        help='Component extraction method (default): hybrid）'
+        choices=['configured'],
+        default='configured',
+        help='Component extraction method (default): local）'
     )
 
     parser.add_argument(
         '--inpaint',
-        choices=['generative', 'baidu', 'hybrid'],
-        default='hybrid',
-        help='Background fixer method (default): hybrid）。generative/hybrid We’ll call the Ventural Model.'
+        choices=['local', 'generative'],
+        default='local',
+        help='Background fixer method (default): local）。generative/local We’ll call the Ventural Model.'
     )
 
     parser.add_argument(

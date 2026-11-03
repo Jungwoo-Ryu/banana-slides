@@ -1660,15 +1660,10 @@ def process_ppt_renovation_task(task_id: str, project_id: str, ai_service,
                         _batch_id, md_text, extract_id, error_msg, _failed = file_parser_service.parse_file(page_pdf_path, filename)
                         if error_msg:
                             # Do not silently turn a parser failure into a blank, successful page.
-                            # In particular, this preserves MinerU credential failures for the UI.
-                            raise ValueError(f"MinerU parsing failed: {error_msg}")
+                            # In particular, this preserves local document parser credential failures for the UI.
+                            raise ValueError(f"Local document parsing failed: {error_msg}")
                         md_text = md_text or ''
 
-                        # Supplement with header/footer from layout.json
-                        if extract_id:
-                            hf_text = file_parser_service.extract_header_footer_from_layout(extract_id)
-                            if hf_text:
-                                md_text = hf_text + '\n\n' + md_text
 
                         if not md_text.strip():
                             content = {'title': f'Page {idx + 1}', 'points': [], 'description': ''}
@@ -1823,8 +1818,8 @@ def export_editable_pptx_with_recursive_analysis_task(
     page_ids: list = None,
     max_depth: int = 2,
     max_workers: int = 4,
-    export_extractor_method: str = 'hybrid',
-    export_inpaint_method: str = 'hybrid',
+    export_extractor_method: str = 'configured',
+    export_inpaint_method: str = 'local',
     enable_icon_subject_extraction: bool = True,
     app=None
 ):
@@ -1837,7 +1832,7 @@ def export_editable_pptx_with_recursive_analysis_task(
     - Supports any size and resolution
     - Recursively analyze the subgraphs and charts in the picture
     - Smarter coordinate map and element extraction
-    - I don’t need it. ai_service（Usage ImageEditabilityService and MinerU）
+    - I don’t need it. ai_service（Usage ImageEditabilityService and local document parser）
 
     Args:
         task_id: Tasks ID
@@ -1847,8 +1842,8 @@ def export_editable_pptx_with_recursive_analysis_task(
         page_ids: Optional Pages ID List (if available, only these pages are exported)）
         max_depth: Maximum Recursive Depth
         max_workers: Combination Number
-        export_extractor_method: Component extraction method ('mineru' or 'hybrid')
-        export_inpaint_method: Background repair method ('generative', 'baidu', 'hybrid')
+        export_extractor_method: Component extraction method ('configured')
+        export_inpaint_method: Background repair method ('local', 'generative')
         app: Flask Apply Examples
     """
     logger.info(f"🚀 Task {task_id} started: export_editable_pptx_with_recursive_analysis (project={project_id}, depth={max_depth}, workers={max_workers}, extractor={export_extractor_method}, inpaint={export_inpaint_method}, icon_subject_extraction={enable_icon_subject_extraction})")

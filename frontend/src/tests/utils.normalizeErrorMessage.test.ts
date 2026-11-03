@@ -26,16 +26,16 @@ describe('operational error guidance', () => {
     }
   });
 
-  test.each(['ko', 'en'])('uses server environment guidance for parser authentication (%s)', (lang) => {
+  test.each(['ko', 'en'])('uses local OCR guidance for parser failures (%s)', (lang) => {
     localStorage.setItem('banana-slides-language', lang);
-    const message = normalizeRenovationErrorMessage('Failed to get upload URL: MinerU API returned 401 Unauthorized: token expired');
-    expect(message).toContain('MINERU_TOKEN');
-    expect(message).toContain('MINERU_API_BASE');
+    const message = normalizeRenovationErrorMessage('Local document parsing failed: Tesseract is unavailable');
+    expect(message).toContain('Tesseract');
+    expect(message).toContain(lang === 'ko' ? '로컬' : 'locally');
     expect(message).not.toContain('Settings');
   });
 
-  test.each(['Azure API returned 401 Unauthorized', 'MinerU parsing failed: File upload failed: 403 Forbidden'])('does not misattribute another auth failure to the parser token: %s', (raw) => {
-    expect(normalizeRenovationErrorMessage(raw)).not.toContain('MINERU_TOKEN');
+  test.each(['Azure API returned 401 Unauthorized', 'Azure image request failed: 403 Forbidden'])('does not misattribute another auth failure to the local OCR: %s', (raw) => {
+    expect(normalizeRenovationErrorMessage(raw)).not.toContain('Tesseract');
     expect(normalizeRenovationErrorMessage(raw)).toContain('접근 권한');
   });
 });

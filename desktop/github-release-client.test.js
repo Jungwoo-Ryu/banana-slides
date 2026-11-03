@@ -14,7 +14,7 @@ test('paginates until GitHub returns a partial release page', async () => {
   const calls = [];
   const fullPage = Array.from({ length: 3 }, (_, index) => ({ id: index + 1 }));
   const finalPage = [{ id: 4 }];
-  const releases = await fetchGitHubReleases('Anionex', 'banana-slides', {
+  const releases = await fetchGitHubReleases('Jungwoo-Ryu', 'banana-slides', {
     perPage: 3,
     fetchPage: async (requestPath, options) => {
       calls.push({ requestPath, options });
@@ -26,11 +26,11 @@ test('paginates until GitHub returns a partial release page', async () => {
   assert.deepEqual(releases, [...fullPage, ...finalPage]);
   assert.deepEqual(calls, [
     {
-      requestPath: '/repos/Anionex/banana-slides/releases?per_page=3&page=1',
+      requestPath: '/repos/Jungwoo-Ryu/banana-slides/releases?per_page=3&page=1',
       options: { userAgent: 'pagination-test' },
     },
     {
-      requestPath: '/repos/Anionex/banana-slides/releases?per_page=3&page=2',
+      requestPath: '/repos/Jungwoo-Ryu/banana-slides/releases?per_page=3&page=2',
       options: { userAgent: 'pagination-test' },
     },
   ]);
@@ -38,7 +38,7 @@ test('paginates until GitHub returns a partial release page', async () => {
 
 test('rejects malformed release pages instead of reporting the app current', async () => {
   await assert.rejects(
-    fetchGitHubReleases('Anionex', 'banana-slides', {
+    fetchGitHubReleases('Jungwoo-Ryu', 'banana-slides', {
       fetchPage: async () => ({ message: 'rate limited' }),
     }),
     /invalid releases response/,

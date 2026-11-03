@@ -1,3 +1,5 @@
+> Historical implementation plan. Current document/OCR adapters are local only; see [ADAPTERS.md](ADAPTERS.md).
+
 # 한국어 로컬 웹 리팩토링 계획
 
 작성 시점: 구현 전. 대상: Jungwoo-Ryu/banana-slides #1.

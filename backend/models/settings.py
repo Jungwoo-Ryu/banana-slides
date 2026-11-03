@@ -21,8 +21,7 @@ class Settings(db.Model):
     max_description_workers = db.Column(db.Integer, nullable=True)  # Description of the maximum number of work-lines generated (NULL=use .env)
     max_image_workers = db.Column(db.Integer, nullable=True)        # Maximum number of worklines for image generation (NULL=use .env)
 
-    # Add： Large models and MinerU Relevant visual configuration (can be edited in settings page)）
-    mineru_api_base = db.Column(db.String(255), nullable=True)  # MinerU Service address (overrided) Config.MINERU_API_BASE）
+    # Add： Large models and local document parser Relevant visual configuration (can be edited in settings page)）
     output_language = db.Column(db.String(10), nullable=True)  # Output language preference (ko, en, auto)(NULL=use .env)
 
     # Reasoning settings (separate controls for text and image generation）

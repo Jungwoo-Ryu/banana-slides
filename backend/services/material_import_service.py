@@ -28,7 +28,7 @@ def import_reference_markdown_images_to_materials(
     markdown_content: Optional[str],
     upload_folder: str,
 ) -> int:
-    """Copy local MinerU markdown images into the project's material library."""
+    """Copy local parsed markdown images into the project's material library."""
     if not project_id or not markdown_content:
         return 0
 
@@ -43,7 +43,7 @@ def import_reference_markdown_images_to_materials(
     for alt_text, raw_image_url in _iter_markdown_images(markdown_content):
         try:
             image_url = unquote(raw_image_url).split("?", 1)[0].split("#", 1)[0]
-            source_path = _resolve_local_mineru_image(image_url, upload_root)
+            source_path = _resolve_local_parsed_image(image_url, upload_root)
             if source_path is None:
                 continue
 
@@ -91,12 +91,12 @@ def _iter_markdown_images(markdown_content: str):
         yield match.group(1), match.group(2).strip()
 
 
-def _resolve_local_mineru_image(image_url: str, upload_folder: Path) -> Optional[Path]:
+def _resolve_local_parsed_image(image_url: str, upload_folder: Path) -> Optional[Path]:
     image_url = image_url.split("?", 1)[0].split("#", 1)[0]
-    if not image_url.startswith("/files/mineru/"):
+    if not image_url.startswith("/files/parsed/"):
         return None
 
-    rel_path = image_url[len("/files/mineru/"):].lstrip("/\\")
+    rel_path = image_url[len("/files/parsed/"):].lstrip("/\\")
     if not rel_path:
         return None
 
@@ -105,11 +105,11 @@ def _resolve_local_mineru_image(image_url: str, upload_folder: Path) -> Optional
         logger.warning("Path traversal attempt blocked for parsed image: %s", image_url)
         return None
 
-    mineru_root = (upload_folder / "mineru_files").resolve()
-    candidate = (mineru_root / normalized_rel_path).resolve()
+    parsed_root = (upload_folder / "parsed_files").resolve()
+    candidate = (parsed_root / normalized_rel_path).resolve()
 
     try:
-        candidate.relative_to(mineru_root)
+        candidate.relative_to(parsed_root)
     except ValueError:
         logger.warning("Path traversal attempt blocked for parsed image: %s", image_url)
         return None
@@ -126,7 +126,7 @@ def _resolve_local_mineru_image(image_url: str, upload_folder: Path) -> Optional
 
     matched = matched.resolve()
     try:
-        matched.relative_to(mineru_root)
+        matched.relative_to(parsed_root)
     except ValueError:
         logger.warning("Path traversal attempt blocked for parsed image: %s", image_url)
         return None

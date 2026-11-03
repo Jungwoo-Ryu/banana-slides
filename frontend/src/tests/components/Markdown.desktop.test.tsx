@@ -1,21 +1,14 @@
 import { render, screen } from '@testing-library/react';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-const { getBackendPort } = vi.hoisted(() => {
-  const getBackendPort = vi.fn(() => '15410');
-  Object.defineProperty(window, 'electronAPI', {
-    configurable: true,
-    value: { getBackendPort },
-  });
-  return { getBackendPort };
+const getBackendPort = vi.fn(() => '15410');
+let Markdown: typeof import('@/components/shared/Markdown')['Markdown'];
+
+beforeAll(async () => {
+  Object.defineProperty(window, 'electronAPI', { configurable: true, value: { getBackendPort } });
+  ({ Markdown } = await import('@/components/shared/Markdown'));
+  expect(getBackendPort).toHaveBeenCalled();
 });
-
-vi.mock('@/utils', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/utils')>()),
-  isDesktop: true,
-}));
-
-import { Markdown } from '@/components/shared/Markdown';
 
 describe('Markdown desktop images', () => {
   afterAll(() => {
@@ -29,7 +22,6 @@ describe('Markdown desktop images', () => {
       </Markdown>,
     );
 
-    expect(getBackendPort).toHaveBeenCalled();
     expect(screen.getByAltText('material')).toHaveAttribute(
       'src',
       'http://127.0.0.1:15410/files/materials/example.png',

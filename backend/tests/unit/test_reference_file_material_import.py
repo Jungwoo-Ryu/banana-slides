@@ -9,7 +9,7 @@ from PIL import Image
 from conftest import assert_success_response
 from models import ReferenceFile, db
 from services.material_import_service import (
-    _resolve_local_mineru_image,
+    _resolve_local_parsed_image,
     import_reference_markdown_images_to_materials,
 )
 
@@ -32,10 +32,10 @@ def test_associate_completed_reference_file_imports_mineru_images_to_project_mat
     project_id = _create_project(client)
 
     upload_folder = Path(app.config["UPLOAD_FOLDER"])
-    source_image = upload_folder / "mineru_files" / "extract123" / "images" / "chart-abcdef.png"
+    source_image = upload_folder / "parsed_files" / "extract123" / "images" / "chart-abcdef.png"
     _write_test_image(source_image)
 
-    markdown = "Text\n![Policy cut-off](/files/mineru/extract123/images/chart-abcdef.png)\n"
+    markdown = "Text\n![Policy cut-off](/files/parsed/extract123/images/chart-abcdef.png)\n"
     with app.app_context():
         reference_file = ReferenceFile(
             filename="report.pdf",
@@ -72,10 +72,10 @@ def test_associate_imports_if_parsing_completes_during_refresh(client, app, monk
     project_id = _create_project(client)
 
     upload_folder = Path(app.config["UPLOAD_FOLDER"])
-    source_image = upload_folder / "mineru_files" / "race123" / "images" / "chart.png"
+    source_image = upload_folder / "parsed_files" / "race123" / "images" / "chart.png"
     _write_test_image(source_image)
 
-    markdown = "Text\n![Refresh & Finish](/files/mineru/race123/images/chart.png)\n"
+    markdown = "Text\n![Refresh & Finish](/files/parsed/race123/images/chart.png)\n"
     with app.app_context():
         reference_file = ReferenceFile(
             filename="race.pdf",
@@ -118,7 +118,7 @@ def test_associate_succeeds_if_material_import_fails(client, app, monkeypatch):
             file_size=123,
             file_type="pdf",
             parse_status="completed",
-            markdown_content="![Figure](/files/mineru/extract/images/missing.png)",
+            markdown_content="![Figure](/files/parsed/extract/images/missing.png)",
         )
         db.session.add(reference_file)
         db.session.commit()
@@ -144,12 +144,12 @@ def test_import_reference_markdown_images_handles_mineru_prefix_paths(client, ap
     project_id = _create_project(client)
 
     upload_folder = Path(app.config["UPLOAD_FOLDER"])
-    source_image = upload_folder / "mineru_files" / "extract456" / "images" / "very-long-image-name.png"
+    source_image = upload_folder / "parsed_files" / "extract456" / "images" / "very-long-image-name.png"
     _write_test_image(source_image)
 
     imported_count = import_reference_markdown_images_to_materials(
         project_id=project_id,
-        markdown_content="![Chart](/files/mineru/extract456/images/very-long-image.png)",
+        markdown_content="![Chart](/files/parsed/extract456/images/very-long-image.png)",
         upload_folder=app.config["UPLOAD_FOLDER"],
     )
     db.session.commit()
@@ -162,14 +162,14 @@ def test_import_reference_markdown_images_deduplicates_repeated_urls(client, app
     project_id = _create_project(client)
 
     upload_folder = Path(app.config["UPLOAD_FOLDER"])
-    source_image = upload_folder / "mineru_files" / "extract789" / "images" / "chart.png"
+    source_image = upload_folder / "parsed_files" / "extract789" / "images" / "chart.png"
     _write_test_image(source_image)
 
     imported_count = import_reference_markdown_images_to_materials(
         project_id=project_id,
         markdown_content="\n".join([
-            "![Chart](/files/mineru/extract789/images/chart.png)",
-            "![Chart](/files/mineru/extract789/images/chart.png)",
+            "![Chart](/files/parsed/extract789/images/chart.png)",
+            "![Chart](/files/parsed/extract789/images/chart.png)",
         ]),
         upload_folder=app.config["UPLOAD_FOLDER"],
     )
@@ -185,9 +185,9 @@ def test_import_reference_markdown_images_deduplicates_per_project(client, app):
     second_project_id = _create_project(client)
 
     upload_folder = Path(app.config["UPLOAD_FOLDER"])
-    source_image = upload_folder / "mineru_files" / "extract_shared" / "images" / "chart.png"
+    source_image = upload_folder / "parsed_files" / "extract_shared" / "images" / "chart.png"
     _write_test_image(source_image)
-    markdown = "![Share Diagram](/files/mineru/extract_shared/images/chart.png)"
+    markdown = "![Share Diagram](/files/parsed/extract_shared/images/chart.png)"
 
     first_count = import_reference_markdown_images_to_materials(
         project_id=first_project_id,
@@ -220,12 +220,12 @@ def test_import_reference_markdown_images_handles_parentheses_in_urls(client, ap
     project_id = _create_project(client)
 
     upload_folder = Path(app.config["UPLOAD_FOLDER"])
-    source_image = upload_folder / "mineru_files" / "extract_parens" / "images" / "chart (1).png"
+    source_image = upload_folder / "parsed_files" / "extract_parens" / "images" / "chart (1).png"
     _write_test_image(source_image)
 
     imported_count = import_reference_markdown_images_to_materials(
         project_id=project_id,
-        markdown_content="![Brackets](/files/mineru/extract_parens/images/chart (1).png)",
+        markdown_content="![Brackets](/files/parsed/extract_parens/images/chart (1).png)",
         upload_folder=app.config["UPLOAD_FOLDER"],
     )
     db.session.commit()
@@ -241,12 +241,12 @@ def test_import_reference_markdown_images_strips_caption_html(client, app):
     project_id = _create_project(client)
 
     upload_folder = Path(app.config["UPLOAD_FOLDER"])
-    source_image = upload_folder / "mineru_files" / "extract_html" / "images" / "chart.png"
+    source_image = upload_folder / "parsed_files" / "extract_html" / "images" / "chart.png"
     _write_test_image(source_image)
 
     imported_count = import_reference_markdown_images_to_materials(
         project_id=project_id,
-        markdown_content="![Chart <img src=x onerror=alert(1)>](/files/mineru/extract_html/images/chart.png)",
+        markdown_content="![Chart <img src=x onerror=alert(1)>](/files/parsed/extract_html/images/chart.png)",
         upload_folder=app.config["UPLOAD_FOLDER"],
     )
     db.session.commit()
@@ -261,10 +261,10 @@ def test_import_reference_markdown_images_decodes_urls_and_truncates_caption(cli
     project_id = _create_project(client)
 
     upload_folder = Path(app.config["UPLOAD_FOLDER"])
-    source_image = upload_folder / "mineru_files" / "extract_cn" / "images" / "Figure.png"
+    source_image = upload_folder / "parsed_files" / "extract_cn" / "images" / "Figure.png"
     _write_test_image(source_image)
 
-    encoded_url = quote("/files/mineru/extract_cn/images/Figure.png", safe="/")
+    encoded_url = quote("/files/parsed/extract_cn/images/Figure.png", safe="/")
     long_caption = "Figure" * 600
     imported_count = import_reference_markdown_images_to_materials(
         project_id=project_id,
@@ -284,12 +284,12 @@ def test_import_reference_markdown_images_strips_query_and_fragment(client, app)
     project_id = _create_project(client)
 
     upload_folder = Path(app.config["UPLOAD_FOLDER"])
-    source_image = upload_folder / "mineru_files" / "extract_query" / "images" / "chart.png"
+    source_image = upload_folder / "parsed_files" / "extract_query" / "images" / "chart.png"
     _write_test_image(source_image)
 
     imported_count = import_reference_markdown_images_to_materials(
         project_id=project_id,
-        markdown_content="![Chart](/files/mineru/extract_query/images/chart.png?v=1#page)",
+        markdown_content="![Chart](/files/parsed/extract_query/images/chart.png?v=1#page)",
         upload_folder=app.config["UPLOAD_FOLDER"],
     )
     db.session.commit()
@@ -301,8 +301,8 @@ def test_import_reference_markdown_images_strips_query_and_fragment(client, app)
     duplicate_count = import_reference_markdown_images_to_materials(
         project_id=project_id,
         markdown_content="\n".join([
-            "![Chart](/files/mineru/extract_query/images/chart.png?v=2)",
-            "![Chart](/files/mineru/extract_query/images/chart.png#another-page)",
+            "![Chart](/files/parsed/extract_query/images/chart.png?v=2)",
+            "![Chart](/files/parsed/extract_query/images/chart.png#another-page)",
         ]),
         upload_folder=app.config["UPLOAD_FOLDER"],
     )
@@ -313,11 +313,11 @@ def test_import_reference_markdown_images_strips_query_and_fragment(client, app)
     assert len(data["data"]["materials"]) == 1
 
 
-def test_resolve_local_mineru_image_rejects_traversal(app):
+def test_resolve_local_parsed_image_rejects_traversal(app):
     upload_folder = Path(app.config["UPLOAD_FOLDER"])
 
-    assert _resolve_local_mineru_image("/files/mineru/../secret.png", upload_folder) is None
-    assert _resolve_local_mineru_image("/files/mineru/extract/../../secret.png", upload_folder) is None
+    assert _resolve_local_parsed_image("/files/parsed/../secret.png", upload_folder) is None
+    assert _resolve_local_parsed_image("/files/parsed/extract/../../secret.png", upload_folder) is None
 
 
 def test_import_reference_markdown_images_rejects_encoded_traversal(client, app):
@@ -325,14 +325,14 @@ def test_import_reference_markdown_images_rejects_encoded_traversal(client, app)
 
     imported_count = import_reference_markdown_images_to_materials(
         project_id=project_id,
-        markdown_content="![bad](/files/mineru/%2e%2e/secret.png)",
+        markdown_content="![bad](/files/parsed/%2e%2e/secret.png)",
         upload_folder=app.config["UPLOAD_FOLDER"],
     )
 
     assert imported_count == 0
 
 
-def test_resolve_local_mineru_image_returns_none_when_parent_missing(app):
+def test_resolve_local_parsed_image_returns_none_when_parent_missing(app):
     upload_folder = Path(app.config["UPLOAD_FOLDER"])
 
-    assert _resolve_local_mineru_image("/files/mineru/missing/images/chart.png", upload_folder) is None
+    assert _resolve_local_parsed_image("/files/parsed/missing/images/chart.png", upload_folder) is None

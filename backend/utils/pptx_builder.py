@@ -278,7 +278,7 @@ class PPTXBuilder:
         width_pt = (width_px / dpi) * 72
         height_pt = (height_px / dpi) * 72
 
-        # MinerU bbox is tight, use it directly
+        # local document parser bbox is tight, use it directly
         # Textbox margins are set to 0 in add_text_element()
         usable_width_pt = width_pt
         usable_height_pt = height_pt
@@ -433,7 +433,7 @@ class PPTXBuilder:
             actual_text = ''.join(latex_to_display_text(seg.text) for seg in latex_segments)
 
         # Expand bbox slightly to prevent text overflow
-        # MinerU bbox is tight, but font rendering may need extra space
+        # local document parser bbox is tight, but font rendering may need extra space
         EXPAND_RATIO = 0.01  # 1% expansion
         bbox_width = bbox[2] - bbox[0]
         bbox_height = bbox[3] - bbox[1]

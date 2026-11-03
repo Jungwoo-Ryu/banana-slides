@@ -11,7 +11,7 @@ from typing import Any
 
 import requests
 
-DOCKER_NAMESPACE = os.getenv("DOCKERHUB_NAMESPACE") or "anoinex"
+DOCKER_NAMESPACE = os.getenv("DOCKERHUB_NAMESPACE") or ""
 DOCKER_REPOSITORY = os.getenv("DOCKERHUB_REPOSITORY") or "banana-slides"
 DOCKER_HUB_TAGS_URL = "https://hub.docker.com/v2/repositories/{namespace}/{repository}/tags"
 SOURCE_REMOTE = os.getenv("APP_SOURCE_REMOTE") or "origin"
@@ -156,6 +156,8 @@ def _pick_latest(tags: list[TagInfo]) -> tuple[TagInfo | None, str]:
 
 
 def fetch_docker_hub_tags(namespace: str = DOCKER_NAMESPACE, repository: str = DOCKER_REPOSITORY) -> list[TagInfo]:
+    if not namespace:
+        return []
     response = requests.get(
         DOCKER_HUB_TAGS_URL.format(namespace=namespace, repository=repository),
         params={"page_size": 25},

@@ -46,7 +46,7 @@ class ServiceConfig:
             max_depth: Maximum Recursive Depth (default) 1）
             min_image_size: Minimum Image Dimensions
             min_image_area: Minimum picture area
-            segmentation_provider: 100-degree smart map Provider（optional) for the main extract of icons
+            segmentation_provider: Optional local provider for icon subject extraction
             enable_icon_subject_extraction: Whether or not to enable icon main extract (default) False，Need to cooperate. provider）
         """
         self.upload_folder = upload_folder
@@ -61,67 +61,22 @@ class ServiceConfig:
     @classmethod
     def from_defaults(
         cls,
-        mineru_token: Optional[str] = None,
-        mineru_api_base: Optional[str] = None,
         upload_folder: Optional[str] = None,
         ai_service: Optional[Any] = None,
-        use_hybrid_extractor: bool = True,
-        use_hybrid_inpaint: bool = True,
-        extractor_method: Optional[str] = None,  # 'mineru' or 'hybrid'，Priority use_hybrid_extractor
-        inpaint_method: Optional[str] = None,    # 'generative', 'baidu', 'hybrid'，Priority use_hybrid_inpaint
-        **kwargs
+        extractor_method: Optional[str] = None,
+        inpaint_method: Optional[str] = None,
+        **kwargs,
     ) -> 'ServiceConfig':
-        """
-        Create Configuration From Default Parameters
-
-        Default Configuration (Recommended for Export PPTX）：
-        - Element extraction： Mixed extractor（MinerU Board Analysis + 100 degrees high accuracy OCR）
-        - Background generation： mixing Inpaint（100 Degree Image Restoration + Generating Paint Upgrade）
-        - Recursive Depth：1
-
-        Mixed Ripper Merger Policy：
-        1. Picture Type bbox 100 degrees contained in it OCR bbox → Delete
-        2. Table Type bbox 100 degrees contained in it OCR bbox → Keep 100 Degrees OCR Result, Delete MinerU Table bbox
-        3. Other types and 100 degrees OCR bbox There’s an intersection. → Use 100 Degrees OCR Result
-
-        Mixed Inpaint Policy：
-        1. First fixes the exact removal of the text from the given area with 100 degrees of image
-        2. Use a generating model to enhance the whole picture
-
-        Support dynamic registration of new element types to different extractors/Redraw Method。
-
-        If the parameters are not provided, they automatically start Flask app.config Fetch Configuration。
-
-        Args:
-            mineru_token: MinerU API token（Optional, Default From Flask config Access）
-            mineru_api_base: MinerU API base URL（Optional, Default From Flask config Access）
-            upload_folder: Upload folder path (optional, default from Flask config Access）
-            ai_service: AI Examples of services (optional, used for generating redrawing)）
-            use_hybrid_extractor: Whether or not to use a hybrid extractor (default) True，overridden by extractor_method）
-            use_hybrid_inpaint: Whether to use mixing Inpaint（Default True，overridden by inpaint_method）
-            extractor_method: Component extraction method，'mineru' or 'hybrid'（Priority use_hybrid_extractor）
-            inpaint_method: Background repair method，'generative', 'baidu', 'hybrid'（Priority use_hybrid_inpaint）
-            **kwargs: Other configuration parameters
-                - max_depth: Maximum Recursive Depth (default) 1）
-                - min_image_size: Minimum image size (default) 200）
-                - min_image_area: Minimum picture area (default) 40000）
-                - contain_threshold: Mixed extractor contains a judgement threshold (default) 0.8）
-                - intersection_threshold: Mixed extractor cross-judgment threshold (default) 0.3）
-                - enhance_quality: Mixed Inpaint Whether to enable painting upgrades (default) True）
-
-        Returns:
-            ServiceConfig Examples
-
-        Raises:
-            ValueError: If... mineru_token Unconfigured
-        """
+        """Use local OCR and OpenCV, with optional company Azure image editing."""
+        if extractor_method not in (None, 'configured'):
+            raise ValueError('OCR 추출 방식은 configured만 지원합니다.')
         from services.runtime_config import setting
         from .local_adapters import ConfiguredOCRExtractor, LocalInpaintProvider
         upload_path = Path(upload_folder or setting('UPLOAD_FOLDER', './uploads')).resolve()
         registry = ExtractorRegistry()
         registry.register_default(ConfiguredOCRExtractor())
         inpaint = InpaintProviderRegistry()
-        method = inpaint_method if inpaint_method in ('local', 'generative') else setting('INPAINTING_PROVIDER', 'local')
+        method = inpaint_method or setting('INPAINTING_PROVIDER', 'local')
         if method == 'local':
             inpaint.register_default(LocalInpaintProvider())
         elif method == 'generative':

@@ -1,10 +1,7 @@
-"""RMBG-2.0 ONNX Local Jurisprudence Curve provider。
+"""Optional local RMBG-2.0 ONNX inference.
 
-Model：AI-ModelScope/RMBG-2.0 (FP16 ONNX mirror)，CPU Arguments。
-Use lazy download for the first time ~/.cache/banana-slides/models/rmbg-2.0/model_fp16.onnx，
-It’s possible. RMBG_MODEL_PATH Environment variable specifies the local model path to go around download。
-
-Note： Models are non-commercial license，Only for local reasoning。
+Supply an approved, separately licensed model via RMBG_MODEL_PATH.
+No model host or automatic model download is configured.
 """
 import logging
 import os

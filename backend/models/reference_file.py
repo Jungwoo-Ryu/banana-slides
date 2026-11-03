@@ -22,7 +22,6 @@ class ReferenceFile(db.Model):
     parse_status = db.Column(db.String(50), nullable=False, default='pending')  # pending|parsing|completed|failed
     markdown_content = db.Column(db.Text, nullable=True)  # Parsed markdown with enhanced image descriptions
     error_message = db.Column(db.Text, nullable=True)  # Error message if parsing failed
-    mineru_batch_id = db.Column(db.String(100), nullable=True)  # Mineru service batch ID
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 

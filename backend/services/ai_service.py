@@ -196,7 +196,7 @@ class AIService:
         pattern = r'!\[.*?\]\((.*?)\)'
         matches = re.findall(pattern, text)
 
-        # Filter empty strings, support http/https URL and /files/ Local path to start (includes) mineru、materials Wait.）
+        # Filter empty strings, support http/https URL and /files/ Local path to start (includes) parsed files and materials Wait.）
         urls = []
         for url in matches:
             url = url.strip()
@@ -328,19 +328,19 @@ class AIService:
             raise
 
     @staticmethod
-    def _convert_mineru_path_to_local(mineru_path: str) -> Optional[str]:
+    def _convert_parsed_path_to_local(parsed_path: str) -> Optional[str]:
         """
-        Yes, sir. /files/mineru/{extract_id}/{rel_path} Convert the format path to the local filesystem path (support prefix matching)）
+        Yes, sir. /files/parsed/{extract_id}/{rel_path} Convert the format path to the local filesystem path (support prefix matching)）
 
         Args:
-            mineru_path: MinerU URL Path, formatted as /files/mineru/{extract_id}/{rel_path}
+            parsed_path: local document parser URL Path, formatted as /files/parsed/{extract_id}/{rel_path}
 
         Returns:
             Local filesystem path, return if conversion fails None
         """
-        from utils.path_utils import find_mineru_file_with_prefix
+        from utils.path_utils import find_parsed_file_with_prefix
 
-        matched_path = find_mineru_file_with_prefix(mineru_path)
+        matched_path = find_parsed_file_with_prefix(parsed_path)
         return str(matched_path) if matched_path else None
 
     @staticmethod
@@ -1131,16 +1131,16 @@ class AIService:
                                 owned_images.append(downloaded_img)
                             else:
                                 logger.warning(f"Failed to download image from URL: {ref_img}, skipping...")
-                        elif ref_img.startswith('/files/mineru/'):
-                            # MinerU Local file path, need to be converted to filesystem path (support prefix matching)）
-                            local_path = self._convert_mineru_path_to_local(ref_img)
+                        elif ref_img.startswith('/files/parsed/'):
+                            # local document parser Local file path, need to be converted to filesystem path (support prefix matching)）
+                            local_path = self._convert_parsed_path_to_local(ref_img)
                             if local_path and os.path.exists(local_path):
                                 opened = Image.open(local_path)
                                 ref_images.append(opened)
                                 owned_images.append(opened)
-                                logger.debug(f"Loaded MinerU image from local path: {local_path}")
+                                logger.debug(f"Loaded local document parser image from local path: {local_path}")
                             else:
-                                logger.warning(f"MinerU image file not found (with prefix matching): {ref_img}, skipping...")
+                                logger.warning(f"local document parser image file not found (with prefix matching): {ref_img}, skipping...")
                         elif ref_img.startswith('/files/'):
                             # Universal /files/ Path（materials、Project files, etc.), converted to file system path
                             upload_folder = get_config().UPLOAD_FOLDER

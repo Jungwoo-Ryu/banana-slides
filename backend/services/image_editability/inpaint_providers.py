@@ -1,15 +1,4 @@
-"""
-Inpaint Provider - It’s different in abstraction. inpaint Achieved
-
-Provide multiple redrawing methods：
-1. DefaultInpaintProvider - Based on mask Accurate area redrawing (use) Volcengine Inpainting Services）
-2. GenerativeEditInpaintProvider - Edit repainting based on an integer based on a large generating model (e.g., Gemini Picture Editor）
-3. BaiduInpaintProvider - 100 Degree Image Restoration API Redraw the area
-4. HybridInpaintProvider - Mixing method： 100 degrees of text removal first, followed by the generation of paint upgrades
-
-and the registration form：
-- InpaintProviderRegistry - Map Registration Table for Element Type to Redraw Method
-"""
+"""Local mask/inpainting abstractions and optional company Azure image editing."""
 import logging
 import tempfile
 from abc import ABC, abstractmethod

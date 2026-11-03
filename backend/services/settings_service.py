@@ -43,9 +43,7 @@ def serialize_settings(preferences):
             result['providers'][role] = {'configured': False, 'message': str(error)}
     result['external_services'] = {
         'document_parser': current_app.config.get('DOCUMENT_PARSER', 'local'),
-        'document_parser_url': current_app.config.get('DOCUMENT_PARSER_URL', ''),
         'ocr_provider': current_app.config.get('OCR_PROVIDER', 'local'),
-        'ocr_url': current_app.config.get('OCR_API_URL', ''),
         'inpainting_provider': current_app.config.get('INPAINTING_PROVIDER', 'local'),
         'tts_enabled': result['providers']['tts']['configured'],
     }

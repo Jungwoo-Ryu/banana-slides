@@ -61,8 +61,6 @@ def _parse_file_async(file_id: str, file_path: str, filename: str, app):
 
             # Initialize parser service
             parser = FileParserService(
-                mineru_token=current_app.config['MINERU_TOKEN'],
-                mineru_api_base=current_app.config['MINERU_API_BASE'],
             )
 
             # Parse file
@@ -70,7 +68,7 @@ def _parse_file_async(file_id: str, file_path: str, filename: str, app):
             batch_id, markdown_content, extract_id, error_message, failed_image_count = parser.parse_file(file_path, filename)
 
             # Update database
-            reference_file.mineru_batch_id = batch_id
+
             if error_message:
                 reference_file.parse_status = 'failed'
                 reference_file.error_message = error_message
@@ -353,7 +351,7 @@ def trigger_file_parse(file_id):
             reference_file.error_message = None
             # Empty the parse results before they are emptied so that they can be resolved
             reference_file.markdown_content = None
-            reference_file.mineru_batch_id = None
+
             db.session.commit()
 
         # Path to getting files

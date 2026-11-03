@@ -883,8 +883,6 @@ def regenerate_renovation_page(project_id, page_id):
         ai_service = get_ai_service()
         from services.file_parser_service import FileParserService
         file_parser_service = FileParserService(
-            mineru_api_base=current_app.config.get('MINERU_API_BASE', ''),
-            mineru_token=current_app.config.get('MINERU_TOKEN', ''),
             upload_folder=current_app.config.get('UPLOAD_FOLDER', 'uploads')
         )
         file_service = FileService(current_app.config['UPLOAD_FOLDER'])
@@ -901,11 +899,6 @@ def regenerate_renovation_page(project_id, page_id):
 
         md_text = md_text or ''
 
-        # Supplement with header/footer from layout.json
-        if extract_id:
-            hf_text = file_parser_service.extract_header_footer_from_layout(extract_id)
-            if hf_text:
-                md_text = hf_text + '\n\n' + md_text
 
         if not md_text.strip():
             return error_response('PARSE_ERROR', f"Failed to extract content from page {page.order_index + 1}", 400)

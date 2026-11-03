@@ -8,7 +8,7 @@ def test_mineru_traversal_and_symlink_never_reach_image_provider(monkeypatch, tm
     from config import get_config
     from services.ai_service import AIService
     upload = tmp_path / 'uploads'
-    valid = upload / 'mineru_files' / 'extract' / 'valid.png'
+    valid = upload / 'parsed_files' / 'extract' / 'valid.png'
     valid.parent.mkdir(parents=True)
     Image.new('RGB', (4, 4), 'blue').save(valid)
     secret = tmp_path / 'uploads_secret' / 'flag.png'
@@ -25,9 +25,9 @@ def test_mineru_traversal_and_symlink_never_reach_image_provider(monkeypatch, tm
     provider.generate_image.side_effect = capture
     AIService(text_provider=object(), image_provider=provider, caption_provider=object()).generate_image(
         'test', additional_ref_images=[
-            '/files/mineru/../../uploads_secret/flag.png',
-            '/files/mineru/extract/linked.png',
-            '/files/mineru/extract/valid.png',
+            '/files/parsed/../../uploads_secret/flag.png',
+            '/files/parsed/extract/linked.png',
+            '/files/parsed/extract/valid.png',
         ])
     refs = provider.generate_image.call_args.kwargs['ref_images']
     assert len(refs) == 1

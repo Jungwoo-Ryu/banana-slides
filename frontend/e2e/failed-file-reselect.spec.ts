@@ -12,7 +12,7 @@ const mockFileList = () => ({
   success: true,
   data: {
     files: [
-      { id: FILE_FAILED, filename: 'broken.pdf', file_size: 1000, file_type: 'application/pdf', parse_status: 'failed', error_message: 'MinerU timeout' },
+      { id: FILE_FAILED, filename: 'broken.pdf', file_size: 1000, file_type: 'application/pdf', parse_status: 'failed', error_message: 'Local parsing timed out' },
       { id: FILE_COMPLETED, filename: 'good.pdf', file_size: 2000, file_type: 'application/pdf', parse_status: 'completed' },
     ]
   }
@@ -67,12 +67,12 @@ test.describe('Failed file re-selection (mocked)', () => {
       data: {
         id: PROJECT_ID, project_id: PROJECT_ID, title: 'Test', status: 'OUTLINE_GENERATED', creation_type: 'idea',
         pages: [{ id: 'p1', page_id: 'p1', title: 'Page 1', order_index: 0, outline_content: { title: 'Page 1', points: ['p'] } }],
-        reference_files: [{ id: FILE_FAILED, filename: 'broken.pdf', file_size: 1000, file_type: 'application/pdf', parse_status: 'failed', error_message: 'MinerU timeout' }]
+        reference_files: [{ id: FILE_FAILED, filename: 'broken.pdf', file_size: 1000, file_type: 'application/pdf', parse_status: 'failed', error_message: 'Local parsing timed out' }]
       }
     }) }))
     await page.route(`**/api/projects/${PROJECT_ID}/pages`, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { pages: [] } }) }))
-    await page.route(`**/api/reference-files/project/${PROJECT_ID}`, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { files: [{ id: FILE_FAILED, filename: 'broken.pdf', file_size: 1000, file_type: 'application/pdf', parse_status: 'failed', error_message: 'MinerU timeout' }] } }) }))
-    await page.route(`**/api/reference-files/${FILE_FAILED}`, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { file: { id: FILE_FAILED, filename: 'broken.pdf', file_size: 1000, file_type: 'application/pdf', parse_status: 'failed', error_message: 'MinerU timeout' } } }) }))
+    await page.route(`**/api/reference-files/project/${PROJECT_ID}`, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { files: [{ id: FILE_FAILED, filename: 'broken.pdf', file_size: 1000, file_type: 'application/pdf', parse_status: 'failed', error_message: 'Local parsing timed out' }] } }) }))
+    await page.route(`**/api/reference-files/${FILE_FAILED}`, r => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { file: { id: FILE_FAILED, filename: 'broken.pdf', file_size: 1000, file_type: 'application/pdf', parse_status: 'failed', error_message: 'Local parsing timed out' } } }) }))
     await page.route(`**/api/reference-files/${FILE_FAILED}/parse`, r => {
       parseCalled = true
       r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: { file: { id: FILE_FAILED, filename: 'broken.pdf', file_size: 1000, file_type: 'application/pdf', parse_status: 'parsing' }, message: 'ok' } }) })

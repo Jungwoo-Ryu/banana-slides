@@ -9,7 +9,7 @@ from .response import (
     rate_limit_error
 )
 from .validators import validate_project_status, validate_page_status, allowed_file
-from .path_utils import convert_mineru_path_to_local, find_mineru_file_with_prefix, find_file_with_prefix
+from .path_utils import convert_parsed_path_to_local, find_parsed_file_with_prefix, find_file_with_prefix
 from .pptx_builder import PPTXBuilder
 from .page_utils import parse_page_ids_from_query, parse_page_ids_from_body, get_filtered_pages
 
@@ -24,8 +24,8 @@ __all__ = [
     'validate_project_status',
     'validate_page_status',
     'allowed_file',
-    'convert_mineru_path_to_local',
-    'find_mineru_file_with_prefix',
+    'convert_parsed_path_to_local',
+    'find_parsed_file_with_prefix',
     'find_file_with_prefix',
     'PPTXBuilder',
     'parse_page_ids_from_query',

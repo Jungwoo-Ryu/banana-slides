@@ -6,7 +6,7 @@ const { isVersionGreater, normalizeReleaseVersion, selectLatestDesktopRelease } 
 
 test('live GitHub releases expose an installable update after rc.3', { timeout: 20000 }, async () => {
   const releases = await fetchGitHubReleases(
-    'Anionex',
+    'Jungwoo-Ryu',
     'banana-slides',
     {
       token: process.env.GITHUB_TOKEN || '',

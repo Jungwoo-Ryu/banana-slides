@@ -135,16 +135,14 @@ export function normalizeErrorMessage(
   return choose('작업을 완료하지 못했습니다. 입력과 서비스 설정을 확인하세요.', 'Could not complete the operation. Check the input and service configuration.');
 }
 
-/** Describe parser authentication failures without exposing upstream response bodies. */
+/** Explain local PDF parsing failures without exposing internal details. */
 export function normalizeRenovationErrorMessage(errorMessage: string | null | undefined): string {
   const message = String(errorMessage || '').toLowerCase();
   const lang = localStorage.getItem('banana-slides-language') || 'ko';
-  const parserStage = /get upload url|requesting upload url|file-urls\/batch|task status|extract-results|file parsing failed/.test(message);
-  const credentialFailure = /401|403|unauthorized|forbidden|token expired|invalid token|token invalid|token has expired|authenticate failed|authentication failed/.test(message);
-  if (message.includes('mineru') && parserStage && credentialFailure) {
+  if (/local document parsing failed|tesseract|failed to extract content/.test(message)) {
     return lang.startsWith('en')
-      ? 'PPT Renovation could not parse the PDF. Check MINERU_TOKEN and MINERU_API_BASE in the server environment, restart the backend, then create the renovation project again.'
-      : 'PDF를 파싱하지 못했습니다. 서버 환경변수 MINERU_TOKEN·MINERU_API_BASE와 권한을 확인하고 백엔드를 재시작한 뒤 프로젝트를 다시 만드세요.';
+      ? 'Could not read the PDF locally. Check the file and install Tesseract language data for scanned pages.'
+      : 'PDF를 로컬에서 읽지 못했습니다. 파일 상태와 스캔 문서용 Tesseract·언어 데이터 설치를 확인하세요.';
   }
   return normalizeErrorMessage(errorMessage, lang);
 }

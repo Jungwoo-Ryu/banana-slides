@@ -26,12 +26,12 @@ test('associating a parsed reference file imports document images into project m
   const projectId = (await projectResp.json()).data.project_id as string
 
   const extractId = `e2e_${Date.now()}`
-  const imageDir = path.join(UPLOADS, 'mineru_files', extractId, 'images')
+  const imageDir = path.join(UPLOADS, 'parsed_files', extractId, 'images')
   fs.mkdirSync(imageDir, { recursive: true })
   fs.copyFileSync(FIXTURE_IMAGE, path.join(imageDir, 'doc-chart-original-name.jpg'))
 
   const referenceFileId = crypto.randomUUID()
-  const markdown = `Document Contents\n![Document charts](/files/mineru/${extractId}/images/doc-chart-original-name.jpg)\n`
+  const markdown = `Document Contents\n![Document charts](/files/parsed/${extractId}/images/doc-chart-original-name.jpg)\n`
   sql(`
     INSERT INTO reference_files (
       id, project_id, filename, file_path, file_size, file_type, parse_status,

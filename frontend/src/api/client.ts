@@ -66,7 +66,7 @@ export function triggerDownload(relativeOrAbsoluteUrl: string, filename?: string
     const url = /^https?:\/\//i.test(relativeOrAbsoluteUrl)
       ? relativeOrAbsoluteUrl
       : `${getBaseURL()}${normalizedPath}`;
-    let fallbackFilename = 'download';
+    let fallbackFilename: string;
     try {
       fallbackFilename = new URL(url).pathname.split('/').pop() || 'download';
     } catch {

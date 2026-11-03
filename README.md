@@ -52,7 +52,7 @@ AZURE_OPENAI_TTS_VOICE=alloy
 
 일반 PPTX는 페이지별 이미지를 담습니다. 편집형 PPTX는 OCR 텍스트 상자를 재구성하므로 표·차트·글꼴·배경의 완전 복원을 보장하지 않습니다. 영역 드래그 수정은 참고 이미지와 프롬프트로 재생성하는 방식이므로 지정 영역 밖도 바뀔 수 있습니다.
 
-AI 생성·분석·TTS는 지정한 사내 Azure로 관련 내용을 전송합니다. 문서/OCR은 기본 로컬이며 사내 HTTP/MinerU 호환 어댑터를 명시적으로 설정할 수 있습니다. 데이터는 기본적으로 `uploads/`, DB는 `backend/instance/database.db`에 저장합니다. 기존 데이터 위치를 바꾸려면 서버 종료 후 직접 옮기고 `UPLOAD_FOLDER`, `EXPORT_FOLDER`, `DATABASE_PATH`를 설정하세요.
+AI 생성·분석·TTS는 지정한 사내 Azure로 관련 내용을 전송합니다. 문서/OCR은 로컬 전용이며 외부 업로드 어댑터는 제거했습니다. PDF는 PyMuPDF, Office 문서는 MarkItDown, OCR은 Tesseract를 사용합니다. 데이터는 기본적으로 `uploads/`, DB는 `backend/instance/database.db`에 저장합니다. 기존 데이터 위치를 바꾸려면 서버 종료 후 직접 옮기고 `UPLOAD_FOLDER`, `EXPORT_FOLDER`, `DATABASE_PATH`를 설정하세요. 교체 내용과 기존 파일 이관은 [의존성 정리 기록](docs/enterprise/DEPENDENCY_HARDENING.md)을 참고하세요.
 
 ## 검증과 후속 통합
 
