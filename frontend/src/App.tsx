@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { isWails, nativeApp } from './utils/wails';
+import { apiClient } from './api/client';
+import { BrowserRouter, HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Home } from './pages/Home';
 import { History } from './pages/History';
 import { OutlineEditor } from './pages/OutlineEditor';
@@ -13,6 +15,10 @@ import { useToast } from './components/shared';
 function App() {
   const { currentProject, syncProject, error, setError } = useProjectStore();
   const { show, ToastContainer } = useToast();
+
+  useEffect(() => {
+    if (isWails()) void apiClient.get('/health').then(() => nativeApp()?.UIReady());
+  }, []);
 
   // Restore Project Status
   useEffect(() => {
@@ -36,7 +42,7 @@ function App() {
       <div>
 
           {(() => {
-            const Router = BrowserRouter;
+            const Router = isWails() ? HashRouter : BrowserRouter;
             return (
               <Router>
                 <Routes>

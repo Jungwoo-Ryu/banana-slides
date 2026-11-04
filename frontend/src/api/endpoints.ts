@@ -1,4 +1,5 @@
-import { apiClient, getBaseURL } from './client';
+import { apiClient, getBaseURL, triggerDownload } from './client';
+import { isWails, saveNative, sessionHeaders } from '@/utils/wails';
 import type { Project, Task, ApiResponse, CreateProjectRequest, Page, Material, TemplateAsset } from '@/types';
 import type { Settings } from '../types/index';
 
@@ -163,6 +164,7 @@ export const generateOutlineStream = async (
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...sessionHeaders(),
       ...(accessCode ? { 'X-Access-Code': accessCode } : {}),
     },
     body: JSON.stringify({ language: lang, lock_page_count: lockPageCount }),
@@ -277,6 +279,7 @@ export const generateDescriptionsStream = async (
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...sessionHeaders(),
       ...(accessCode ? { 'X-Access-Code': accessCode } : {}),
     },
     body: JSON.stringify({ language: lang, detail_level: detailLevel || 'default' }),
@@ -1004,14 +1007,10 @@ export const downloadMaterialsZip = async (
   );
 
   const href = URL.createObjectURL(blob);
-  const link = Object.assign(document.createElement('a'), {
-    href,
-    download: 'materials.zip',
-  });
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(href);
+  try {
+    if (isWails()) await saveNative(href, 'materials.zip');
+    else triggerDownload(href, 'materials.zip');
+  } finally { URL.revokeObjectURL(href); }
 
   return { success: true, data: { download_url: '' } };
 };
@@ -1228,7 +1227,7 @@ export const dissociateFileFromProject = async (
 
 // ===== Output Language Settings =====
 
-export type OutputLanguage = 'zh' | 'ja' | 'en' | 'auto';
+export type OutputLanguage = 'ko' | 'en' | 'auto';
 
 export interface OutputLanguageOption {
   value: OutputLanguage;
@@ -1236,8 +1235,7 @@ export interface OutputLanguageOption {
 }
 
 export const OUTPUT_LANGUAGE_OPTIONS: OutputLanguageOption[] = [
-  { value: 'zh', label: 'Chinese' },
-  { value: 'ja', label: 'Japanese' },
+  { value: 'ko', label: '한국어' },
   { value: 'en', label: 'English' },
   { value: 'auto', label: 'Auto' },
 ];
@@ -1263,10 +1261,10 @@ export const getDefaultOutputLanguage = async (): Promise<ApiResponse<{ language
 export const getStoredOutputLanguage = async (): Promise<OutputLanguage> => {
   try {
     const response = await apiClient.get<ApiResponse<{ language: OutputLanguage }>>('/api/output-language');
-    return response.data.data?.language || 'zh';
+    return response.data.data?.language || 'ko';
   } catch (error) {
     console.warn('Failed to load output language from settings, using default', error);
-    return 'zh';
+    return 'ko';
   }
 };
 
@@ -1360,7 +1358,7 @@ export const extractStyleFromImage = async (
  */
 export const generateStyleFromContent = async (
   content: string,
-  language: string = 'zh'
+  language: string = 'ko'
 ): Promise<ApiResponse<{ style_description: string }>> => {
   const response = await apiClient.post<ApiResponse<{ style_description: string }>>(
     '/api/generate-style-from-content',

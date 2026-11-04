@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { desktopConfig, desktopFileURL, isWails, saveNative, sessionHeaders } from '@/utils/wails';
 import { isDesktop } from '@/utils';
 
 const DESKTOP_BACKEND_PORT_STORAGE_KEY = '__desktop_backend_port__';
@@ -37,6 +38,7 @@ if (isDesktop) {
 }
 
 export function getBaseURL(): string {
+  if (isWails()) return desktopConfig()?.baseURL || 'http://127.0.0.1:0';
   if (!isDesktop) return '';
   const port = (window as any).__BACKEND_PORT__;
   if (!isValidPort(port)) {
@@ -50,6 +52,14 @@ export function getBaseURL(): string {
 export function triggerDownload(relativeOrAbsoluteUrl: string, filename?: string): void {
   if (!relativeOrAbsoluteUrl || typeof relativeOrAbsoluteUrl !== 'string') {
     console.warn('Invalid download URL:', relativeOrAbsoluteUrl);
+    return;
+  }
+
+  if (isWails()) {
+    void saveNative(relativeOrAbsoluteUrl, filename || relativeOrAbsoluteUrl.split(/[?#]/)[0].split('/').pop() || 'download').catch(error => {
+      console.error('파일 저장 실패', error);
+      window.alert(`파일을 저장하지 못했습니다: ${String(error)}`);
+    });
     return;
   }
 
@@ -101,6 +111,10 @@ apiClient.interceptors.request.use(
     const hasAbsoluteRequestURL = typeof config.url === 'string' && /^https?:\/\//i.test(config.url);
     if (!hasAbsoluteBaseURL && !hasAbsoluteRequestURL) {
       config.baseURL = getBaseURL();
+    }
+
+    if (isWails() && !hasAbsoluteRequestURL && !hasAbsoluteBaseURL) {
+      Object.assign(config.headers, sessionHeaders());
     }
 
     // Return user-visible error files in UI language to backend (e.g. aborted backstage task)/Hold it!）
@@ -167,12 +181,14 @@ export const getImageUrl = (path?: string, timestamp?: string | number): string 
     url = `${getBaseURL()}${url}`;
   }
 
+  if (isWails()) url = desktopFileURL(url);
+
   // Add time stamp parameters to avoid browser caches (add only when time stamp is provided)）
   if (timestamp) {
     const ts = typeof timestamp === 'string'
       ? new Date(timestamp).getTime()
       : timestamp;
-    url += `?v=${ts}`;
+    url += `${url.includes('?') ? '&' : '?'}v=${ts}`;
   }
 
   return url;

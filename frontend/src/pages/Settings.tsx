@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiClient } from '@/api/client';
+import { DesktopSettings } from '@/components/shared/DesktopSettings';
 
 type Config = Record<string, any>;
 const roles = [['text', '텍스트 생성'], ['image', '이미지 생성·영역 수정'], ['image_caption', '이미지 인식'], ['tts', '발표 음성']] as const;
@@ -35,7 +36,7 @@ export function SettingsPage() {
     if (!config) return;
     setBusy(true); setMessage('');
     try {
-      const { providers: _, external_services: __, ...values } = config;
+      const { providers: _, external_services: __, desktop_limits: ___, ...values } = config;
       const response = await apiClient.put('/api/settings', Object.fromEntries(Object.entries(values).filter(([, v]) => v != null)));
       setConfig(response.data.data); setMessage('설정을 저장했습니다.');
     } catch (e: any) { setMessage(e.response?.data?.error?.message || '설정을 저장하지 못했습니다.'); }
@@ -54,6 +55,7 @@ export function SettingsPage() {
       <Link to="/" className="text-sm text-blue-700">← 홈으로</Link>
       <div><h1 className="text-3xl font-bold">설정</h1><p className="mt-2 text-gray-600">슬라이드 생성에 사용할 모델과 작업 방식을 설정하세요.</p></div>
       {message && <p role="status" className="rounded-xl bg-blue-50 p-4">{message}</p>}
+      <DesktopSettings />
       {!config ? <p>설정을 불러오는 중…</p> : <>
         <section className="rounded-2xl border bg-white p-6">
           <h2 className="text-xl font-semibold">모델 연결</h2>
@@ -72,13 +74,13 @@ export function SettingsPage() {
             value={config.design_system_prompt || ''} onChange={e => set('design_system_prompt', e.target.value)}
             placeholder="예: Sol.A 기업 발표자료. 흰색 배경, 남색 제목, 금색 강조, 넓은 여백, 한국어 산세리프 글꼴." />
         </section>
-        <section className="rounded-2xl border bg-white p-6"><h2 className="text-xl font-semibold">생성 설정</h2><div className="mt-4 grid gap-5 sm:grid-cols-2">
+        <section className="rounded-2xl border bg-white p-6"><h2 className="text-xl font-semibold">생성 설정</h2>{config.desktop_limits && <p className="mt-2 text-sm text-gray-600">데스크톱에서는 메모리 사용을 제한하기 위해 이미지 1개, 설명 최대 2개, 문서·영상 변환 1개씩 실행합니다.</p>}<div className="mt-4 grid gap-5 sm:grid-cols-2">
           <label>출력 언어<select className={inputClass} value={config.output_language} onChange={e => set('output_language',e.target.value)}><option value="ko">한국어</option><option value="en">영어</option><option value="auto">입력 언어에 맞춤</option></select></label>
           <label>이미지 해상도<select className={inputClass} value={config.image_resolution} onChange={e => set('image_resolution',e.target.value)}>{['1K','2K','4K'].map(x=><option key={x}>{x}</option>)}</select></label>
           <label>설명 생성 방식<select className={inputClass} value={config.description_generation_mode} onChange={e=>set('description_generation_mode',e.target.value)}><option value="streaming">순서대로 표시</option><option value="parallel">여러 페이지 동시 생성</option></select></label>
           <label>이미지 품질<select className={inputClass} value={config.image_quality || 'auto'} onChange={e=>set('image_quality',e.target.value)}>{[['auto','자동'],['low','낮음'],['medium','보통'],['high','높음']].map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label>
-          <label>설명 동시 작업 수<input type="number" min="1" max="20" className={inputClass} value={config.max_description_workers} onChange={e=>set('max_description_workers',Number(e.target.value))}/></label>
-          <label>이미지 동시 작업 수<input type="number" min="1" max="20" className={inputClass} value={config.max_image_workers} onChange={e=>set('max_image_workers',Number(e.target.value))}/></label>
+          <label>설명 동시 작업 수<input type="number" min="1" max={config.desktop_limits?.text_workers || 20} className={inputClass} value={config.max_description_workers} onChange={e=>set('max_description_workers',Number(e.target.value))}/></label>
+          <label>이미지 동시 작업 수<input type="number" min="1" max={config.desktop_limits?.image_workers || 20} className={inputClass} value={config.max_image_workers} onChange={e=>set('max_image_workers',Number(e.target.value))}/></label>
         </div></section>
         <section className="rounded-2xl border bg-white p-6"><h2 className="text-xl font-semibold">문서·OCR 처리 위치</h2><p className="mt-3">문서: {config.external_services?.document_parser} / OCR: {config.external_services?.ocr_provider} / 배경 복원: {config.external_services?.inpainting_provider}</p><p className="mt-2 text-sm text-gray-600">문서 파싱과 OCR은 이 서버에서 로컬로 처리합니다. AI 생성·영역 수정 시에는 사내 Azure에 프롬프트와 관련 이미지가 전송됩니다.</p></section>
         <button className="rounded-xl bg-gray-900 px-6 py-3 font-semibold text-white disabled:opacity-50" disabled={busy} onClick={save}>{busy ? '저장 중…' : '설정 저장'}</button>

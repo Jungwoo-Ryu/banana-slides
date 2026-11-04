@@ -1,0 +1,74 @@
+name: Wails Windows
+on:
+  push:
+    branches: [feat/wails-windows, Dev]
+    paths: ['wails/**', 'frontend/**', 'scripts/wails/**', '.github/workflows/wails-windows.yml']
+  pull_request:
+    paths: ['wails/**', 'frontend/**', 'scripts/wails/**', '.github/workflows/wails-windows.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: wails-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  go-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.3'
+          cache-dependency-path: wails/go.sum
+      - name: Native helper tools
+        run: sudo apt-get update && sudo apt-get install -y tesseract-ocr tesseract-ocr-kor ffmpeg poppler-utils libreoffice-impress
+      - name: Go race and integration tests
+        working-directory: wails
+        run: go test -race ./...
+      - name: Go dependency vulnerabilities
+        working-directory: wails
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
+  windows:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.3'
+          cache-dependency-path: wails/go.sum
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.4'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Build native executable
+        shell: pwsh
+        run: ./scripts/wails/build-windows.ps1
+      - name: Start the real WebView2 window and verify React/API startup
+        shell: pwsh
+        run: |
+          $env:SOLA_DATA_DIR = Join-Path $env:RUNNER_TEMP 'sola-desktop-test'
+          $env:SOLA_SMOKE_REPORT = Join-Path $env:RUNNER_TEMP 'sola-smoke.json'
+          $process = Start-Process wails/build/bin/SolA.exe -PassThru
+          try {
+            if (-not $process.WaitForExit(90000)) { throw 'The desktop app did not complete its UI startup test.' }
+            if ($process.ExitCode -ne 0) { throw "App exit code: $($process.ExitCode)" }
+            if (-not (Test-Path $env:SOLA_SMOKE_REPORT)) { throw 'No React/API-ready report was written.' }
+            $report = Get-Content $env:SOLA_SMOKE_REPORT | ConvertFrom-Json
+            if (-not $report.ui -or $report.runtime -ne 'wails-go') { throw 'Unexpected desktop report.' }
+            Get-Content $env:SOLA_SMOKE_REPORT
+          } finally {
+            if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force }
+          }
+      - name: Package portable app
+        shell: pwsh
+        run: |
+          Compress-Archive -Path wails/build/bin/* -DestinationPath wails/build/SolA-Windows-x64.zip
+          (Get-FileHash wails/build/SolA-Windows-x64.zip -Algorithm SHA256).Hash | Out-File wails/build/SolA-Windows-x64.zip.sha256 -Encoding ascii
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SolA-Windows-x64
+          path: |
+            wails/build/SolA-Windows-x64.zip
+            wails/build/SolA-Windows-x64.zip.sha256
+          retention-days: 14

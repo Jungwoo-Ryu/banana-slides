@@ -116,3 +116,12 @@ uploads/
 # Sol.A application assets and integration handoff
 !frontend/src/assets/sola-sun.svg
 !sola-integration.md
+
+# Native Wails build resources are source files, not generated binaries.
+!wails/build/
+wails/build/*
+!wails/build/windows/
+!wails/build/windows/icon.ico
+/frontend/src/wailsjs/
+
+!wails/build/appicon.png

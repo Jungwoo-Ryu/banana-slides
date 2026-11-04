@@ -25,7 +25,8 @@
     "prepreview": "node ../scripts/check-node.cjs",
     "pretest": "node ../scripts/check-node.cjs",
     "pretest:e2e": "node ../scripts/check-node.cjs",
-    "preinstall": "node ../scripts/check-node.cjs"
+    "preinstall": "node ../scripts/check-node.cjs",
+    "build:wails": "node ../scripts/check-node.cjs && tsc && vite build --base=/ --outDir ../wails/frontend/dist --emptyOutDir"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",
