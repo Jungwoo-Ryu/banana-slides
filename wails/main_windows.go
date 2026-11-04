@@ -14,8 +14,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	goruntime "runtime"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/Jungwoo-Ryu/banana-slides/wails/internal/backend"
 	"github.com/wailsapp/wails/v2"
@@ -35,9 +37,11 @@ type App struct {
 	dataDir      string
 	saveMu       sync.Mutex
 	smokeOnce    sync.Once
+	ready        chan struct{}
 }
 
 func (a *App) startup(ctx context.Context) {
+	defer close(a.ready)
 	a.ctx = ctx
 	a.dataDir = backend.DefaultDataDir()
 	if dir := os.Getenv("SOLA_DATA_DIR"); dir != "" {
@@ -58,6 +62,13 @@ func (a *App) startup(ctx context.Context) {
 }
 func (a *App) Bootstrap() (map[string]string, error) {
 	slog.Info("desktop bootstrap requested")
+	// Wails starts OnStartup asynchronously; the page can request its session
+	// before SQLite and the loopback listener have finished opening.
+	select {
+	case <-a.ready:
+	case <-time.After(30 * time.Second):
+		return nil, errors.New("앱 초기화 시간이 초과되었습니다. 로그를 확인해 주세요")
+	}
 	if a.startupError != "" {
 		return nil, errors.New(a.startupError)
 	}
@@ -69,6 +80,7 @@ func (a *App) Bootstrap() (map[string]string, error) {
 func (a *App) SaveDownload(reference, name string) (string, error) {
 	a.saveMu.Lock()
 	defer a.saveMu.Unlock()
+	slog.Info("native save requested")
 	if a.server == nil {
 		return "", errors.New("앱이 초기화되지 않았습니다")
 	}
@@ -83,7 +95,9 @@ func (a *App) SaveDownload(reference, name string) (string, error) {
 	if name == "" {
 		name = filepath.Base(source)
 	}
+	slog.Info("native save dialog opening")
 	destination, e := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{Title: "Sol.A 파일 저장", DefaultFilename: filepath.Base(name)})
+	slog.Info("native save dialog closed", "cancelled", destination == "", "error", e)
 	if e != nil || destination == "" {
 		return "", e
 	}
@@ -133,6 +147,12 @@ func (a *App) UIReady() {
 	slog.Info("desktop UI ready")
 	if path := os.Getenv("SOLA_SMOKE_REPORT"); path != "" {
 		a.smokeOnce.Do(func() {
+			go func() {
+				time.Sleep(45 * time.Second)
+				stack := make([]byte, 128<<10)
+				stack = stack[:goruntime.Stack(stack, true)]
+				slog.Warn("desktop smoke still waiting", "goroutines", string(stack))
+			}()
 			defer runtime.Quit(a.ctx)
 			// The Windows CI harness drives the real save dialog. No credentials
 			// or model calls are needed to exercise native file delivery.
@@ -162,18 +182,22 @@ func (a *App) UIReady() {
 }
 func main() {
 	root := backend.DefaultDataDir()
+	if dir := os.Getenv("SOLA_DATA_DIR"); dir != "" {
+		root = dir
+	}
 	_ = os.MkdirAll(filepath.Join(root, "logs"), 0700)
 	logfile, e := os.OpenFile(filepath.Join(root, "logs", "desktop.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 	if e == nil {
 		defer logfile.Close()
 		slog.SetDefault(slog.New(slog.NewJSONHandler(logfile, &slog.HandlerOptions{Level: slog.LevelInfo})))
 	}
-	app := &App{}
+	app := &App{ready: make(chan struct{})}
 	static, e := fs.Sub(assets, "frontend/dist")
 	if e != nil {
 		panic(e)
 	}
 	e = wails.Run(&options.App{Title: "Sol.A ☀", Width: 1440, Height: 960, MinWidth: 1000, MinHeight: 700, AssetServer: &assetserver.Options{Assets: static}, OnStartup: app.startup, OnDomReady: func(context.Context) { slog.Info("desktop DOM ready") }, OnShutdown: func(context.Context) {
+		<-app.ready
 		if app.server != nil {
 			app.server.Close()
 		}
