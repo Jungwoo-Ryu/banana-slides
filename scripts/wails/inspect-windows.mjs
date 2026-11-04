@@ -3,6 +3,7 @@ import { chromium } from '../../frontend/node_modules/playwright-core/index.mjs'
 import fs from 'node:fs/promises';
 import path from 'node:path';
 const output = process.env.SOLA_SMOKE_OUTPUT;
+const watchdog = setTimeout(() => { console.error('WebView inspection timed out'); process.exit(2); }, 45000);
 await fs.mkdir(output, { recursive: true });
 let browser;
 for (let i = 0; i < 60; i++) {
@@ -29,7 +30,7 @@ try {
     };
     if (app) {
       try {
-        const bootstrap = await app.Bootstrap();
+        const bootstrap = await Promise.race([app.Bootstrap(), new Promise((_, reject) => setTimeout(() => reject(new Error('Native bootstrap timed out during modal dialog')), 5000))]);
         result.baseURL = bootstrap.baseURL;
         const response = await fetch(bootstrap.baseURL + '/health', { headers: { 'X-SolA-Session': bootstrap.session } });
         result.health = response.status;
@@ -40,4 +41,4 @@ try {
   console.log('WebView2 report:', JSON.stringify(report));
   await fs.writeFile(path.join(output, 'webview.json'), JSON.stringify(report, null, 2));
   await page.screenshot({ path: path.join(output, 'webview.png') });
-} finally { await browser.close(); }
+} finally { clearTimeout(watchdog); await browser.close(); }
