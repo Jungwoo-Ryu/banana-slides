@@ -34,6 +34,7 @@ type App struct {
 	startupError string
 	dataDir      string
 	saveMu       sync.Mutex
+	smokeOnce    sync.Once
 }
 
 func (a *App) startup(ctx context.Context) {
@@ -126,8 +127,32 @@ func (a *App) ImportLegacy() (map[string]int, error) {
 }
 func (a *App) UIReady() {
 	if path := os.Getenv("SOLA_SMOKE_REPORT"); path != "" {
-		_ = os.WriteFile(path, []byte(`{"window":true,"ui":true,"runtime":"wails-go"}`), 0600)
-		runtime.Quit(a.ctx)
+		a.smokeOnce.Do(func() {
+			defer runtime.Quit(a.ctx)
+			// The Windows CI harness drives the real save dialog. No credentials
+			// or model calls are needed to exercise native file delivery.
+			folder := filepath.Join(a.dataDir, "uploads", "desktop-smoke")
+			if e := os.MkdirAll(folder, 0700); e != nil {
+				slog.Error("desktop smoke mkdir", "error", e)
+				return
+			}
+			content := []byte("Sol.A native file save verified\n")
+			if e := os.WriteFile(filepath.Join(folder, "smoke.txt"), content, 0600); e != nil {
+				slog.Error("desktop smoke write", "error", e)
+				return
+			}
+			saved, e := a.SaveDownload("/files/desktop-smoke/smoke.txt", "sola-smoke.txt")
+			if e != nil || saved == "" {
+				slog.Error("desktop smoke save", "error", e)
+				return
+			}
+			raw, e := os.ReadFile(saved)
+			if e != nil || string(raw) != string(content) {
+				slog.Error("desktop smoke verify", "error", e)
+				return
+			}
+			_ = os.WriteFile(path, []byte(`{"window":true,"ui":true,"nativeSave":true,"runtime":"wails-go"}`), 0600)
+		})
 	}
 }
 func main() {

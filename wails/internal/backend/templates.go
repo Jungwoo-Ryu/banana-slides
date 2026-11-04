@@ -18,11 +18,15 @@ func (s *Server) newAsset(pid string, raw []byte, source, label string) (Object,
 	if e = atomicFile(path, raw); e != nil {
 		return nil, e
 	}
+	thumb, e := s.makeThumbnail(relative)
+	if e != nil {
+		return nil, e
+	}
 	all, e := s.Store.List("asset", pid)
 	if e != nil {
 		return nil, e
 	}
-	a := Object{"id": id, "project_id": pid, "image_url": "/files/" + relative, "thumb_url": "/files/" + relative, "_file": relative, "source": source, "sort_order": len(all), "user_label": label, "analysis_status": "pending", "analysis_json": nil, "analysis_notes": nil, "analysis_error": nil, "user_edited_analysis": false, "created_at": now(), "updated_at": now()}
+	a := Object{"id": id, "project_id": pid, "image_url": "/files/" + relative, "thumb_url": thumb, "_file": relative, "source": source, "sort_order": len(all), "user_label": label, "analysis_status": "pending", "analysis_json": nil, "analysis_notes": nil, "analysis_error": nil, "user_edited_analysis": false, "created_at": now(), "updated_at": now()}
 	return a, s.Store.Put("asset", id, pid, len(all), a)
 }
 func (s *Server) analyzeAsset(ctx context.Context, asset Object) error {
@@ -390,7 +394,11 @@ func (s *Server) userTemplate(w http.ResponseWriter, r *http.Request) (any, erro
 			d["name"] = name
 		}
 		d["template_image_url"] = "/files/" + relative
-		d["thumb_url"] = d["template_image_url"]
+		thumb, e := s.makeThumbnail(relative)
+		if e != nil {
+			return nil, e
+		}
+		d["thumb_url"] = thumb
 		d["_file"] = relative
 	}
 	return created(d), s.Store.Put(kind, id, "", 0, d)

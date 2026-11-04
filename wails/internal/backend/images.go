@@ -9,7 +9,7 @@ import (
 	"image/color"
 	"image/draw"
 	_ "image/gif"
-	_ "image/jpeg"
+	"image/jpeg"
 	"image/png"
 	"io"
 	"mime/multipart"
@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	xdraw "golang.org/x/image/draw"
 	_ "golang.org/x/image/webp"
 )
 
@@ -158,9 +159,14 @@ func (s *Server) saveImage(project, page string, raw []byte) (Object, error) {
 	if err = atomicFile(path, raw); err != nil {
 		return nil, err
 	}
-	version := Object{"version_id": id, "page_id": page, "project_id": project, "version_number": next, "is_current": true, "image_url": "/files/" + relative, "image_path": relative, "created_at": now()}
+	thumb, e := s.makeThumbnail(relative)
+	if e != nil {
+		return nil, e
+	}
+	version := Object{"version_id": id, "page_id": page, "project_id": project, "version_number": next, "is_current": true, "image_url": "/files/" + relative, "image_path": relative, "thumbnail_image_url": thumb, "created_at": now()}
 	p["_image"] = relative
 	p["generated_image_url"] = "/files/" + relative
+	p["thumbnail_image_url"] = thumb
 	p["status"] = "COMPLETED"
 	p["updated_at"] = now()
 	records = append(records, Record{"version", id, project, next, version}, Record{"page", page, project, num(p, "order_index"), p})
@@ -298,4 +304,46 @@ func RestoreRegions(source image.Image, boxes []image.Rectangle) image.Image {
 		}
 	}
 	return out
+}
+
+func (s *Server) makeThumbnail(relative string) (string, error) {
+	path, e := s.uploadPath(relative)
+	if e != nil {
+		return "", e
+	}
+	raw, e := os.ReadFile(path)
+	if e != nil {
+		return "", e
+	}
+	img, e := decodeImage(raw)
+	if e != nil {
+		return "", e
+	}
+	b := img.Bounds()
+	width, height := b.Dx(), b.Dy()
+	if width > 480 || height > 480 {
+		if width >= height {
+			height = max(1, height*480/width)
+			width = 480
+		} else {
+			width = max(1, width*480/height)
+			height = 480
+		}
+	}
+	thumb := image.NewRGBA(image.Rect(0, 0, width, height))
+	draw.Draw(thumb, thumb.Bounds(), &image.Uniform{color.White}, image.Point{}, draw.Src)
+	xdraw.CatmullRom.Scale(thumb, thumb.Bounds(), img, b, draw.Over, nil)
+	var buffer bytes.Buffer
+	if e = jpeg.Encode(&buffer, thumb, &jpeg.Options{Quality: 85}); e != nil {
+		return "", e
+	}
+	thumbRelative := strings.TrimSuffix(relative, filepath.Ext(relative)) + "-thumb.jpg"
+	target, e := s.uploadPath(thumbRelative)
+	if e != nil {
+		return "", e
+	}
+	if e = atomicFile(target, buffer.Bytes()); e != nil {
+		return "", e
+	}
+	return "/files/" + thumbRelative, nil
 }

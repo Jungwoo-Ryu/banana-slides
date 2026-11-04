@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"image"
+	"image/color"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -302,6 +304,7 @@ func (s *Server) restoreVersion(w http.ResponseWriter, r *http.Request) (any, er
 	}
 	p["_image"] = v["image_path"]
 	p["generated_image_url"] = v["image_url"]
+	p["thumbnail_image_url"] = v["thumbnail_image_url"]
 	p["status"] = "COMPLETED"
 	p["updated_at"] = now()
 	records = append(records, Record{"page", str(p, "page_id"), pid, num(p, "order_index"), p})
@@ -422,6 +425,23 @@ func (s *Server) settingsTest(w http.ResponseWriter, r *http.Request) (any, erro
 			var raw []byte
 			raw, e = s.Azure.Image(ctx, "A simple blue circle on a white background.", "1:1", "1K", "low", nil)
 			result["bytes"] = len(raw)
+		case "caption-model":
+			temporary, err := os.CreateTemp("", "sola-caption-*.png")
+			if err != nil {
+				return err
+			}
+			path := temporary.Name()
+			temporary.Close()
+			defer os.Remove(path)
+			img := image.NewRGBA(image.Rect(0, 0, 64, 64))
+			for y := 0; y < 64; y++ {
+				for x := 0; x < 64; x++ {
+					img.Set(x, y, color.RGBA{0, 0, 255, 255})
+				}
+			}
+			if e = writePNG(path, img); e == nil {
+				result["text"], e = s.Azure.Text(ctx, "이미지의 색상을 한국어로 답하세요.", []string{path}, 100, nil)
+			}
 		default:
 			result["text"], e = s.Azure.Text(ctx, "연결 확인입니다. 확인이라고 답하세요.", nil, 100, nil)
 		}

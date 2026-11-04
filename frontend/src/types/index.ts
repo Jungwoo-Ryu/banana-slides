@@ -91,6 +91,7 @@ export interface Page {
   outline_content: OutlineContent | null;
   description_content?: DescriptionContent;
   narration_text?: string; // TTS Narrative Text
+  thumbnail_image_url?: string;
   generated_image_url?: string; // Backend Backend generated_image_url
   generated_image_path?: string; // Alias used at the frontend
   status: PageStatus;

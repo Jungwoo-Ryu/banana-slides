@@ -44,22 +44,9 @@ jobs:
       - name: Build native executable
         shell: pwsh
         run: ./scripts/wails/build-windows.ps1
-      - name: Start the real WebView2 window and verify React/API startup
+      - name: Verify the real WebView2 window and native save dialog
         shell: pwsh
-        run: |
-          $env:SOLA_DATA_DIR = Join-Path $env:RUNNER_TEMP 'sola-desktop-test'
-          $env:SOLA_SMOKE_REPORT = Join-Path $env:RUNNER_TEMP 'sola-smoke.json'
-          $process = Start-Process wails/build/bin/SolA.exe -PassThru
-          try {
-            if (-not $process.WaitForExit(90000)) { throw 'The desktop app did not complete its UI startup test.' }
-            if ($process.ExitCode -ne 0) { throw "App exit code: $($process.ExitCode)" }
-            if (-not (Test-Path $env:SOLA_SMOKE_REPORT)) { throw 'No React/API-ready report was written.' }
-            $report = Get-Content $env:SOLA_SMOKE_REPORT | ConvertFrom-Json
-            if (-not $report.ui -or $report.runtime -ne 'wails-go') { throw 'Unexpected desktop report.' }
-            Get-Content $env:SOLA_SMOKE_REPORT
-          } finally {
-            if (-not $process.HasExited) { Stop-Process -Id $process.Id -Force }
-          }
+        run: ./scripts/wails/smoke-windows.ps1
       - name: Package portable app
         shell: pwsh
         run: |

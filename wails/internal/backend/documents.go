@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -125,7 +124,7 @@ func (s *Server) officeConvert(ctx context.Context, path, format, folder string)
 		return "", e
 	}
 	defer os.RemoveAll(profile)
-	profileURL := (&url.URL{Scheme: "file", Path: filepath.ToSlash(profile)}).String()
+	profileURL := fileURI(profile, "")
 	if _, e = runTool(ctx, s.Config.Office, "-env:UserInstallation="+profileURL, "--headless", "--convert-to", format, "--outdir", folder, path); e != nil {
 		return "", e
 	}

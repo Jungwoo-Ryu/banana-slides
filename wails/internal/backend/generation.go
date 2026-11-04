@@ -476,31 +476,40 @@ func (s *Server) imageForPage(ctx context.Context, project, page, d Object, edit
 				return e
 			}
 			path := temporary.Name()
-			defer os.Remove(path)
-			if _, e = temporary.Write(raw); e != nil {
-				temporary.Close()
-				return e
-			}
 			temporary.Close()
-			reviewText, e := s.text(ctx, "Review this rendered slide against the requirements. Return JSON {passed:boolean,feedback:string}. Reject illegible text, missing required content, obvious layout defects. Requirements: "+prompt, []string{path}, nil)
-			if e != nil {
-				return e
-			}
-			var review Object
-			if e = extractJSON(reviewText, &review); e != nil {
-				return e
-			}
-			if !boolean(review, "passed") {
+			defer os.Remove(path)
+			for attempt := 0; attempt < 2; attempt++ {
+				if e = os.WriteFile(path, raw, 0600); e != nil {
+					return e
+				}
+				reviewText, e := s.text(ctx, "Review this rendered slide against the requirements. Return JSON {passed:boolean,feedback:string}. Reject illegible text, missing required content, obvious layout defects. Requirements: "+prompt, []string{path}, nil)
+				if e != nil {
+					return e
+				}
+				var review Object
+				if e = extractJSON(reviewText, &review); e != nil {
+					return e
+				}
+				if boolean(review, "passed") {
+					break
+				}
+				if attempt == 1 {
+					return fmt.Errorf("이미지 품질 검사를 통과하지 못했습니다: %s", str(review, "feedback"))
+				}
 				raw, e = s.Azure.Image(ctx, prompt+"\nCorrect these quality problems: "+str(review, "feedback"), ratio, str(prefs, "image_resolution"), str(prefs, "image_quality"), append([]string{path}, refs[:min(len(refs), 15)]...))
 				if e != nil {
 					return e
 				}
 			}
 		}
+
 		slog.Info("image stage", "page_id", id, "stage", "save", "bytes", len(raw))
 		result, e = s.saveImage(pid, id, raw)
 		return e
 	})
+	if err != nil {
+		_, _ = s.Store.Update("page", str(page, "page_id"), func(p Object) error { p["status"] = "FAILED"; return nil })
+	}
 	return result, err
 }
 func (s *Server) generateImages(w http.ResponseWriter, r *http.Request) (any, error) {

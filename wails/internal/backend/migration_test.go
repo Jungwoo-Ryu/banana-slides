@@ -190,3 +190,45 @@ func TestAssetOwnershipAndInvalidOrders(t *testing.T) {
 	call(t, s, "PUT", "/api/projects/"+pid, Object{"pages_order": []string{str(page, "page_id"), str(page, "page_id")}}, 400)
 	call(t, s, "GET", "/api/projects/"+str(p2, "project_id")+"/pages/"+str(page, "page_id")+"/image-versions", nil, 404)
 }
+
+func TestWindowsDriveFileURI(t *testing.T) {
+	if got := fileURI("C:/Users/Test User/data.db", "mode=ro"); got != "file:///C:/Users/Test%20User/data.db?mode=ro" {
+		t.Fatal(got)
+	}
+}
+
+func TestThumbnailKeepsOriginalCoordinates(t *testing.T) {
+	s := newTestServer(t, newFixture(t))
+	project, _ := s.newProject(Object{})
+	pid := str(project, "project_id")
+	page := s.newPage(pid, Object{}, 0)
+	id := str(page, "page_id")
+	if e := s.Store.Put("page", id, pid, 0, page); e != nil {
+		t.Fatal(e)
+	}
+	page, e := s.saveImage(pid, id, testImage())
+	if e != nil {
+		t.Fatal(e)
+	}
+	original, _ := s.ExportPath(str(page, "generated_image_url"))
+	thumb, _ := s.ExportPath(str(page, "thumbnail_image_url"))
+	originalFile, _ := os.Open(original)
+	originalCfg, _, e := image.DecodeConfig(originalFile)
+	originalFile.Close()
+	if e != nil || originalCfg.Width != 640 {
+		t.Fatal(originalCfg, e)
+	}
+	thumbFile, _ := os.Open(thumb)
+	thumbCfg, _, e := image.DecodeConfig(thumbFile)
+	thumbFile.Close()
+	if e != nil || thumbCfg.Width != 480 {
+		t.Fatal(thumbCfg, e)
+	}
+	r := httptest.NewRequest("GET", str(page, "thumbnail_image_url"), nil)
+	r.Header.Set("X-SolA-Session", s.Token)
+	w := httptest.NewRecorder()
+	s.Handler(true).ServeHTTP(w, r)
+	if w.Code != 200 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+}

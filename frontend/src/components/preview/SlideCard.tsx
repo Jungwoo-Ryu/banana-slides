@@ -51,7 +51,7 @@ export const SlideCard: React.FC<SlideCardProps> = ({
   const t = useT(slideCardI18n);
   const { confirm, ConfirmDialog } = useConfirm();
   const imageUrl = page.generated_image_path
-    ? getImageUrl(page.generated_image_path, page.updated_at)
+    ? getImageUrl(page.thumbnail_image_url || page.generated_image_path, page.updated_at)
     : '';
 
   const generating = isGenerating || page.status === 'QUEUED' || page.status === 'GENERATING';

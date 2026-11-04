@@ -193,3 +193,12 @@ func resolveTool(name string, candidates ...string) string {
 	}
 	return name
 }
+
+// Windows drive letters must be a path component, never the URI authority.
+func fileURI(path, query string) string {
+	path = filepath.ToSlash(path)
+	if len(path) > 1 && path[1] == ':' {
+		path = "/" + path
+	}
+	return (&url.URL{Scheme: "file", Path: path, RawQuery: query}).String()
+}

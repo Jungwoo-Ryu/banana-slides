@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -43,8 +42,7 @@ func (s *Server) ImportLegacy(root string) (map[string]int, error) {
 	if database == "" {
 		return nil, errors.New("backend/instance에서 기존 SQLite 데이터베이스를 찾을 수 없습니다")
 	}
-	u := url.URL{Scheme: "file", Path: filepath.ToSlash(database), RawQuery: "mode=ro"}
-	db, e := sql.Open("sqlite", u.String())
+	db, e := sql.Open("sqlite", fileURI(database, "mode=ro"))
 	if e != nil {
 		return nil, e
 	}
