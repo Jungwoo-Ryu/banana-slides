@@ -57,6 +57,7 @@ func (a *App) startup(ctx context.Context) {
 	}
 }
 func (a *App) Bootstrap() (map[string]string, error) {
+	slog.Info("desktop bootstrap requested")
 	if a.startupError != "" {
 		return nil, errors.New(a.startupError)
 	}
@@ -72,7 +73,7 @@ func (a *App) SaveDownload(reference, name string) (string, error) {
 		return "", errors.New("앱이 초기화되지 않았습니다")
 	}
 	u, e := url.Parse(reference)
-	if e != nil || u.IsAbs() || !strings.HasPrefix(u.Path, "/files/") {
+	if e != nil || u.IsAbs() || u.Host != "" || !strings.HasPrefix(u.Path, "/files/") {
 		return "", errors.New("앱에서 생성한 파일만 저장할 수 있습니다")
 	}
 	source, e := a.server.ExportPath(u.Path)
@@ -97,6 +98,9 @@ func (a *App) SaveData(encoded, name string) (string, error) {
 	raw, e := base64.StdEncoding.DecodeString(encoded)
 	if e != nil {
 		return "", e
+	}
+	if len(raw) > 64<<20 {
+		return "", errors.New("파일은 최대 64MB입니다")
 	}
 	destination, e := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{Title: "Sol.A 파일 저장", DefaultFilename: filepath.Base(name)})
 	if e != nil || destination == "" {
@@ -126,6 +130,7 @@ func (a *App) ImportLegacy() (map[string]int, error) {
 	return a.server.ImportLegacy(root)
 }
 func (a *App) UIReady() {
+	slog.Info("desktop UI ready")
 	if path := os.Getenv("SOLA_SMOKE_REPORT"); path != "" {
 		a.smokeOnce.Do(func() {
 			defer runtime.Quit(a.ctx)
@@ -168,7 +173,7 @@ func main() {
 	if e != nil {
 		panic(e)
 	}
-	e = wails.Run(&options.App{Title: "Sol.A ☀", Width: 1440, Height: 960, MinWidth: 1000, MinHeight: 700, AssetServer: &assetserver.Options{Assets: static}, OnStartup: app.startup, OnShutdown: func(context.Context) {
+	e = wails.Run(&options.App{Title: "Sol.A ☀", Width: 1440, Height: 960, MinWidth: 1000, MinHeight: 700, AssetServer: &assetserver.Options{Assets: static}, OnStartup: app.startup, OnDomReady: func(context.Context) { slog.Info("desktop DOM ready") }, OnShutdown: func(context.Context) {
 		if app.server != nil {
 			app.server.Close()
 		}

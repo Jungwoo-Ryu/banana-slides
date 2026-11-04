@@ -9,9 +9,14 @@ New-Item -ItemType Directory -Path $SmokeRoot | Out-Null
 $env:SOLA_DATA_DIR = Join-Path $SmokeRoot 'data'
 $env:SOLA_SMOKE_REPORT = Join-Path $SmokeRoot 'report.json'
 $SavedPath = Join-Path $SmokeRoot 'native-download.txt'
+$env:SOLA_SMOKE_OUTPUT = Join-Path $RepoRoot '.runtime/wails-windows-smoke'
+New-Item -ItemType Directory -Path $env:SOLA_SMOKE_OUTPUT -Force | Out-Null
+$env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = '--remote-debugging-port=9223'
 $Executable = Join-Path $RepoRoot 'wails/build/bin/SolA.exe'
 $Process = Start-Process $Executable -PassThru
 try {
+    & node (Join-Path $PSScriptRoot 'inspect-windows.mjs')
+    if ($LASTEXITCODE -ne 0) { Write-Warning 'WebView2 inspection failed; collecting native window diagnostics.' }
     $Dialog = $null
     $Condition = [System.Windows.Automation.PropertyCondition]::new(
         [System.Windows.Automation.AutomationElement]::NameProperty, 'Sol.A 파일 저장')
@@ -22,7 +27,12 @@ try {
         if ($null -ne $Dialog) { break }
         Start-Sleep -Milliseconds 500
     }
-    if ($null -eq $Dialog) { throw 'The real WebView2 window did not reach its native save dialog.' }
+    if ($null -eq $Dialog) {
+        $Windows = [System.Windows.Automation.AutomationElement]::RootElement.FindAll(
+            [System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition)
+        foreach ($Window in $Windows) { Write-Host ("Window: " + $Window.Current.Name + " / " + $Window.Current.ClassName) }
+        throw 'The real WebView2 window did not reach its native save dialog.'
+    }
     [Microsoft.VisualBasic.Interaction]::AppActivate('Sol.A 파일 저장')
     [System.Windows.Forms.SendKeys]::SendWait('%n')
     [System.Windows.Forms.SendKeys]::SendWait('^a')
@@ -39,6 +49,8 @@ try {
     if (-not $Process.HasExited) { Stop-Process -Id $Process.Id -Force }
     $Log = Join-Path $env:LOCALAPPDATA 'SolA/logs/desktop.log'
     if (Test-Path $Log) { Get-Content $Log -Tail 80 }
+    if (Test-Path $Log) { Copy-Item $Log (Join-Path $env:SOLA_SMOKE_OUTPUT 'desktop.log') -Force }
+    Remove-Item Env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS -ErrorAction SilentlyContinue
     Remove-Item Env:SOLA_SMOKE_REPORT -ErrorAction SilentlyContinue
     Remove-Item Env:SOLA_DATA_DIR -ErrorAction SilentlyContinue
 }

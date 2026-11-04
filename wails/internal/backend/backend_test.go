@@ -69,6 +69,8 @@ func newFixture(t *testing.T) *fixture {
 			raw := fmt.Sprint(d["messages"])
 			text := "확인"
 			switch {
+			case strings.Contains(raw, "Review this rendered slide"):
+				text = `{"passed":false,"feedback":"Unreadable slide text"}`
 			case strings.Contains(raw, "slide-template visual analyst"):
 				text = `{"template_role":"title","layout_structure":"centered","content_capacity":"low","text_regions":[],"image_regions":[],"visual_density":"low","style_keywords":["minimal"],"color_palette":["#FFFFFF"],"notes":"검증용"}`
 			case strings.Contains(raw, "<!-- BEGIN -->"):
@@ -425,5 +427,34 @@ func TestCancellationAndRecovery(t *testing.T) {
 	task, e := store.Get("task", "idempotent")
 	if e != nil || str(task, "status") != "FAILED" {
 		t.Fatal(task, e)
+	}
+}
+
+func TestQualityReviewFailureDoesNotSaveUnverifiedImage(t *testing.T) {
+	f := newFixture(t)
+	s := newTestServer(t, f)
+	prefs := defaults()
+	prefs["enable_image_quality_control"] = true
+	if e := s.Store.Put("settings", "preferences", "", 0, prefs); e != nil {
+		t.Fatal(e)
+	}
+	project, _ := s.newProject(Object{})
+	pid := str(project, "project_id")
+	page := s.newPage(pid, Object{}, 0)
+	id := str(page, "page_id")
+	s.Store.Put("page", id, pid, 0, page)
+	if _, e := s.imageForPage(context.Background(), project, page, Object{}, false, nil); e == nil {
+		t.Fatal("quality failure was ignored")
+	}
+	if f.images.Load() != 2 {
+		t.Fatal("quality retries were not bounded", f.images.Load())
+	}
+	saved, _ := s.Store.Get("page", id)
+	if str(saved, "status") != "FAILED" || str(saved, "_image") != "" {
+		t.Fatal(saved)
+	}
+	versions, _ := s.Store.List("version", pid)
+	if len(versions) != 0 {
+		t.Fatal("unverified image version persisted")
 	}
 }

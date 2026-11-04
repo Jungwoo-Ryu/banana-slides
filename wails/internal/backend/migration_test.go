@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"image"
 	"image/color"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -230,5 +231,22 @@ func TestThumbnailKeepsOriginalCoordinates(t *testing.T) {
 	s.Handler(true).ServeHTTP(w, r)
 	if w.Code != 200 {
 		t.Fatal(w.Code, w.Body.String())
+	}
+}
+
+func TestReferenceImagesRejectInternalAddresses(t *testing.T) {
+	for _, address := range []string{"127.0.0.1", "10.1.2.3", "169.254.169.254", "100.100.100.200", "::1", "::ffff:127.0.0.1", "192.168.10.10"} {
+		if publicIP(net.ParseIP(address)) {
+			t.Fatal("internal address allowed", address)
+		}
+	}
+	var hits atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { hits.Add(1) }))
+	defer server.Close()
+	if _, e := fetchPublicImage(context.Background(), server.URL+"/metadata"); e == nil {
+		t.Fatal("loopback image fetch accepted")
+	}
+	if hits.Load() != 0 {
+		t.Fatal("request reached internal server")
 	}
 }

@@ -288,6 +288,11 @@ func (s *Server) serveFile(w http.ResponseWriter, r *http.Request) {
 		failure(w, ErrNotFound)
 		return
 	}
+	extension := strings.ToLower(filepath.Ext(p))
+	if !oneOf(extension, ".png", ".jpg", ".jpeg", ".webp", ".gif", ".pdf", ".mp4", ".mp3", ".wav", ".txt", ".md", ".csv") {
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.Header().Set("Content-Disposition", "attachment")
+	}
 	http.ServeFile(w, r, p)
 }
 func withSlot(ctx context.Context, slot chan struct{}, fn func() error) error {

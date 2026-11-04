@@ -64,6 +64,8 @@ go test -race ./...
 go run ./cmd/sola-server --data-dir ../.runtime/wails-dev --listen 127.0.0.1:5012 --no-auth
 ```
 
+Linux 개발 환경에서 기존 `.venv` 테스트 의존성과 Playwright가 준비되어 있다면 `scripts/wails/verify-local.sh`로 모의 Azure·Go 서버·React 화면을 함께 띄워 브라우저 검증을 재현할 수 있습니다.
+
 `--no-auth`는 로컬 테스트 전용입니다. Azure 프로토콜 모의 서버도 루프백 HTTP일 때만 `--allow-test-http`로 허용합니다. 실제 Azure 호출 테스트는 사내 인증과 비용이 발생하는 별도 검증입니다.
 
 이 코드는 Banana Slides에서 파생된 AGPL-3.0 프로젝트입니다. 루트 LICENSE와 기존 저작권 표시를 유지합니다. Wails, WebView2, 보조 도구의 라이선스도 각각 적용됩니다.

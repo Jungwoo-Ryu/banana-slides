@@ -15,6 +15,7 @@ import (
 	"mime/multipart"
 	"net"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -222,7 +223,7 @@ func fetchPublicImage(ctx context.Context, address string) ([]byte, error) {
 		}
 		for _, addr := range addresses {
 			ip := addr.IP
-			if !ip.IsGlobalUnicast() || ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsUnspecified() {
+			if !publicIP(ip) {
 				return nil, bad("내부 네트워크 이미지 주소는 가져올 수 없습니다.")
 			}
 		}
@@ -346,4 +347,21 @@ func (s *Server) makeThumbnail(relative string) (string, error) {
 		return "", e
 	}
 	return "/files/" + thumbRelative, nil
+}
+
+func publicIP(ip net.IP) bool {
+	if !ip.IsGlobalUnicast() || ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsUnspecified() {
+		return false
+	}
+	addr, ok := netip.AddrFromSlice(ip)
+	if !ok {
+		return false
+	}
+	addr = addr.Unmap()
+	for _, cidr := range []string{"100.64.0.0/10", "192.0.0.0/24", "192.0.2.0/24", "198.18.0.0/15", "198.51.100.0/24", "203.0.113.0/24", "240.0.0.0/4", "2001:db8::/32"} {
+		if netip.MustParsePrefix(cidr).Contains(addr) {
+			return false
+		}
+	}
+	return true
 }
