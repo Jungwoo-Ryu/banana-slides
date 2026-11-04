@@ -12,6 +12,15 @@ $env:SOLA_SMOKE_REPORT = Join-Path $SmokeRoot 'report.json'
 $SavedPath = Join-Path $SmokeRoot 'native-download.txt'
 $env:SOLA_SMOKE_OUTPUT = Join-Path $RepoRoot '.runtime/wails-windows-smoke'
 New-Item -ItemType Directory -Path $env:SOLA_SMOKE_OUTPUT -Force | Out-Null
+function Save-DesktopScreenshot {
+    $Bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+    $Screenshot = [System.Drawing.Bitmap]::new($Bounds.Width, $Bounds.Height)
+    $Graphics = [System.Drawing.Graphics]::FromImage($Screenshot)
+    try {
+        $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
+        $Screenshot.Save((Join-Path $env:SOLA_SMOKE_OUTPUT 'desktop.png'))
+    } finally { $Graphics.Dispose(); $Screenshot.Dispose() }
+}
 $Executable = Join-Path $RepoRoot 'wails/build/bin/SolA.exe'
 $Process = Start-Process $Executable -PassThru
 try {
@@ -46,6 +55,7 @@ try {
         }
         throw 'The real WebView2 window did not reach its native save dialog.'
     }
+    Save-DesktopScreenshot
     [Microsoft.VisualBasic.Interaction]::AppActivate('Sol.A 파일 저장')
     [System.Windows.Forms.SendKeys]::SendWait('%n')
     [System.Windows.Forms.SendKeys]::SendWait('^a')
@@ -59,13 +69,7 @@ try {
     if ((Get-Content $SavedPath -Raw) -ne "Sol.A native file save verified`n") { throw 'Native download content differs.' }
     Get-Content $env:SOLA_SMOKE_REPORT
 } finally {
-    $Bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-    $Screenshot = [System.Drawing.Bitmap]::new($Bounds.Width, $Bounds.Height)
-    $Graphics = [System.Drawing.Graphics]::FromImage($Screenshot)
-    try {
-        $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
-        $Screenshot.Save((Join-Path $env:SOLA_SMOKE_OUTPUT 'desktop.png'))
-    } finally { $Graphics.Dispose(); $Screenshot.Dispose() }
+    if (-not (Test-Path (Join-Path $env:SOLA_SMOKE_OUTPUT 'desktop.png'))) { Save-DesktopScreenshot }
     if (-not $Process.HasExited) { Stop-Process -Id $Process.Id -Force }
     $Log = Join-Path $env:SOLA_DATA_DIR 'logs/desktop.log'
     if (Test-Path $Log) { Get-Content $Log -Tail 80 }

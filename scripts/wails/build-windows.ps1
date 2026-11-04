@@ -30,4 +30,35 @@ $PackageDir = Join-Path $RepoRoot 'wails/build/bin'
 Copy-Item LICENSE (Join-Path $PackageDir 'LICENSE')
 Copy-Item scripts/wails/install-tools.ps1 (Join-Path $PackageDir 'install-tools.ps1')
 Copy-Item wails/README.md (Join-Path $PackageDir 'README.md')
+$SourceRevision = 'feat/wails-windows'
+if ((Get-Command git -ErrorAction SilentlyContinue) -and (Test-Path (Join-Path $RepoRoot '.git'))) {
+    $SourceRevision = (& git rev-parse HEAD).Trim()
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot identify the source revision.' }
+}
+@"
+Sol.A is derived from Banana Slides and distributed under AGPL-3.0.
+Corresponding source: https://github.com/Jungwoo-Ryu/banana-slides/tree/$SourceRevision
+Source archive: https://github.com/Jungwoo-Ryu/banana-slides/archive/$SourceRevision.zip
+Build instructions: wails/README.md and scripts/wails/build-windows.ps1 in that revision.
+"@ | Set-Content (Join-Path $PackageDir 'SOURCE.txt') -Encoding utf8
+$Notices = [System.Collections.Generic.List[string]]::new()
+$Notices.Add('Third-party licenses for the Go application and bundled frontend. Optional system tools are distributed separately by their publishers.')
+function Add-LicenseNotices([string]$Label, [string]$Directory) {
+    if (-not $Directory -or -not (Test-Path $Directory)) { return }
+    $Files = Get-ChildItem -LiteralPath $Directory -File | Where-Object { $_.Name -match '^(LICENSE|LICENCE|COPYING|NOTICE)([.-].*)?$' }
+    foreach ($File in $Files) {
+        $Notices.Add("`n===== $Label / $($File.Name) =====`n")
+        $Notices.Add((Get-Content -LiteralPath $File.FullName -Raw))
+    }
+}
+$Modules = & go -C wails list -m -f '{{.Path}}|{{.Version}}|{{.Dir}}' all
+if ($LASTEXITCODE -ne 0) { throw 'Cannot list Go license sources.' }
+foreach ($Module in $Modules) {
+    $Parts = $Module -split '\|', 3
+    if ($Parts.Length -eq 3) { Add-LicenseNotices "$($Parts[0]) $($Parts[1])" $Parts[2] }
+}
+$Packages = & npm.cmd --prefix frontend ls --omit=dev --all --parseable
+if ($LASTEXITCODE -ne 0) { throw 'Cannot list frontend license sources.' }
+foreach ($Package in $Packages) { Add-LicenseNotices ($Package -replace [regex]::Escape($RepoRoot), '') $Package }
+$Notices | Set-Content (Join-Path $PackageDir 'THIRD_PARTY_NOTICES.txt') -Encoding utf8
 Get-FileHash (Join-Path $PackageDir 'SolA.exe') -Algorithm SHA256 | Format-List

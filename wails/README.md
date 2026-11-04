@@ -6,6 +6,8 @@
 
 Windows 10/11 x64에서 `SolA.exe`를 실행하세요. WebView2 Runtime이 없으면 Wails 안내에 따라 Microsoft WebView2 Evergreen Runtime을 설치합니다.
 
+미리 빌드된 앱은 [Wails Windows 작업 목록](https://github.com/Jungwoo-Ryu/banana-slides/actions/workflows/wails-windows.yml)에서 성공한 실행을 열고 **Artifacts → SolA-Windows-x64**를 내려받습니다. 안의 `SolA-Windows-x64.zip`을 풀고 `SolA.exe`를 실행합니다. 아티팩트 보관 기간은 14일이며 만료되면 워크플로를 다시 실행하거나 소스에서 빌드합니다.
+
 소스에서 빌드하려면 Go **1.27.3**, Node **22.23.4**를 설치하고 루트의 `build-wails.bat`를 실행합니다. 이후 `start-wails.bat`로 실행할 수 있습니다. 수정한 코드를 반영하려면 `build-wails.bat`를 다시 실행합니다. 결과는 `wails/build/bin/SolA.exe`입니다.
 
 빌드 스크립트는 고정 버전 Wails 2.17.1을 사용합니다. 결과 EXE와 portable ZIP은 GitHub Actions의 **Wails Windows** 워크플로에서도 생성합니다. 배포 서명은 별도 기업 코드 서명 인증서가 있어야 적용할 수 있습니다.
@@ -70,6 +72,10 @@ Linux 개발 환경에서 기존 `.venv` 테스트 의존성과 Playwright가 �
 
 이 코드는 Banana Slides에서 파생된 AGPL-3.0 프로젝트입니다. 루트 LICENSE와 기존 저작권 표시를 유지합니다. Wails, WebView2, 보조 도구의 라이선스도 각각 적용됩니다.
 
+배포 폴더에는 `LICENSE`, 원본 소스 리비전과 빌드 안내가 있는 `SOURCE.txt`, Go·프론트엔드 의존성의 `THIRD_PARTY_NOTICES.txt`가 함께 들어갑니다.
+
 ## 검증 기록
 
 2026-11-04: Go 저장소·API·Azure 프로토콜·작업 실패 및 중단·경로/세션 검증·기존 DB 가져오기·OCR/PDF·XLSX 테스트, 프론트엔드 200개 테스트, Go 서버를 사용하는 브라우저 통합 시나리오를 실행했습니다. 브라우저에서 다운로드한 PPTX는 독립적인 PowerPoint 파서로, MP4는 FFprobe로 확인했습니다. Go 의존성은 Linux와 Windows 대상 `govulncheck`에서 호출 가능한 취약점이 발견되지 않았습니다. Azure 응답은 로컬 프로토콜 모의 서버로 검증했으며 사내 실제 배포의 접근 권한·할당량·생성 품질은 연결 설정 후 확인해야 합니다.
+
+Windows 2025 CI에서 실제 WebView2 창의 React 로딩, 네이티브 초기화, Go API 연결, Windows 저장 대화상자 조작, 저장 파일 내용 검증까지 통과했습니다. 소비자용 Windows 10/11 PC의 기업 보안 정책·프록시·코드 서명 정책은 별도 설치 환경에서 확인해야 합니다.
