@@ -1,6 +1,6 @@
+import { verifyExport } from './helpers/go-backend';
 import { test, expect, type APIRequestContext } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
-import path from 'node:path';
 
 test.skip(process.env.SOLA_GO_E2E !== '1', 'Requires the isolated Go backend and loopback Azure protocol fixture.');
 async function complete(request: APIRequestContext, project: string, id: string) {
@@ -60,7 +60,7 @@ test('Go settings, outline SSE, generated images, pixel region editing and real 
     const download = await downloadPromise;
     const saved = info.outputPath('go-export.pptx'); await download.saveAs(saved);
     // Independent OOXML reader validates the downloaded file, not the API response.
-    execFileSync(path.resolve('../.venv/bin/python'), ['-c', 'from pptx import Presentation; import sys; p=Presentation(sys.argv[1]); assert len(p.slides)==2; assert len(p.slides[0].shapes)>0; assert p.slides[0].has_notes_slide', saved]);
+    verifyExport(saved, 'pptx', 2);
     const files = (await (await request.get(`/api/projects/${pid}/exports`)).json()).data.files;
     expect(files.some((file: { filename: string }) => file.filename.endsWith('.pptx'))).toBeTruthy();
     await page.screenshot({ path: info.outputPath('go-slide-preview.png'), fullPage: true });

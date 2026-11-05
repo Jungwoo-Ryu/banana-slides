@@ -125,3 +125,9 @@ wails/build/*
 /frontend/src/wailsjs/
 
 !wails/build/appicon.png
+
+**/node_modules/
+/backend/bin/
+!backend/README.md
+!wails/README.md
+!AGENTS.md

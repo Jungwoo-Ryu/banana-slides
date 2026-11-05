@@ -9,9 +9,10 @@
 후원·소셜·상업적 API 가입 링크 제거는 원저작자의 저작권이나 AGPL 고지를 제거하지 않습니다. upstream 이력은 Git에 보존합니다.
 
 추가 검토 영역:
-- PyMuPDF: AGPL/상업 라이선스 이중 배포. PDF 파싱·렌더링·출력 경로.
+- Wails: MIT. Windows WebView2 창과 네이티브 런타임.
+- modernc.org/sqlite: BSD-3-Clause 계열 고지 및 SQLite 원본 조건. Go 저장소.
+- Go x/image 및 기타 Go/npm 의존성: 각 모듈 원본 고지. Windows 패키지에 THIRD_PARTY_NOTICES.txt를 포함합니다.
 - Tesseract: Apache-2.0 실행 파일 및 언어 데이터. 사용자가 설치하는 로컬 OCR 엔진.
-- OpenCV: Apache-2.0 계열 라이선스. 로컬 인페인팅.
-- ONNX/배경 제거 가중치: 모델마다 별도 조건. 이 배포는 가중치를 포함하거나 자동 다운로드하지 않습니다.
-- 폰트: backend/fonts 등 각 파일의 원본 라이선스 확인 필요. 사내 폰트는 사용자 제공.
-- 각 Python/npm 의존성의 라이선스는 해당 패키지 원본 고지를 따릅니다.
+- Poppler, FFmpeg, LibreOffice: 설치된 배포판의 GPL/LGPL/MPL 등 구성별 고지를 따릅니다. Windows에서는 별도 도구이며 컨테이너에서는 배포판 패키지로 설치됩니다.
+- 폰트: 설치된 Noto 등 각 파일의 원본 라이선스를 유지합니다. 사내 폰트는 사용자 제공입니다.
+- 이전 PyMuPDF·OpenCV·인터프리터 의존성과 모델 가중치는 현재 앱에 포함하지 않습니다.

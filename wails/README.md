@@ -1,6 +1,6 @@
 # Sol.A — Go / Wails Windows desktop
 
-기존 React/TypeScript 화면을 Wails WebView2 창에 표시하고, Python 백엔드의 API를 Go 애플리케이션 서비스로 옮긴 Windows 앱입니다. 앱 실행에 Python, Node.js, Electron 또는 Docker가 필요하지 않습니다. Node.js와 Go는 개발·빌드 시에만 사용합니다. 기존 웹/Electron 소스는 비교와 기존 배포를 위해 보존하며 새 EXE에 포함하지 않습니다.
+기존 React/TypeScript 화면을 Wails WebView2 창에 표시하고, Python 백엔드의 API를 Go 애플리케이션 서비스로 옮긴 Windows 앱입니다. 앱 실행에 Python, Node.js, Electron 또는 Docker가 필요하지 않습니다. Node.js와 Go는 개발·빌드 시에만 사용합니다. 정식 백엔드는 루트의 `backend/` Go 모듈이며 Wails와 웹이 이를 공유합니다. 이전 인터프리터 백엔드와 Electron 런처는 제거했습니다.
 
 ## 실행
 
@@ -61,12 +61,12 @@ OCR_LANGUAGES=kor+eng
 ## 개발 검증
 
 ```bash
-cd wails
+cd backend
 go test -race ./...
 go run ./cmd/sola-server --data-dir ../.runtime/wails-dev --listen 127.0.0.1:5012 --no-auth
 ```
 
-Linux 개발 환경에서 기존 `.venv` 테스트 의존성과 Playwright가 준비되어 있다면 `scripts/wails/verify-local.sh`로 모의 Azure·Go 서버·React 화면을 함께 띄워 브라우저 검증을 재현할 수 있습니다.
+Linux 개발 환경에서 Go·Node.js·Playwright·FFmpeg·Poppler·LibreOffice가 준비되어 있다면 `scripts/wails/verify-local.sh`로 모의 Azure·Go 서버·React 화면을 함께 띄워 브라우저 검증을 재현할 수 있습니다.
 
 `--no-auth`는 로컬 테스트 전용입니다. Azure 프로토콜 모의 서버도 루프백 HTTP일 때만 `--allow-test-http`로 허용합니다. 실제 Azure 호출 테스트는 사내 인증과 비용이 발생하는 별도 검증입니다.
 
@@ -76,6 +76,6 @@ Linux 개발 환경에서 기존 `.venv` 테스트 의존성과 Playwright가 �
 
 ## 검증 기록
 
-2026-11-04: Go 저장소·API·Azure 프로토콜·작업 실패 및 중단·경로/세션 검증·기존 DB 가져오기·OCR/PDF·XLSX 테스트, 프론트엔드 200개 테스트, Go 서버를 사용하는 브라우저 통합 시나리오를 실행했습니다. 브라우저에서 다운로드한 PPTX는 독립적인 PowerPoint 파서로, MP4는 FFprobe로 확인했습니다. Go 의존성은 Linux와 Windows 대상 `govulncheck`에서 호출 가능한 취약점이 발견되지 않았습니다. Azure 응답은 로컬 프로토콜 모의 서버로 검증했으며 사내 실제 배포의 접근 권한·할당량·생성 품질은 연결 설정 후 확인해야 합니다.
+2026-11-04: Go 저장소·API·Azure 프로토콜·작업 실패 및 중단·경로/세션 검증·기존 DB 가져오기·OCR/PDF·XLSX 테스트, 프론트엔드 200개 테스트, Go 서버를 사용하는 브라우저 통합 시나리오를 실행했습니다. 브라우저에서 다운로드한 PPTX는 독립적인 LibreOffice·Poppler 리더로, MP4는 FFprobe로 확인했습니다. Go 의존성은 Linux와 Windows 대상 `govulncheck`에서 호출 가능한 취약점이 발견되지 않았습니다. Azure 응답은 로컬 프로토콜 모의 서버로 검증했으며 사내 실제 배포의 접근 권한·할당량·생성 품질은 연결 설정 후 확인해야 합니다.
 
 Windows 2025 CI에서 실제 WebView2 창의 React 로딩, 네이티브 초기화, Go API 연결, Windows 저장 대화상자 조작, 저장 파일 내용 검증까지 통과했습니다. 소비자용 Windows 10/11 PC의 기업 보안 정책·프록시·코드 서명 정책은 별도 설치 환경에서 확인해야 합니다.

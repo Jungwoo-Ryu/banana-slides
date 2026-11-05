@@ -1,3 +1,5 @@
+> Historical reference: setup has moved to the Go backend. Follow the root README and backend/README.md; commands below describe the retired implementation.
+
 # README Multilingual maintenance
 
 Chinese `README.md` is the source of the content. English, Brazilian Portuguese, Japanese, Korean are currently available; language, file name and button file are centrally registered. `docs/i18n/languages.json`。All language files are placed in the repository root directory, with relative links and shares Image assets。

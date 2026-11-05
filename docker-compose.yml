@@ -3,57 +3,28 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
-      args:
-        DOCKER_REGISTRY: ${DOCKER_REGISTRY:-}
-        GHCR_REGISTRY: ${GHCR_REGISTRY:-ghcr.io/}
-        APT_MIRROR: ${APT_MIRROR:-}
-        PYPI_INDEX_URL: ${PYPI_INDEX_URL:-}
-    container_name: banana-slides-backend
-    ports:
-      # Host Port:Internal Port of Container
-      # Host port by BACKEND_PORT Control, inside the container fixed. 5000
-      - "${BACKEND_PORT:-5011}:5000"
-    # From .env The file automatically loads all environment variables
     env_file:
-      - .env
+      - path: .env
+        required: false
     volumes:
-      # Enduring database
-      - ./backend/instance:/app/backend/instance
-      # Enduring Uploaded Files
-      - ./uploads:/app/uploads
+      - sola-data:/data
     restart: unless-stopped
+    mem_limit: 2g
+    cpus: 1
     healthcheck:
-      # Health checks use internal fixed ports in containers 5000
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 30s
-      timeout: 10s
+      test: [CMD, sola-server, --healthcheck, 'http://127.0.0.1:5000/health']
+      interval: 15s
+      timeout: 6s
       retries: 3
-      start_period: 10s
-    networks:
-      - banana-slides-network
-
   frontend:
     build:
       context: .
       dockerfile: frontend/Dockerfile
-      # Windows Compatibility： Disable symbolic link following + Front-end build parameters
-      args:
-        DOCKER_BUILDKIT: 1
-        DOCKER_REGISTRY: ${DOCKER_REGISTRY:-}
-        NPM_REGISTRY: ${NPM_REGISTRY:-}
-    container_name: banana-slides-frontend
     ports:
-      - "${FRONTEND_PORT:-3011}:80"
+      - '127.0.0.1:${FRONTEND_PORT:-3011}:80'
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
-    networks:
-      - banana-slides-network
-
-networks:
-  banana-slides-network:
-    driver: bridge
-
 volumes:
-  backend-data:
-  uploads-data:
+  sola-data:

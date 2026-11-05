@@ -1,26 +1,17 @@
 services:
-  app:
+  sola:
     build:
       context: .
       dockerfile: Dockerfile.allinone
-      args:
-        DOCKER_REGISTRY: ${DOCKER_REGISTRY:-}
-        GHCR_REGISTRY: ${GHCR_REGISTRY:-ghcr.io/}
-        APT_MIRROR: ${APT_MIRROR:-}
-        PYPI_INDEX_URL: ${PYPI_INDEX_URL:-}
-        NPM_REGISTRY: ${NPM_REGISTRY:-}
-    container_name: banana-slides
-    ports:
-      - "${PORT:-3011}:80"
     env_file:
-      - .env
+      - path: .env
+        required: false
+    ports:
+      - '127.0.0.1:${FRONTEND_PORT:-3011}:5000'
     volumes:
-      - ./backend/instance:/app/backend/instance
-      - ./uploads:/app/uploads
+      - sola-data:/data
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
+    mem_limit: 2g
+    cpus: 1
+volumes:
+  sola-data:

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Button, useToast, MaterialSelector } from '@/components/shared';
 import { useT } from '@/hooks/useT';
 import { getImageUrl } from '@/api/client';
-import { isDesktop } from '@/utils';
 
 // Template Component contains translation
 const templateI18n = {
@@ -44,7 +43,7 @@ import { ImagePlus, X } from 'lucide-react';
 
 const publicAssetPath = (assetPath: string) => {
   const normalizedPath = assetPath.startsWith('/') ? assetPath : `/${assetPath}`;
-  return isDesktop ? `.${normalizedPath}` : normalizedPath;
+  return normalizedPath;
 };
 
 interface TemplateSelectorProps {

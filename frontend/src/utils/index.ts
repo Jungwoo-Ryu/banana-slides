@@ -1,3 +1,4 @@
+import { isWails } from './wails';
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import type { Project, Page } from '@/types';
@@ -147,5 +148,5 @@ export function normalizeRenovationErrorMessage(errorMessage: string | null | un
   return normalizeErrorMessage(errorMessage, lang);
 }
 
-export const isDesktop = typeof window !== 'undefined' && 'electronAPI' in window;
+export const isDesktop = typeof window !== 'undefined' && isWails();
 export const DESKTOP_TITLEBAR_HEIGHT = 50;

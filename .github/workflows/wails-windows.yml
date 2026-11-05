@@ -2,9 +2,9 @@ name: Wails Windows
 on:
   push:
     branches: [feat/wails-windows, Dev]
-    paths: ['wails/**', 'frontend/**', 'scripts/wails/**', '.github/workflows/wails-windows.yml']
+    paths: ['wails/**', 'backend/**', 'frontend/**', 'scripts/wails/**', '.github/workflows/wails-windows.yml']
   pull_request:
-    paths: ['wails/**', 'frontend/**', 'scripts/wails/**', '.github/workflows/wails-windows.yml']
+    paths: ['wails/**', 'backend/**', 'frontend/**', 'scripts/wails/**', '.github/workflows/wails-windows.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -20,26 +20,24 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.27.3'
-          cache-dependency-path: wails/go.sum
+          cache-dependency-path: |
+            backend/go.sum
+            wails/go.sum
       - name: Native helper tools
         run: sudo apt-get update && sudo apt-get install -y tesseract-ocr tesseract-ocr-kor ffmpeg poppler-utils libreoffice-impress
       - name: Go race and integration tests
-        working-directory: wails
+        working-directory: backend
         run: go test -race ./...
       - name: Go dependency vulnerabilities
-        working-directory: wails
+        working-directory: backend
         run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
       - uses: actions/setup-node@v4
         with:
           node-version: '22.23.4'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - uses: astral-sh/setup-uv@v6
-        with:
-          enable-cache: false
       - name: Browser test dependencies
         run: |
-          uv sync --frozen --extra test --python 3.12
           npm --prefix frontend ci
           cd frontend
           npx playwright install --with-deps chromium
@@ -61,7 +59,9 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.27.3'
-          cache-dependency-path: wails/go.sum
+          cache-dependency-path: |
+            backend/go.sum
+            wails/go.sum
       - uses: actions/setup-node@v4
         with:
           node-version: '22.23.4'

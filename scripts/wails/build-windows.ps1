@@ -19,6 +19,8 @@ if ($LASTEXITCODE -ne 0) { throw 'Frontend build failed.' }
 & go install github.com/wailsapp/wails/v2/cmd/wails@v2.17.1
 if ($LASTEXITCODE -ne 0) { throw 'Wails installation failed.' }
 $WailsExecutable = Join-Path ((& go env GOPATH).Trim()) 'bin/wails.exe'
+& go -C backend test ./...
+if ($LASTEXITCODE -ne 0) { throw 'Backend tests failed.' }
 Push-Location wails
 try {
     & go test ./...

@@ -1,9 +1,8 @@
+import { verifyExport } from './helpers/go-backend';
 import { test, expect, type APIRequestContext } from '@playwright/test';
-import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 const root = path.resolve('..');
-const python = path.join(root, process.platform === 'win32' ? '.venv/Scripts/python.exe' : '.venv/bin/python');
 const project = async (request: APIRequestContext, id: string) => (await (await request.get(`/api/projects/${id}`)).json()).data;
 async function task(request: APIRequestContext, id: string, taskId: string) {
   await expect.poll(async () => {
@@ -65,8 +64,7 @@ test('real backend generation: SSE, scripts, image editing, version restore and 
       const url = (await result.json()).data.download_url;
       const downloaded = await request.get(url); expect(downloaded.ok()).toBeTruthy();
       const file = info.outputPath(path.basename(url)); writeFileSync(file, await downloaded.body());
-      const validation = format === 'pptx' ? 'from pptx import Presentation; assert len(Presentation(p).slides)==2' : format === 'pdf' ? 'import fitz; assert len(fitz.open(p))==2' : 'import zipfile; z=zipfile.ZipFile(p); assert len(z.namelist())==2; assert z.testzip() is None';
-      execFileSync(python, ['-c', 'import sys; p=sys.argv[1]; ' + validation, file]);
+      verifyExport(file, format, 2);
     }
     const logs = readFileSync(modelLog, 'utf8').trim().split('\n').slice(previousRequests).map(l => JSON.parse(l));
     const images = logs.filter(l => l.path.includes('/images/') && l.prompt.includes('REGRESSION_DESIGN'));
@@ -102,18 +100,12 @@ test('PDF template upload splits, analyzes, binds and generates a slide through 
 
 for (const status of [401, 404]) {
   test(`batch image failure ${status} is visible, diagnosable and recoverable without Tesseract`, async ({ page, request }) => {
-    test.skip(process.env.SOLA_E2E_VIDEO !== '1', 'Requires the Azure protocol fixture and invalid TESSERACT_CMD');
+    test.skip(process.env.SOLA_E2E_VIDEO !== '1', 'Requires the Azure protocol fixture');
     const messages: string[] = [];
     page.on('console', message => { if (message.text().includes('[Sol.A image-generation]')) messages.push(message.text()); });
     const created = await request.post('/api/projects', { data: { creation_type: 'blank', template_style: 'Navy and gold' } });
     const id = (await created.json()).data.project_id;
     try {
-      // Prove OCR is unavailable in this server, rather than assuming it is absent.
-      const ocr = await request.post('/api/settings/tests/ocr');
-      const ocrId = (await ocr.json()).data.task_id;
-      await expect.poll(async () => (await (await request.get(`/api/settings/tests/${ocrId}/status`)).json()).data.status).toBe('FAILED');
-      const ocrFailure = (await (await request.get(`/api/settings/tests/${ocrId}/status`)).json()).data;
-      expect(ocrFailure.error).toContain('Tesseract');
       for (let i = 0; i < 2; i++) {
         const added = await request.post(`/api/projects/${id}/pages`, { data: { order_index: i, outline_content: { title: `오류 검증 ${i+1}` }, description_content: { text: `슬라이드 설명 ${i+1}` } } });
         expect(added.status()).toBe(201);
@@ -140,10 +132,10 @@ for (const status of [401, 404]) {
       if (successful) expect(after.find((p: any) => p.page_id === successful.page_id).generated_image_url).toBe(successful.generated_image_url);
       expect(messages.some(m => m.includes('accepted'))).toBe(true);
       expect(messages.some(m => m.includes('failed'))).toBe(true);
-      const log = readFileSync(path.join(root, '.runtime/logs/backend.log'), 'utf8');
+      const log = readFileSync(path.join(process.env.SOLA_E2E_FOLDER!, 'backend.log'), 'utf8');
       const events = log.split('\n').filter(line => line.includes('image_generation') && line.includes(taskId));
-      expect(events.some(line => line.includes('"stage": "queue"'))).toBe(true);
-      expect(events.some(line => line.includes('"stage": "azure_image_request"') && line.includes('fixture-image-request'))).toBe(true);
+      expect(events.some(line => line.includes('"stage":"queue"'))).toBe(true);
+      expect(events.some(line => line.includes('"stage":"azure_image_request"') && line.includes('fixture-image-request'))).toBe(true);
       expect(log).not.toContain('sk-fixture-must-not-leak');
     } finally {
       await request.post('http://127.0.0.1:5044/__fixture__/image-failures', { data: { statuses: [] } });

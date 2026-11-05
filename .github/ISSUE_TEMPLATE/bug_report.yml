@@ -11,7 +11,7 @@ body:
         - Demo Website / Online Demo (bananaslides.online)
         - Docker Compose (docker-compose.yml)
         - Docker Compose with Pre-built Images (docker-compose.prod.yml)
-        - Local Development / Local development (uv + npm)
+        - Local Development / Local development (Go + npm)
         - Cloud Platform / Cloud platform deployment (Rain clouds and so on.)
         - Other / Other
     validations:

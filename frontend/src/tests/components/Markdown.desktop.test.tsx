@@ -1,18 +1,19 @@
 import { render, screen } from '@testing-library/react';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-const getBackendPort = vi.fn(() => '15410');
+
 let Markdown: typeof import('@/components/shared/Markdown')['Markdown'];
 
 beforeAll(async () => {
-  Object.defineProperty(window, 'electronAPI', { configurable: true, value: { getBackendPort } });
+  window.go = { main: { App: { Bootstrap: vi.fn().mockResolvedValue({ baseURL: 'http://127.0.0.1:15410', session: 'test-session', runtime: 'wails', dataDir: 'test' }), SaveDownload: vi.fn(), SaveData: vi.fn(), OpenSettings: vi.fn(), OpenDataFolder: vi.fn(), ImportLegacy: vi.fn(), UIReady: vi.fn() } } };
+  await (await import('@/utils/wails')).initializeWails();
   ({ Markdown } = await import('@/components/shared/Markdown'));
-  expect(getBackendPort).toHaveBeenCalled();
+
 });
 
 describe('Markdown desktop images', () => {
   afterAll(() => {
-    delete (window as typeof window & { electronAPI?: unknown }).electronAPI;
+    delete window.go;
   });
 
   it('loads backend file images from the dynamic desktop port', () => {
@@ -24,7 +25,7 @@ describe('Markdown desktop images', () => {
 
     expect(screen.getByAltText('material')).toHaveAttribute(
       'src',
-      'http://127.0.0.1:15410/files/materials/example.png',
+      'http://127.0.0.1:15410/files/materials/example.png?session=test-session',
     );
   });
 

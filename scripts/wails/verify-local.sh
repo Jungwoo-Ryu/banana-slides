@@ -8,10 +8,6 @@ for port in 5044 5012 3012; do
     exit 1
   fi
 done
-if [ ! -x .venv/bin/python ]; then
-  echo 'Browser verification uses the existing web test environment (.venv with Pillow and python-pptx). It is not bundled with the desktop app.' >&2
-  exit 1
-fi
 mkdir -p .runtime
 test_root="$(mktemp -d "$repo_root/.runtime/wails-browser-XXXXXX")"
 service_pids=()
@@ -21,8 +17,11 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 export SOLA_E2E_FOLDER="$test_root"
-go -C wails build -o "$test_root/sola-server" ./cmd/sola-server
-.venv/bin/python frontend/e2e/helpers/fake_azure_tts.py > "$test_root/azure.log" 2>&1 &
+export SOLA_VERIFY_BIN="$test_root/sola-verify"
+go -C backend build -o "$test_root/azure-fixture" ./cmd/azure-fixture
+go -C backend build -o "$SOLA_VERIFY_BIN" ./cmd/sola-verify
+go -C backend build -o "$test_root/sola-server" ./cmd/sola-server
+"$test_root/azure-fixture" > "$test_root/azure.log" 2>&1 &
 service_pids+=("$!")
 AZURE_OPENAI_ENDPOINT=http://127.0.0.1:5044 AZURE_OPENAI_API_KEY=sk-fixture-must-not-leak \
 AZURE_OPENAI_DEPLOYMENT=gpt-5.5 AZURE_OPENAI_IMAGE_DEPLOYMENT=gpt-image-2 \
@@ -49,5 +48,5 @@ if [ "$ready" != true ]; then
   exit 1
 fi
 cd frontend
-SOLA_GO_E2E=1 BASE_URL=http://127.0.0.1:3012 npx playwright test --config playwright.wails.config.ts
+SOLA_E2E_VIDEO=1 SOLA_GO_E2E=1 BASE_URL=http://127.0.0.1:3012 npx playwright test --config playwright.wails.config.ts
 printf 'Protocol and application logs: %s\n' "$test_root"

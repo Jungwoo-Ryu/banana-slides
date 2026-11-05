@@ -1,3 +1,5 @@
+> Historical reference: setup has moved to the Go backend. Follow the root README and backend/README.md; commands below describe the retired implementation.
+
 # Banana Slides Desktop Handover Document
 
 ## Branch Information

@@ -19,7 +19,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Jungwoo-Ryu/banana-slides/wails/internal/backend"
+	"github.com/Jungwoo-Ryu/banana-slides/backend"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"

@@ -1,102 +1,27 @@
 import axios from 'axios';
 import { desktopConfig, desktopFileURL, isWails, saveNative, sessionHeaders } from '@/utils/wails';
-import { isDesktop } from '@/utils';
-
-const DESKTOP_BACKEND_PORT_STORAGE_KEY = '__desktop_backend_port__';
-
-function isValidPort(port: number): boolean {
-  return Number.isInteger(port) && port > 0 && port <= 65535;
-}
-
-function parsePort(value: unknown): number {
-  return Number.parseInt(String(value ?? ''), 10);
-}
-
-function resolveDesktopBackendPort(): number {
-  const rawPort = (window as any).electronAPI?.getBackendPort?.();
-  const port = parsePort(rawPort);
-  if (isValidPort(port)) {
-    sessionStorage.setItem(DESKTOP_BACKEND_PORT_STORAGE_KEY, String(port));
-    return port;
-  }
-
-  const cachedPort = parsePort(sessionStorage.getItem(DESKTOP_BACKEND_PORT_STORAGE_KEY));
-  if (isValidPort(cachedPort)) {
-    return cachedPort;
-  }
-
-  console.warn('Desktop backend port is unavailable');
-  return 0;
-}
 
 const isClientSideUrl = (url: string) => /^\/?(data|blob):/i.test(url);
 const normalizeClientSideUrl = (url: string) => url.replace(/^\/(?=(data|blob):)/i, '');
 
-// Desktop Mode： From URL query param Synchronize the backend to avoid arcade competition
-if (isDesktop) {
-  (window as any).__BACKEND_PORT__ = resolveDesktopBackendPort();
-}
-
 export function getBaseURL(): string {
-  if (isWails()) return desktopConfig()?.baseURL || 'http://127.0.0.1:0';
-  if (!isDesktop) return '';
-  const port = (window as any).__BACKEND_PORT__;
-  if (!isValidPort(port)) {
-    console.warn('Desktop backend port is unavailable');
-    return 'http://127.0.0.1:0';
-  }
-  return `http://127.0.0.1:${port}`;
+  return isWails() ? desktopConfig()?.baseURL || 'http://127.0.0.1:0' : '';
 }
 
-// Unify Download Entry：desktop Walk original saving dialogue box，web Come on. window.open
-export function triggerDownload(relativeOrAbsoluteUrl: string, filename?: string): void {
-  if (!relativeOrAbsoluteUrl || typeof relativeOrAbsoluteUrl !== 'string') {
-    console.warn('Invalid download URL:', relativeOrAbsoluteUrl);
-    return;
-  }
-
+export function triggerDownload(url: string, filename?: string): void {
+  if (!url || typeof url !== 'string') return;
+  const name = filename || url.split(/[?#]/)[0].split('/').pop() || 'download';
   if (isWails()) {
-    void saveNative(relativeOrAbsoluteUrl, filename || relativeOrAbsoluteUrl.split(/[?#]/)[0].split('/').pop() || 'download').catch(error => {
+    void saveNative(url, name).catch(error => {
       console.error('파일 저장 실패', error);
       window.alert(`파일을 저장하지 못했습니다: ${String(error)}`);
     });
     return;
   }
-
-  if (isDesktop) {
-    if (isClientSideUrl(relativeOrAbsoluteUrl)) {
-      const url = normalizeClientSideUrl(relativeOrAbsoluteUrl);
-      (window as any).electronAPI.downloadFile(url, filename || 'download');
-      return;
-    }
-
-    const normalizedPath = relativeOrAbsoluteUrl.startsWith('/')
-      ? relativeOrAbsoluteUrl
-      : `/${relativeOrAbsoluteUrl}`;
-    const url = /^https?:\/\//i.test(relativeOrAbsoluteUrl)
-      ? relativeOrAbsoluteUrl
-      : `${getBaseURL()}${normalizedPath}`;
-    let fallbackFilename: string;
-    try {
-      fallbackFilename = new URL(url).pathname.split('/').pop() || 'download';
-    } catch {
-      fallbackFilename = relativeOrAbsoluteUrl.split('?')[0].split('/').filter(Boolean).pop() || 'download';
-    }
-    (window as any).electronAPI.downloadFile(url, filename || fallbackFilename);
-  } else {
-    // Downloads may start after a long export request, when popup activation has expired.
-    const link = document.createElement('a');
-    link.href = relativeOrAbsoluteUrl;
-    link.rel = 'noopener';
-    link.download = filename || relativeOrAbsoluteUrl.split(/[?#]/)[0].split('/').pop() || '';
-    link.hidden = true;
-    document.body.appendChild(link);
-    try {
-      link.click();
-    } finally {
-      link.remove();
-    }
-  }
+  const link = document.createElement('a');
+  link.href = url; link.rel = 'noopener'; link.download = name; link.hidden = true;
+  document.body.appendChild(link);
+  try { link.click(); } finally { link.remove(); }
 }
 
 // Create axios Examples
@@ -176,10 +101,6 @@ export const getImageUrl = (path?: string, timestamp?: string | number): string 
   }
   // Use relative path (ensure that / Start）
   let url = path.startsWith('/') ? path : '/' + path;
-
-  if (isDesktop) {
-    url = `${getBaseURL()}${url}`;
-  }
 
   if (isWails()) url = desktopFileURL(url);
 

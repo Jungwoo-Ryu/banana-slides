@@ -1,8 +1,9 @@
+import { readFileSync } from 'node:fs';
+import { seedSlide, verifyExport } from './helpers/go-backend';
 import {test,expect} from '@playwright/test';
 import {execFileSync} from 'node:child_process';
 import path from 'node:path';
 const root=path.resolve('..');
-const python=path.join(root,process.platform==='win32'?'.venv/Scripts/python.exe':'.venv/bin/python');
 
 test('Korean settings save and reload without storing secrets',async({page})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
@@ -33,7 +34,7 @@ test('blank project, region prompt and actual PPTX browser download',async({page
     const project=(await(await request.get(`/api/projects/${projectId}`)).json()).data;const pageId=project.pages[0].page_id;
     await request.put(`/api/projects/${projectId}/pages/${pageId}/outline`,{data:{outline_content:{title:'로컬 편집 검증',points:['영역 편집','PPTX 다운로드']}}});
     await request.put(`/api/projects/${projectId}/pages/${pageId}/description`,{data:{description_content:{text:'테스트 슬라이드입니다.'}}});
-    execFileSync(python,[path.join(root,'scripts/seed_local_e2e.py'),projectId,pageId]);await page.goto(`/project/${projectId}/preview`);
+    await seedSlide(request,projectId,pageId);await page.goto(`/project/${projectId}/preview`);
     await expect(page.getByText('로컬 편집 검증').first()).toBeVisible();
     await expect(page.locator('body')).not.toContainText(/[\u4e00-\u9fff]/);await page.screenshot({path:testInfo.outputPath('preview.png')});
     await page.getByTestId('preview-floating-toolbar').getByRole('button',{name:'편집',exact:true}).click();
@@ -53,8 +54,7 @@ test('blank project, region prompt and actual PPTX browser download',async({page
     await page.reload();await page.getByRole('button',{name:'내보내기',exact:true}).click();await page.getByRole('button',{name:'PPTX 내보내기',exact:true}).click();
     const downloadPromise=page.waitForEvent('download');await page.getByRole('button',{name:'내보내기 시작',exact:true}).click();const download=await downloadPromise;
     const saved=testInfo.outputPath('browser-export.pptx');await download.saveAs(saved);
-    const result=execFileSync(python,['-c','from pptx import Presentation; import sys; p=Presentation(sys.argv[1]); assert len(p.slides)==1; assert len(p.slides[0].shapes)>0; print("PPTX verified")',saved],{encoding:'utf8'});
-    expect(result).toContain('PPTX verified');expect(errors).toEqual([]);
+    verifyExport(saved, 'pptx', 1);expect(errors).toEqual([]);
   }finally{await request.delete(`/api/projects/${projectId}`);}
 });
 
@@ -93,7 +93,7 @@ test('edited script is saved before Azure TTS video export and MP4 download',asy
     const added=await request.post(`/api/projects/${projectId}/pages`,{data:{order_index:0,outline_content:{title:'Sol.A 발표 테스트'}}});
     const pageId=(await added.json()).data.page_id;
     await request.put(`/api/projects/${projectId}/pages/${pageId}/description`,{data:{description_content:{text:'화면에 보여줄 내용',extra_fields:{TTS_SCRIPT:'처음 생성한 발표 스크립트'}}}});
-    execFileSync(python,[path.join(root,'scripts/seed_local_e2e.py'),projectId,pageId]);
+    await seedSlide(request,projectId,pageId);
     await page.goto(`/project/${projectId}/preview`);
     const script=page.getByTestId('drawer-narration-input');
     await expect(script).toHaveValue('처음 생성한 발표 스크립트');
@@ -113,7 +113,7 @@ test('edited script is saved before Azure TTS video export and MP4 download',asy
     },{timeout:45000}).toBe('COMPLETED');
     const saved=(await(await request.get(`/api/projects/${projectId}`)).json()).data.pages[0];
     expect(saved.narration_text).toBe(edited);
-    const inputs=execFileSync(python,['-c','from pathlib import Path; import os; print((Path(os.environ["SOLA_E2E_FOLDER"])/"speech-inputs.jsonl").read_text())'],{encoding:'utf8'});
+    const inputs = readFileSync(path.join(process.env.SOLA_E2E_FOLDER!, 'speech-inputs.jsonl'), 'utf8');
     expect(inputs).toContain(edited);
     const downloadPromise=page.waitForEvent('download');
     await page.getByTestId('export-tasks-list').getByRole('button',{name:'다운로드',exact:true}).first().click();

@@ -1,3 +1,5 @@
+> Historical reference: setup has moved to the Go backend. Follow the root README and backend/README.md; commands below describe the retired implementation.
+
 > Historical implementation plan. Current document/OCR adapters are local only; see [ADAPTERS.md](ADAPTERS.md).
 
 # 한국어 로컬 웹 리팩토링 계획

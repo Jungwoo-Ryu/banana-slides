@@ -1,3 +1,5 @@
+> Historical reference: setup has moved to the Go backend. Follow the root README and backend/README.md; commands below describe the retired implementation.
+
 # Sol.A 로컬 웹 검증 기록
 
 검증 환경: Linux, Python 3.12, Node.js **22.23.4**, FFmpeg/FFprobe, Chromium (Playwright). 실제 사내 Azure 키는 사용하지 않았습니다.

@@ -1,9 +1,6 @@
+import { seedSlide } from './helpers/go-backend';
 import { expect, test, type Page, type APIRequestContext } from '@playwright/test';
-import { execFileSync } from 'node:child_process';
-import path from 'node:path';
 
-const root = path.resolve('..');
-const python = path.join(root, process.platform === 'win32' ? '.venv/Scripts/python.exe' : '.venv/bin/python');
 
 async function fixture(request: APIRequestContext) {
   const created = await request.post('/api/projects', { data: { creation_type: 'idea', idea_prompt: 'Region editor regression' } });
@@ -13,7 +10,7 @@ async function fixture(request: APIRequestContext) {
   expect(added.ok()).toBeTruthy();
   const state = (await (await request.get(`/api/projects/${id}`)).json()).data;
   const pageId = state.pages[0].page_id;
-  execFileSync(python, [path.join(root, 'scripts/seed_local_e2e.py'), id, pageId]);
+  await seedSlide(request,id,pageId);
   return { id, pageId };
 }
 

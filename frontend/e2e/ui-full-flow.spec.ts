@@ -1,3 +1,4 @@
+import { verifyExport } from './helpers/go-backend';
 /**
  * UI-driven end-to-end test: From user interface operations to final PPT export
  *
@@ -643,23 +644,7 @@ test.describe('UI-driven E2E test: From user interface to PPT export', () => {
     console.log(`  Path: ${downloadPath}`)
     console.log(`  Size: ${(fileStats.size / 1024).toFixed(2)} KB\n`)
 
-    // Validate PPTX file content using python-pptx
-    console.log('🔍 Validating PPTX file content...')
-    const { execSync } = await import('child_process')
-    const { fileURLToPath } = await import('url')
-    try {
-      // Get current directory (ES module compatible)
-      const currentDir = path.dirname(fileURLToPath(import.meta.url))
-      const validateScript = path.join(currentDir, 'validate_pptx.py')
-      const result = execSync(
-        `python3 "${validateScript}" "${downloadPath}" 3 "Artificial intelligence" "AI"`,
-        { encoding: 'utf-8', stdio: 'pipe' }
-      )
-      console.log(`✓ ${result.trim()}\n`)
-    } catch (error: any) {
-      console.warn(`⚠️  PPTX validation warning: ${error.stdout || error.message}`)
-      console.log('  (Continuing test, but PPTX content validation had issues)\n')
-    }
+    verifyExport(path.resolve(downloadPath), 'pptx', 3)
 
     // ====================================
     // Final verification

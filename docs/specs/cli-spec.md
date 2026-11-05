@@ -1,3 +1,5 @@
+> Historical reference: setup has moved to the Go backend. Follow the root README and backend/README.md; commands below describe the retired implementation.
+
 # Banana Slides CLI Requirements specification（API Drive, close to full capacity.）
 
 ## 1. Objectives and non-objectives

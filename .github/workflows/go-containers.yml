@@ -1,0 +1,39 @@
+name: Go Containers
+on:
+  push:
+    branches: [feat/wails-windows, Dev]
+    paths: ['backend/**', 'frontend/**', '*Dockerfile*', 'docker-compose*', '.dockerignore', '.github/workflows/go-containers.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the standalone Go backend and Go-served UI
+        run: |
+          docker build -f backend/Dockerfile -t sola-api:test .
+          docker build -f Dockerfile.allinone -t sola-app:test .
+          docker compose config --quiet
+          docker compose -f docker-compose.allinone.yml config --quiet
+      - name: Verify the real image, API, persistent storage and deep-link UI
+        run: |
+          docker run -d --name sola-go-test -p 127.0.0.1:5013:5000 --mount type=volume,source=sola-go-ci,target=/data sola-app:test
+          trap 'docker logs sola-go-test; docker stop sola-go-test' EXIT
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:5013/health > /tmp/health.json; then break; fi
+            sleep 1
+          done
+          jq -e '.data.runtime == "go"' /tmp/health.json
+          curl -fsS http://127.0.0.1:5013/project/example/outline | grep '<div id="root">'
+          curl -fsS -H 'Content-Type: application/json' -d '{"creation_type":"blank","project_title":"Go container persistence"}' http://127.0.0.1:5013/api/projects > /tmp/project.json
+          project_id=$(jq -er '.data.project_id' /tmp/project.json)
+          docker exec sola-go-test sh -c 'test "$(id -u)" != 0; ! command -v python; ! command -v python3; ! command -v uv; ! command -v node; test -s /data/sola-go.db'
+          docker restart sola-go-test
+          for i in $(seq 1 30); do
+            if curl -fsS "http://127.0.0.1:5013/api/projects/$project_id" > /tmp/restored.json; then break; fi
+            sleep 1
+          done
+          jq -e '.data.project_title == "Go container persistence"' /tmp/restored.json
